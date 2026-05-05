@@ -7,7 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background-color: #0f172a; color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow-x: hidden; }
-        canvas { border-radius: 8px; background: #1e293b; touch-action: none; }
+        canvas { border-radius: 8px; background: #1e293b; touch-action: none; display: block; }
         .glass-panel {
             background: rgba(30, 41, 59, 0.7);
             backdrop-filter: blur(10px);
@@ -35,7 +35,7 @@
     <div class="max-w-6xl mx-auto">
         <header class="mb-8 text-center">
             <h1 class="text-3xl font-bold text-purple-400">Automated Mass Spectrometry</h1>
-            <p class="text-slate-400 mt-2">Optimized 4-Window Scan | Magnesium Isotope Analysis</p>
+            <p class="text-slate-400 mt-2">Precision Trajectory Alignment | Magnesium Analysis</p>
         </header>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -59,7 +59,9 @@
                         </div>
                     </div>
 
-                    <canvas id="simCanvas" class="w-full h-[450px]"></canvas>
+                    <div class="relative w-full aspect-[16/10] min-h-[350px]">
+                        <canvas id="simCanvas" class="w-full h-full"></canvas>
+                    </div>
                     
                     <div class="mt-6 space-y-4">
                         <div class="flex justify-between items-center">
@@ -73,7 +75,6 @@
                         </div>
                         
                         <div class="relative w-full bg-slate-800 h-4 rounded-full overflow-hidden border border-slate-700 shadow-inner">
-                            <!-- Dividers updated for 4 windows: 25%, 50%, 75% -->
                             <div class="timeline-divider" style="left: 25%"></div>
                             <div class="timeline-divider" style="left: 50%"></div>
                             <div class="timeline-divider" style="left: 75%"></div>
@@ -150,7 +151,6 @@
         const SETTLE_DURATION = 1500;   
         const CYCLE_TOTAL = EMISSION_DURATION + SETTLE_DURATION; 
         
-        // Removed targetMz: 27
         const scanWindows = [
             { targetMz: 23, bField: 0.96 },
             { targetMz: 24, bField: 1.00 }, 
@@ -172,66 +172,92 @@
         let emittedCounts = { 24: 0, 25: 0, 26: 0 };
 
         function resize() {
-            canvas.width = canvas.offsetWidth;
-            canvas.height = canvas.offsetHeight;
+            const dpr = window.devicePixelRatio || 1;
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
+            particles.forEach(p => {
+                p.w = rect.width;
+                p.h = rect.height;
+            });
         }
         window.addEventListener('resize', resize);
         resize();
 
         class Particle {
-            constructor(mzValue, belongsToRecordedIso, scanIndexAtBirth) {
+            constructor(mzValue, scanIndexAtBirth) {
                 this.isoData = sampleComposition.find(i => i.mz === mzValue);
                 this.mz = mzValue;
                 this.color = this.isoData.color;
-                this.x = 40;
-                this.y = canvas.height - 40;
-                this.vx = 8.5;
+                
+                const rect = canvas.getBoundingClientRect();
+                this.w = rect.width;
+                this.h = rect.height;
+
+                // Initial position at source
+                this.startX = 40;
+                this.startY = this.h - 40;
+                this.x = this.startX;
+                this.y = this.startY;
+                
+                this.speed = (this.w / 800) * 8.5;
+                this.vx = this.speed;
                 this.vy = 0;
+                
                 this.history = [];
                 this.active = true;
                 this.detected = false;
-                this.belongsToRecordedIso = belongsToRecordedIso;
                 this.scanIndexAtBirth = scanIndexAtBirth;
             }
 
             update() {
                 if (!this.active) return;
                 this.history.push({x: this.x, y: this.y});
-                if (this.history.length > 15) this.history.shift();
+                if (this.history.length > 12) this.history.shift();
 
-                if (this.x < 150) {
+                const entryX = this.w * 0.25; 
+                const detX = this.w - 100;
+                const detY = 45; 
+
+                if (this.x < entryX) {
                     this.x += this.vx;
                 } else {
-                    const windowData = scanWindows[this.scanIndexAtBirth] || scanWindows[0];
+                    const windowData = scanWindows[this.scanIndexAtBirth];
+                    if (!windowData) { this.active = false; return; }
+                    
                     const targetMz = windowData.targetMz;
                     
-                    let radius;
-                    if (this.mz === targetMz) {
-                        radius = 368; 
-                    } else if (this.mz < targetMz) {
-                        radius = 368 - ((targetMz - this.mz) * 140);
-                    } else {
-                        radius = 368 + ((this.mz - targetMz) * 140);
-                    }
+                    // The arc must pass through (entryX, bottomY) and (detX, detY)
+                    // only when mz == targetMz.
+                    const dx = detX - entryX;
+                    const dy = this.startY - detY;
                     
-                    const angleStep = this.vx / radius;
-                    const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+                    // R_ideal is the radius required for a particle to hit the center of the detector.
+                    const R_ideal = (dx * dx + dy * dy) / (2 * dy);
+                    
+                    // Actual radius depends on mass/charge. 
+                    // Lower mass = smaller radius = hits to the left of the detector.
+                    // Higher mass = larger radius = hits to the right of the detector.
+                    const radius = R_ideal * (this.mz / targetMz);
+                    
+                    const angleStep = this.speed / radius;
                     const currentAngle = Math.atan2(this.vy, this.vx);
                     const newAngle = currentAngle - angleStep;
                     
-                    this.vx = Math.cos(newAngle) * speed;
-                    this.vy = Math.sin(newAngle) * speed;
+                    this.vx = Math.cos(newAngle) * this.speed;
+                    this.vy = Math.sin(newAngle) * this.speed;
                     this.x += this.vx;
                     this.y += this.vy;
                 }
 
-                const detX = canvas.width - 100;
-                const slitY = 50;
-                
-                if (this.y < slitY) {
-                    if (Math.abs(this.x - detX) < 15) {
+                // Tight detection zone (only 6px wide) to ensure strict filtering
+                if (this.y < detY + 4) {
+                    if (Math.abs(this.x - detX) < 6) { 
                         this.detected = true;
-                        if (isRunning && this.mz === scanWindows[this.scanIndexAtBirth].targetMz) {
+                        // Extra verification: ensure we only record if it's the specific target isotope
+                        const windowData = scanWindows[this.scanIndexAtBirth];
+                        if (isRunning && windowData && this.mz === windowData.targetMz) {
                             recordedData[this.mz]++;
                             updateCumulativeDisplay();
                             updateSpectrum();
@@ -240,7 +266,8 @@
                     this.active = false;
                 }
                 
-                if (this.x > canvas.width || this.y < -20 || this.y > canvas.height + 20 || this.x < -20) {
+                // Cleanup
+                if (this.x > this.w + 100 || this.y < -100 || this.y > this.h + 100 || this.x < -100) {
                     this.active = false;
                 }
             }
@@ -249,30 +276,53 @@
                 if (!this.active && !this.detected) return;
                 ctx.beginPath();
                 ctx.strokeStyle = this.color;
-                ctx.globalAlpha = 0.2;
-                ctx.lineWidth = 2;
+                ctx.globalAlpha = 0.15;
+                ctx.lineWidth = 1.5;
                 this.history.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
                 ctx.stroke();
+                
                 ctx.globalAlpha = 1.0;
                 ctx.fillStyle = this.color;
                 ctx.beginPath();
-                ctx.arc(this.x, this.y, 4, 0, Math.PI * 2);
+                ctx.arc(this.x, this.y, 3.5, 0, Math.PI * 2);
                 ctx.fill();
             }
         }
 
         function drawEnvironment() {
-            const detX = canvas.width - 100;
-            ctx.fillStyle = 'rgba(168, 85, 247, 0.03)';
-            ctx.fillRect(150, 0, canvas.width - 150, canvas.height);
-            ctx.fillStyle = '#334155'; ctx.fillRect(0, canvas.height - 70, 60, 50);
-            ctx.fillStyle = '#94a3b8'; ctx.font = 'bold 10px sans-serif'; ctx.fillText('SOURCE', 10, canvas.height - 75);
+            const rect = canvas.getBoundingClientRect();
+            const w = rect.width;
+            const h = rect.height;
+            const entryX = w * 0.25;
+            const detX = w - 100;
+            
+            // Magnetic field region
+            const grad = ctx.createLinearGradient(entryX, 0, w, 0);
+            grad.addColorStop(0, 'rgba(168, 85, 247, 0.12)');
+            grad.addColorStop(1, 'rgba(168, 85, 247, 0.02)');
+            ctx.fillStyle = grad;
+            ctx.fillRect(entryX, 0, w - entryX, h);
+            
+            ctx.setLineDash([5, 5]);
+            ctx.strokeStyle = 'rgba(168, 85, 247, 0.4)';
+            ctx.beginPath(); ctx.moveTo(entryX, 0); ctx.lineTo(entryX, h); ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Source box
+            ctx.fillStyle = '#334155'; ctx.fillRect(0, h - 70, 60, 50);
+            ctx.fillStyle = '#94a3b8'; ctx.font = 'bold 10px sans-serif'; ctx.textAlign = 'left';
+            ctx.fillText('ION SOURCE', 10, h - 75);
+            
+            // Detector Housing
             ctx.fillStyle = '#1e293b'; ctx.fillRect(detX - 120, 0, 240, 45);
             ctx.strokeStyle = '#475569'; ctx.lineWidth = 2; ctx.strokeRect(detX - 120, 0, 240, 45);
-            ctx.clearRect(detX - 15, 40, 30, 10);
-            ctx.strokeStyle = '#a855f7'; ctx.lineWidth = 5; ctx.beginPath();
-            ctx.moveTo(detX - 15, 45); ctx.lineTo(detX - 120, 45);
-            ctx.moveTo(detX + 15, 45); ctx.lineTo(detX + 120, 45); ctx.stroke();
+            
+            // Slit visualization - tighter opening
+            ctx.clearRect(detX - 8, 40, 16, 10);
+            ctx.strokeStyle = '#a855f7'; ctx.lineWidth = 8; ctx.beginPath();
+            ctx.moveTo(detX - 8, 45); ctx.lineTo(detX - 120, 45);
+            ctx.moveTo(detX + 8, 45); ctx.lineTo(detX + 120, 45); ctx.stroke();
+            
             ctx.fillStyle = '#a855f7'; ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'center';
             ctx.fillText('DETECTOR SLIT', detX, 25);
         }
@@ -305,37 +355,43 @@
                 if (currentScanIndex !== cycleIndex) {
                     currentScanIndex = cycleIndex;
                     const windowData = scanWindows[cycleIndex];
-                    bValueDisp.innerText = `${windowData.bField.toFixed(2)} T`;
-                    emittedCounts = { 24: 0, 25: 0, 26: 0 };
-                    
-                    [24, 25, 26].forEach(m => {
-                        const el = document.getElementById(`legend${m}`);
-                        if (el) el.classList.toggle('active-iso', m === windowData.targetMz);
-                    });
+                    if (windowData) {
+                        bValueDisp.innerText = `${windowData.bField.toFixed(2)} T`;
+                        emittedCounts = { 24: 0, 25: 0, 26: 0 };
+                        
+                        [24, 25, 26].forEach(m => {
+                            const el = document.getElementById(`legend${m}`);
+                            if (el) el.classList.toggle('active-iso', m === windowData.targetMz);
+                        });
+                    }
                 }
 
                 scanProgress.style.width = `${(elapsed / (CYCLE_TOTAL * scanWindows.length)) * 100}%`;
 
                 if (!isSettling) {
-                    statusText.innerText = `Scan Window ${cycleIndex + 1} (m/z = ${scanWindows[cycleIndex].targetMz})`;
-                    statusDot.className = "w-3 h-3 rounded-full bg-green-500 animate-pulse";
-                    
-                    sampleComposition.forEach((iso) => {
-                        const targetForCycle = iso.abundance;
-                        const schedule = (windowTime / EMISSION_DURATION) * targetForCycle;
+                    const windowData = scanWindows[cycleIndex];
+                    if (windowData) {
+                        statusText.innerText = `Scanning: m/z = ${windowData.targetMz}`;
+                        statusDot.className = "w-3 h-3 rounded-full bg-green-500 animate-pulse";
                         
-                        while (emittedCounts[iso.mz] < schedule && emittedCounts[iso.mz] < targetForCycle) {
-                            particles.push(new Particle(iso.mz, true, cycleIndex));
-                            emittedCounts[iso.mz]++;
-                        }
-                    });
+                        // Emit all isotopes to show them missing the slit
+                        sampleComposition.forEach((iso) => {
+                            const targetForCycle = iso.abundance;
+                            const schedule = (windowTime / EMISSION_DURATION) * targetForCycle;
+                            
+                            while (emittedCounts[iso.mz] < schedule) {
+                                particles.push(new Particle(iso.mz, cycleIndex));
+                                emittedCounts[iso.mz]++;
+                            }
+                        });
+                    }
                 } else {
-                    statusText.innerText = `Stepping B-Field...`;
+                    statusText.innerText = `Calibrating Field...`;
                     statusDot.className = "w-3 h-3 rounded-full bg-yellow-500";
                 }
             } else {
                 isRunning = false;
-                statusText.innerText = "Scan Complete";
+                statusText.innerText = "Scan Sequence Complete";
                 statusDot.className = "w-3 h-3 rounded-full bg-blue-500";
                 startBtn.disabled = false;
                 startBtn.innerText = "Restart Analysis";
@@ -360,19 +416,23 @@
         };
 
         function animate(timestamp) {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const rect = canvas.getBoundingClientRect();
+            ctx.clearRect(0, 0, rect.width, rect.height);
             drawEnvironment();
             handleScanLogic(timestamp);
             
-            particles.forEach((p, index) => {
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
                 p.update();
                 p.draw();
-                if (!p.active && !p.detected) particles.splice(index, 1);
-                if (p.detected) {
-                    p.y -= 3; 
-                    if (p.y < -10) particles.splice(index, 1);
+                if (!p.active && !p.detected) {
+                    particles.splice(i, 1);
+                } else if (p.detected) {
+                    // Visual feedback for detection: ion travels into housing
+                    p.y -= 2.5; 
+                    if (p.y < -10) particles.splice(i, 1);
                 }
-            });
+            }
             requestAnimationFrame(animate);
         }
 
