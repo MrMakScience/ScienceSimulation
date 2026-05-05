@@ -187,7 +187,7 @@
             { symbol: 'Ar', z: 18 }, { symbol: 'Kr', z: 36 }
         ];
 
-        let currentIndex = 23; // Start at Chromium to show exceptions
+        let currentIndex = 0; // Fixed: Start at Hydrogen (Z=1) instead of Chromium
 
         function getConfiguration(z) {
             if (z <= 0) return {};
