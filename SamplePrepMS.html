@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mass Spec: Sample Preparation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Added MathJax for LaTeX rendering -->
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']]
+            },
+            svg: {
+                fontCache: 'global'
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        body { 
+            background-color: #f8fafc; 
+            font-family: 'Inter', system-ui, -apple-system, sans-serif; 
+            overflow-x: hidden; 
+        }
+        canvas { 
+            background: #ffffff; 
+            border-radius: 12px; 
+            box-shadow: inset 0 2px 4px 0 rgb(0 0 0 / 0.05); 
+            touch-action: none; 
+            width: 100%; 
+            height: 600px; 
+            border: 1px solid #e2e8f0; 
+        }
+        .control-panel { 
+            background: #ffffff; 
+            border-radius: 16px; 
+            padding: 24px; 
+            border: 1px solid #e2e8f0; 
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05); 
+        }
+        .step-card {
+            border: 2px solid #f1f5f9;
+            border-radius: 12px;
+            padding: 16px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .step-card.active {
+            border-color: #6366f1;
+            background-color: #f5f7ff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
+        }
+        .equation-box {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 8px;
+            margin-top: 8px;
+            font-size: 0.9rem;
+            color: #475569;
+            min-height: 2.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .step-desc {
+            font-size: 10px;
+            color: #64748b;
+            text-align: center;
+            margin-top: 6px;
+            font-style: italic;
+            line-height: 1.2;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8 text-slate-800">
+    <div class="max-w-7xl mx-auto">
+        <header class="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
+            <div>
+                <nav class="text-sm font-medium text-indigo-600 mb-2 uppercase tracking-wider">Interactive Chemistry Series</nav>
+                <h1 class="text-4xl font-black text-slate-900 tracking-tight">Mass Spectrometry <span class="text-slate-400 font-light">|</span> <span class="text-indigo-600">Stage 1</span></h1>
+                <p class="text-slate-500 mt-1 text-lg">Sample Preparation: Vaporization, Ionization & Acceleration</p>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <!-- Controls Sidebar -->
+            <div class="lg:col-span-4 xl:col-span-3 space-y-4 control-panel h-fit">
+                <h2 class="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">Process Sequence</h2>
+               
+                <!-- Step 1: Vaporization -->
+                <div class="step-card" id="cardHeat">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-xs font-black text-slate-500 uppercase tracking-widest">1. Vaporization</span>
+                    </div>
+                    <button id="heatBtn" class="w-full py-3 px-4 rounded-xl font-bold bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200 transition-all flex items-center justify-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.99 7.99 0 0120 13a7.99 7.99 0 01-2.343 5.657z" /></svg>
+                        HEATER: OFF
+                    </button>
+                    <div class="equation-box text-center">
+                        $A(s) \rightarrow A(g)$
+                    </div>
+                    <p class="step-desc">Vaporized atom can be ionized easier</p>
+                </div>
+
+                <!-- Step 2: Ionization -->
+                <div class="step-card" id="cardBeam">
+                    <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-3">2. Ionization</label>
+                    <button id="beamBtn" class="w-full py-3 px-4 rounded-xl font-bold bg-blue-50 text-blue-600 border border-blue-100 hover:bg-blue-100 transition-all flex items-center justify-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                        E-BEAM: OFF
+                    </button>
+                    <div class="equation-box text-center">
+                        $A(g) + e^- \rightarrow A^+(g) + 2e^-$
+                    </div>
+                    <p class="step-desc">High energy $e^-$ is bombard to $A(g)$ to knock off its $e^-$</p>
+                </div>
+
+                <!-- Step 3: Acceleration -->
+                <div class="step-card" id="cardAccel">
+                    <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-3">3. Acceleration</label>
+                    <button id="accelBtn" class="w-full py-3 px-4 rounded-xl font-bold bg-purple-50 text-purple-600 border border-purple-100 hover:bg-purple-100 transition-all flex items-center justify-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" /></svg>
+                        E-FIELD: OFF
+                    </button>
+                    <p class="step-desc">Only charged particles are affected by the E-field</p>
+                </div>
+
+                <!-- Reset Button -->
+                <div class="pt-4">
+                    <button id="resetSampleBtn" class="w-full py-3 px-4 rounded-xl font-bold bg-slate-900 text-white hover:bg-black transition-all flex items-center justify-center gap-2 shadow-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                        RESET SAMPLE
+                    </button>
+                </div>
+
+                <div class="bg-indigo-900 p-5 rounded-2xl mt-6 text-white overflow-hidden relative">
+                    <div class="relative z-10">
+                        <h4 class="text-xs font-bold text-indigo-300 uppercase mb-2 tracking-tighter">Observer Guide</h4>
+                        <p class="text-xs text-indigo-100 leading-relaxed opacity-90">
+                            Watch how the electric field (Stage 3) specifically targets the focused beam of colorful ions, leaving the neutral gas particles behind.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Simulation View -->
+            <div class="lg:col-span-8 xl:col-span-9 relative group">
+                <div class="absolute top-4 left-4 bg-white/80 backdrop-blur px-3 py-1 rounded-full border border-slate-200 text-[10px] font-bold text-slate-500 z-10">
+                    REAL-TIME SIMULATION VIEW | <span id="particleCount">0</span> PARTICLES IN SYSTEM
+                </div>
+                <canvas id="simCanvas"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+       
+        let width, height;
+        let isHeaterOn = false;
+        let isBeamOn = false;
+        let isAccelOn = false;
+        let sampleParticles = [];
+        let temp = 20;
+
+        const CHAMBER_LEFT = 60;
+        const CHAMBER_TOP = 80;
+        const SHIELD_X = 500;
+        const SLIT_Y = 260;
+        const SLIT_SIZE = 80;
+        const SLIT_CENTER = SLIT_Y + (SLIT_SIZE / 2);
+        const TOTAL_PARTICLE_COUNT = 80;
+
+        const HEATER_TOP = 540;
+        const HEATER_HEIGHT = 30;
+
+        function resize() {
+            width = canvas.parentElement.clientWidth;
+            height = 600;
+            canvas.width = width;
+            canvas.height = height;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        function createParticle() {
+            const ox = CHAMBER_LEFT + 30 + Math.random() * (SHIELD_X - CHAMBER_LEFT - 100);
+            const oy = HEATER_TOP - 4;
+            return {
+                x: ox, y: oy, vx: 0, vy: 0,
+                type: 'solid', color: '#94a3b8', ionLife: 0, exited: false,
+                hue: Math.random() * 360,
+                radius: 4
+            };
+        }
+
+        function initSample() {
+            sampleParticles = [];
+            for(let i=0; i < TOTAL_PARTICLE_COUNT; i++) {
+                sampleParticles.push(createParticle());
+            }
+        }
+
+        function update() {
+            const chamberRight = SHIELD_X;
+           
+            if (isHeaterOn) temp = Math.min(450, temp + 1.2);
+            else temp = Math.max(20, temp - 0.6);
+
+            sampleParticles = sampleParticles.filter(p => {
+                if (p.exited) {
+                    return p.x < width + 100 && p.y > -100 && p.y < height + 100;
+                }
+                return true;
+            });
+
+            document.getElementById('particleCount').innerText = sampleParticles.length;
+
+            for (let i = 0; i < sampleParticles.length; i++) {
+                let p = sampleParticles[i];
+
+                if (p.type === 'solid') {
+                    if (p.y > HEATER_TOP - 4) p.y = HEATER_TOP - 4;
+                    if (temp > 150) {
+                        const prob = (temp - 150) / 4000;
+                        if (Math.random() < prob) {
+                            p.type = 'gas';
+                            const startSpeed = 1.5 + (temp / 450) * 1.5;
+                            p.vx = (Math.random() - 0.5) * startSpeed;
+                            p.vy = -Math.random() * startSpeed;
+                            p.color = '#e2e8f0';
+                        }
+                    }
+                }
+
+                if (p.type !== 'solid') {
+                    if (!p.exited && !isAccelOn) {
+                        p.vx += (Math.random() - 0.5) * 0.1;
+                        p.vy += (Math.random() - 0.5) * 0.1;
+                    }
+
+                    if (isAccelOn && p.type === 'ion' && !p.exited) {
+                        p.vx += 0.5;
+                        const dy = SLIT_CENTER - p.y;
+                        p.vy += dy * 0.02;
+                        p.vy *= 0.95;
+                    }
+
+                    p.x += p.vx;
+                    p.y += p.vy;
+
+                    const isInSlitY = p.y >= SLIT_Y && p.y <= SLIT_Y + SLIT_SIZE;
+                   
+                    if (!p.exited) {
+                        if (p.x >= chamberRight && isInSlitY) {
+                            p.exited = true;
+                        } else {
+                            if (p.x < CHAMBER_LEFT + 15) { p.x = CHAMBER_LEFT + 15; p.vx = Math.abs(p.vx); }
+                            if (p.x > chamberRight - 15 && !isInSlitY) { p.x = chamberRight - 15; p.vx = -Math.abs(p.vx); }
+                            if (p.y < CHAMBER_TOP + 15) { p.y = CHAMBER_TOP + 15; p.vy = Math.abs(p.vy); }
+                           
+                            if (p.y > HEATER_TOP - 4) {
+                                if (temp < 100) {
+                                    p.type = 'solid';
+                                    p.color = '#94a3b8';
+                                    p.y = HEATER_TOP - 4;
+                                    p.vx = 0; p.vy = 0;
+                                } else {
+                                    p.y = HEATER_TOP - 4;
+                                    p.vy = -Math.abs(p.vy) * 0.8;
+                                }
+                            }
+                        }
+                    }
+
+                    const isInBeam = isBeamOn && p.y >= SLIT_Y - 20 && p.y <= SLIT_Y + SLIT_SIZE + 20 && p.x < chamberRight;
+                    if (p.type === 'gas' && isInBeam) {
+                        if (Math.random() < 0.15) {
+                            p.type = 'ion';
+                            p.ionLife = 1.0;
+                            p.color = `hsl(${p.hue}, 80%, 60%)`;
+                        }
+                    } else if (p.type === 'ion') {
+                        if (isInBeam) p.ionLife = Math.min(1.0, p.ionLife + 0.1);
+                        else p.ionLife -= p.exited ? 0.0005 : 0.01;
+                       
+                        if (p.ionLife <= 0 && !p.exited) {
+                            p.type = 'gas';
+                            p.color = '#e2e8f0';
+                        }
+                    }
+                }
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, width, height);
+
+            ctx.strokeStyle = '#cbd5e1';
+            ctx.lineWidth = 4;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(CHAMBER_LEFT, height - 30);
+            ctx.lineTo(CHAMBER_LEFT, CHAMBER_TOP);
+            ctx.lineTo(SHIELD_X, CHAMBER_TOP);
+            ctx.lineTo(SHIELD_X, SLIT_Y);
+            ctx.moveTo(SHIELD_X, SLIT_Y + SLIT_SIZE);
+            ctx.lineTo(SHIELD_X, height - 30);
+            ctx.stroke();
+
+            ctx.fillStyle = '#6366f1';
+            ctx.font = 'bold 11px sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText("IONIZATION SOURCE", CHAMBER_LEFT + 5, CHAMBER_TOP - 15);
+           
+            ctx.fillStyle = '#94a3b8';
+            ctx.textAlign = 'right';
+            ctx.font = 'bold 11px sans-serif';
+            ctx.fillText("TO THE DEFLECTION ZONE (WITH B-FIELD) ➔", width - 20, SLIT_Y + SLIT_SIZE/2 + 5);
+
+            const heatRatio = (temp - 20) / 430;
+            const r = Math.floor(120 + (135 * heatRatio));
+            const g = Math.floor(160 - (100 * heatRatio));
+            const b = Math.floor(220 - (180 * heatRatio));
+           
+            ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+            ctx.beginPath();
+            if (ctx.roundRect) {
+                ctx.roundRect(CHAMBER_LEFT + 10, HEATER_TOP, SHIELD_X - CHAMBER_LEFT - 20, HEATER_HEIGHT, 8);
+            } else {
+                ctx.rect(CHAMBER_LEFT + 10, HEATER_TOP, SHIELD_X - CHAMBER_LEFT - 20, HEATER_HEIGHT);
+            }
+            ctx.fill();
+
+            ctx.fillStyle = heatRatio > 0.5 ? '#fff' : '#475569';
+            ctx.font = 'bold 10px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText("HEATER", (CHAMBER_LEFT + SHIELD_X)/2, HEATER_TOP + 19);
+
+            if (isBeamOn) {
+                const beamGrad = ctx.createLinearGradient(CHAMBER_LEFT, 0, SHIELD_X, 0);
+                beamGrad.addColorStop(0, 'rgba(59, 130, 246, 0)');
+                beamGrad.addColorStop(0.5, 'rgba(59, 130, 246, 0.2)');
+                beamGrad.addColorStop(1, 'rgba(59, 130, 246, 0)');
+                ctx.fillStyle = beamGrad;
+                ctx.fillRect(CHAMBER_LEFT + 6, SLIT_Y - 10, SHIELD_X - CHAMBER_LEFT - 12, SLIT_SIZE + 20);
+            }
+
+            if (isAccelOn) {
+                ctx.strokeStyle = 'rgba(168, 85, 247, 0.15)';
+                ctx.lineWidth = 1;
+                for (let i = -2; i <= 2; i++) {
+                    const startY = SLIT_CENTER + (i * 100);
+                    ctx.beginPath();
+                    ctx.moveTo(CHAMBER_LEFT + 50, startY);
+                    ctx.quadraticCurveTo(SHIELD_X - 100, SLIT_CENTER, SHIELD_X + 100, SLIT_CENTER);
+                    ctx.stroke();
+                }
+            }
+
+            for (const p of sampleParticles) {
+                ctx.globalAlpha = p.exited ? 0.4 : 1.0;
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.type === 'ion' ? 4.5 : 3, 0, 2 * Math.PI);
+                ctx.fill();
+
+                if (p.type === 'ion') {
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
+                }
+            }
+            ctx.globalAlpha = 1.0;
+        }
+
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        document.getElementById('heatBtn').onclick = function() {
+            isHeaterOn = !isHeaterOn;
+            this.innerHTML = isHeaterOn ?
+                `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.99 7.99 0 0120 13a7.99 7.99 0 01-2.343 5.657z" /></svg> HEATER: ON` :
+                `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.99 7.99 0 0120 13a7.99 7.99 0 01-2.343 5.657z" /></svg> HEATER: OFF`;
+            this.className = `w-full py-3 px-4 rounded-xl font-bold border transition-all flex items-center justify-center gap-2 ${isHeaterOn ? 'bg-orange-600 text-white border-orange-700' : 'bg-slate-100 text-slate-700 border-slate-200'}`;
+            document.getElementById('cardHeat').classList.toggle('active', isHeaterOn);
+        };
+
+        document.getElementById('beamBtn').onclick = function() {
+            isBeamOn = !isBeamOn;
+            this.innerHTML = isBeamOn ?
+                `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg> E-BEAM: ON` :
+                `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg> E-BEAM: OFF`;
+            this.className = `w-full py-3 px-4 rounded-xl font-bold border transition-all flex items-center justify-center gap-2 ${isBeamOn ? 'bg-blue-600 text-white border-blue-700' : 'bg-blue-50 text-blue-600 border-blue-100'}`;
+            document.getElementById('cardBeam').classList.toggle('active', isBeamOn);
+        };
+
+        document.getElementById('accelBtn').onclick = function() {
+            isAccelOn = !isAccelOn;
+            this.innerHTML = isAccelOn ?
+                `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" /></svg> E-FIELD: ON` :
+                `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" /></svg> E-FIELD: OFF`;
+            this.className = `w-full py-3 px-4 rounded-xl font-bold border transition-all flex items-center justify-center gap-2 ${isAccelOn ? 'bg-purple-600 text-white border-purple-700' : 'bg-purple-50 text-purple-600 border-purple-100'}`;
+            document.getElementById('cardAccel').classList.toggle('active', isAccelOn);
+        };
+
+        document.getElementById('resetSampleBtn').onclick = initSample;
+
+        window.onload = () => {
+            initSample();
+            gameLoop();
+        };
+    </script>
+</body>
+</html>

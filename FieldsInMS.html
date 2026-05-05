@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>High-Resolution Mass Spectrometer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { 
+            background-color: #f0f2f5; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            overflow-x: hidden;
+        }
+        canvas { 
+            background: #ffffff; 
+            border-radius: 8px; 
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); 
+            touch-action: none; 
+            width: 100%;
+            height: 600px;
+        }
+        .control-panel { 
+            background: #ffffff; 
+            border-radius: 12px; 
+            padding: 20px; 
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1); 
+        }
+        .slider-label { 
+            display: flex; 
+            justify-content: space-between; 
+            margin-bottom: 4px; 
+            font-weight: 600; 
+            font-size: 0.875rem; 
+            color: #374151; 
+        }
+        input[type="range"] { width: 100%; cursor: pointer; }
+        .btn-fire { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
+        .btn-fire:active { transform: scale(0.95); }
+        .btn-secondary { background-color: #e2e8f0; color: #475569; transition: all 0.2s; }
+        .btn-secondary:hover { background-color: #cbd5e1; color: #1e293b; }
+        .ion-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <div class="max-w-6xl mx-auto">
+        <header class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+                <h1 class="text-3xl font-bold text-slate-800">Mass Spectrometer</h1>
+                <p class="text-slate-600">Ion Scattering & Field Visualization</p>
+            </div>
+            <div class="bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-mono shadow-sm border-l-4 border-yellow-500 min-w-[140px]">
+                Status: <span id="syncStatus" class="text-yellow-400">READY</span>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            <!-- Sidebar Controls -->
+            <div class="lg:col-span-1 space-y-4 control-panel">
+                <div class="space-y-2">
+                    <label class="block text-sm font-bold text-gray-700">System Power & Environment</label>
+                    <button id="eToggle" class="w-full py-2 px-4 rounded-lg font-bold transition-colors bg-red-500 hover:bg-red-600 text-white shadow-md">
+                        E-Field: OFF
+                    </button>
+                    <button id="vToggle" class="w-full py-2 px-4 rounded-lg font-bold transition-colors bg-green-600 hover:bg-green-700 text-white shadow-md">
+                        Vacuum: ON
+                    </button>
+                    
+                    <div class="pt-2">
+                        <div class="slider-label">
+                            <span>Magnetic Field (B)</span>
+                            <span id="bVal" class="text-blue-600 font-mono">1.00</span>
+                        </div>
+                        <input type="range" id="bSlider" min="0.10" max="3.45" step="0.01" value="1.00">
+                        <p id="bLimitNote" class="text-[10px] text-red-500 mt-1 hidden font-semibold">B-Field capped for 2+ mass limit (800)</p>
+                    </div>
+                </div>
+
+                <div class="ion-card space-y-4">
+                    <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider border-b pb-2">Ion Properties</h3>
+                    
+                    <div>
+                        <div class="slider-label">
+                            <span>Mass (m)</span>
+                            <span id="massVal" class="text-indigo-600 font-mono">232</span>
+                        </div>
+                        <input type="range" id="massSlider" min="10" max="800" step="1" value="232">
+                    </div>
+
+                    <div>
+                        <span class="text-sm font-semibold text-gray-700 block mb-2">Charge (z)</span>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button id="z1Btn" class="py-2 rounded-md font-bold transition-all bg-indigo-600 text-white border border-indigo-700">1+</button>
+                            <button id="z2Btn" class="py-2 rounded-md font-bold transition-all bg-white text-indigo-600 border border-indigo-200 hover:border-indigo-400">2+</button>
+                        </div>
+                    </div>
+
+                    <div class="bg-indigo-50 p-3 rounded-lg border border-indigo-100 flex flex-col items-center">
+                        <span class="text-[11px] font-bold text-indigo-500 tracking-tight">Mass-to-charge ratio (m/z)</span>
+                        <span id="mzVal" class="text-2xl font-black text-indigo-900 font-mono">232.0</span>
+                    </div>
+
+                    <button id="autoTune" class="w-full py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold transition-all text-xs shadow-sm">
+                        Auto-Tune m/z
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 gap-2 pt-2">
+                    <button id="fireBtn" class="w-full py-4 px-4 rounded-lg font-black text-lg text-white shadow-lg btn-fire transition-all">
+                        FIRE ION
+                    </button>
+                    <button id="clearBtn" class="w-full py-2 px-4 rounded-lg font-bold text-sm btn-secondary shadow-sm">
+                        Clear Trajectories
+                    </button>
+                </div>
+
+                <div class="pt-4 border-t border-gray-100">
+                    <h3 class="font-bold text-xs text-gray-400 uppercase tracking-widest mb-2">Physics Reference</h3>
+                    <ul class="text-[11px] text-gray-500 space-y-2 list-disc pl-4">
+                        <li><b>Visualization:</b> Successful detections are highlighted in green.</li>
+                        <li><b>Integer Mass:</b> Ions are configured with whole number mass values.</li>
+                        <li><b>Max Mass:</b> Fixed at 800 for the detector array.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Simulation Canvas -->
+            <div class="lg:col-span-3 relative">
+                <canvas id="simCanvas"></canvas>
+                <div id="statusMessage" class="absolute top-4 left-4 bg-white/90 px-6 py-3 rounded-xl shadow-2xl text-base font-black border border-slate-200 hidden transition-all">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+        const eToggleBtn = document.getElementById('eToggle');
+        const vToggleBtn = document.getElementById('vToggle');
+        const fireBtn = document.getElementById('fireBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const bSlider = document.getElementById('bSlider');
+        const bLimitNote = document.getElementById('bLimitNote');
+        const massSlider = document.getElementById('massSlider');
+        const z1Btn = document.getElementById('z1Btn');
+        const z2Btn = document.getElementById('z2Btn');
+        const autoTuneBtn = document.getElementById('autoTune');
+        const bValText = document.getElementById('bVal');
+        const massValText = document.getElementById('massVal');
+        const mzValText = document.getElementById('mzVal');
+        const statusMsg = document.getElementById('statusMessage');
+        const syncStatus = document.getElementById('syncStatus');
+
+        let width, height;
+        let particles = [];
+        let gasParticles = [];
+        let eFieldOn = false;
+        let vacuumOn = true;
+        let bFieldStrength = 1.00;
+        let ionMass = 232;
+        let ionCharge = 1;
+        let mzRatio = 232.0;
+
+        const ACC_START_X = 40;
+        const SHIELD_X = 260;
+        const APERTURE_Y = 80;
+        const APERTURE_WIDTH = 10;
+        const DETECTOR_WIDTH = 12;
+        const BASE_GRAVITY = 0.05;
+        const CALIBRATION_MZ = 232;
+        const MAX_MASS = 800;
+        const MIN_MASS = 10;
+
+        function updateMZ() {
+            mzRatio = ionMass / ionCharge;
+            mzValText.textContent = mzRatio.toFixed(1);
+        }
+
+        function refreshBLimits() {
+            const maxMZPossible = MAX_MASS / ionCharge;
+            const maxB = maxMZPossible / CALIBRATION_MZ;
+            bSlider.max = maxB.toFixed(2);
+            if (bFieldStrength > maxB) {
+                bFieldStrength = maxB;
+                bSlider.value = maxB;
+                bValText.textContent = bFieldStrength.toFixed(2);
+            }
+            if (ionCharge > 1) {
+                bLimitNote.classList.remove('hidden');
+            } else {
+                bLimitNote.classList.add('hidden');
+            }
+        }
+
+        function getDetectorCenter() {
+            return SHIELD_X + (width - SHIELD_X) / 2;
+        }
+
+        function initGas() {
+            gasParticles = [];
+            const count = 150;
+            for(let i=0; i<count; i++) {
+                const inZone1 = Math.random() > 0.6;
+                let x, y;
+                if (inZone1) {
+                    x = Math.random() * (SHIELD_X - 10);
+                    y = Math.random() * (height - 20) + 10;
+                } else {
+                    x = Math.random() * (width - SHIELD_X - 15) + SHIELD_X + 10;
+                    y = Math.random() * (height - 20) + 10;
+                }
+                gasParticles.push({
+                    x: x, y: y,
+                    vx: (Math.random() - 0.5) * 2.2,
+                    vy: (Math.random() - 0.5) * 2.2,
+                    radius: 2 + Math.random() * 2
+                });
+            }
+        }
+
+        function resize() {
+            width = canvas.offsetWidth;
+            height = canvas.offsetHeight;
+            canvas.width = width;
+            canvas.height = height;
+            if(!vacuumOn) initGas();
+        }
+
+        window.addEventListener('resize', resize);
+        resize();
+
+        class Particle {
+            constructor(mz, b, powered) {
+                this.x = ACC_START_X;
+                this.y = APERTURE_Y;
+                this.mz = mz;
+                this.b = b;
+                this.powered = powered;
+                this.history = [];
+                this.active = true;
+                this.collided = false;
+                this.isBounced = false;
+                this.isHit = false;
+                this.phase = 'accel';
+                this.progress = 0;
+                this.vx = powered ? 18 : (2 + (mz / 400));
+                this.vy = 0;
+                this.gravityFactor = BASE_GRAVITY * (0.5 + (mz / 150));
+                
+                const center = getDetectorCenter();
+                const targetCalibration = this.b * CALIBRATION_MZ;
+                this.massDiff = this.mz - targetCalibration;
+                this.finalTargetX = center + (this.massDiff * 40);
+                this.baseColor = `hsl(${220 + (mz/800)*100}, 90%, 55%)`;
+                this.color = this.baseColor;
+            }
+
+            update() {
+                if (!this.active) return;
+                if (!vacuumOn) {
+                    for (let g of gasParticles) {
+                        const dx = this.x - g.x;
+                        const dy = this.y - g.y;
+                        if (Math.sqrt(dx*dx + dy*dy) < 8) {
+                            this.collided = true;
+                            this.isBounced = true;
+                            const angle = Math.atan2(dy, dx) + (Math.random() - 0.5);
+                            const speed = Math.sqrt(this.vx*this.vx + this.vy*this.vy) * 0.7;
+                            this.vx = Math.cos(angle) * speed;
+                            this.vy = Math.sin(angle) * speed;
+                            this.x += this.vx; this.y += this.vy;
+                            showMessage("💥 BOUNCE: Ion scattered", "error");
+                            updateSyncStatus("MISSED", "text-red-400");
+                            break;
+                        }
+                    }
+                }
+                if (this.isBounced) {
+                    this.x += this.vx; this.vy += this.gravityFactor; this.y += this.vy;
+                    if (this.y > height || this.y < 0 || this.x > width || this.x < 0) this.active = false;
+                } else if (this.phase === 'accel') {
+                    this.x += this.vx;
+                    if (!this.powered) {
+                        this.vy += this.gravityFactor; this.y += this.vy;
+                        if (this.y > height - 10 || this.x >= SHIELD_X - 5) {
+                            this.active = false; this.collided = true;
+                            showMessage("⚠️ FAIL: No Acceleration", "error");
+                            updateSyncStatus("MISSED", "text-red-400");
+                        }
+                    } else if (this.x >= SHIELD_X) {
+                        this.x = SHIELD_X; this.phase = 'curve';
+                    }
+                } else {
+                    this.progress += 0.009;
+                    if (this.progress >= 1) {
+                        this.progress = 1;
+                        this.active = false;
+                        this.checkHit();
+                    }
+                    const t = this.progress;
+                    const p0 = { x: SHIELD_X, y: APERTURE_Y };
+                    const p1 = { x: width - 5, y: APERTURE_Y };
+                    const p2 = { x: this.finalTargetX, y: height - 12 };
+                    this.x = (1 - t) * (1 - t) * p0.x + 2 * (1 - t) * t * p1.x + t * t * p2.x;
+                    this.y = (1 - t) * (1 - t) * p0.y + 2 * (1 - t) * t * p1.y + t * t * p2.y;
+                    if (this.progress > 0.02 && this.x < SHIELD_X) {
+                        this.active = false; this.collided = true;
+                        showMessage("❌ COLLISION: Wall", "error");
+                        updateSyncStatus("MISSED", "text-red-400");
+                    }
+                }
+                this.history.push({x: this.x, y: this.y});
+                if (this.history.length > 300) this.history.shift();
+            }
+
+            checkHit() {
+                if (this.collided || this.isBounced) return;
+                const center = getDetectorCenter();
+                if (Math.abs(this.x - center) <= (DETECTOR_WIDTH / 2) + 0.1) {
+                    this.isHit = true;
+                    this.color = '#22c55e';
+                    showMessage(`🎯 HIT: m/z ${this.mz.toFixed(1)} Detected`, "success");
+                    updateSyncStatus("ALIGNED", "text-green-400");
+                } else {
+                    showMessage(`❌ MISSED: m/z ${this.mz.toFixed(1)}`, "error");
+                    updateSyncStatus("MISSED", "text-red-400");
+                }
+            }
+
+            draw() {
+                if (this.history.length > 1) {
+                    ctx.beginPath();
+                    ctx.strokeStyle = this.collided ? '#ef4444' : this.color;
+                    ctx.globalAlpha = this.isBounced ? 0.2 : (this.isHit ? 0.8 : 0.4);
+                    ctx.lineWidth = this.isHit ? 6 : (this.isBounced ? 2 : 4);
+                    ctx.moveTo(this.history[0].x, this.history[0].y);
+                    for (let p of this.history) ctx.lineTo(p.x, p.y);
+                    ctx.stroke();
+                    ctx.globalAlpha = 1.0;
+                }
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.isBounced ? 5 : 7, 0, Math.PI * 2);
+                ctx.fillStyle = this.collided ? '#ef4444' : this.color;
+                ctx.fill();
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
+        }
+
+        function updateSyncStatus(text, className) {
+            syncStatus.textContent = text;
+            syncStatus.className = className;
+        }
+
+        function showMessage(text, type) {
+            statusMsg.textContent = text;
+            statusMsg.style.display = 'block';
+            statusMsg.className = `absolute top-4 left-4 px-6 py-3 rounded-xl shadow-2xl text-base font-black border transition-all ${
+                type === 'success' ? 'bg-green-600 text-white border-green-400' :
+                (type === 'error' ? 'bg-red-600 text-white border-red-400' : 'bg-slate-900 text-white border-slate-700')
+            }`;
+            setTimeout(() => { statusMsg.style.display = 'none'; }, 2000);
+        }
+
+        function drawEnvironment() {
+            const center = getDetectorCenter();
+            ctx.fillStyle = vacuumOn ? '#f8fafc' : '#e2e8f0';
+            ctx.fillRect(0, 0, width, height);
+
+            ctx.fillStyle = '#10b981'; ctx.fillRect(0, 0, SHIELD_X - 5, 45);
+            ctx.fillStyle = '#6366f1'; ctx.fillRect(SHIELD_X + 5, 0, width - SHIELD_X - 5, 45);
+            ctx.fillStyle = '#ffffff'; ctx.font = 'bold 13px sans-serif'; ctx.textAlign = 'center';
+            ctx.fillText("ZONE 1: ACCELERATION (E-FIELD)", (SHIELD_X-5)/2, 28);
+            ctx.fillText("ZONE 2: DEFLECTION (B-FIELD)", SHIELD_X + (width - SHIELD_X)/2, 28);
+
+            if (eFieldOn) {
+                const gradient = ctx.createLinearGradient(ACC_START_X, 0, SHIELD_X, 0);
+                gradient.addColorStop(0, 'rgba(34, 197, 94, 0.0)');
+                gradient.addColorStop(1, 'rgba(34, 197, 94, 0.2)');
+                ctx.fillStyle = gradient; ctx.fillRect(ACC_START_X, APERTURE_Y - 35, SHIELD_X - ACC_START_X, 70);
+            }
+
+            ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 1;
+            for (let x = SHIELD_X + 25; x < width; x += 50) {
+                for (let y = 70; y < height; y += 50) {
+                    ctx.beginPath(); ctx.moveTo(x - 5, y - 5); ctx.lineTo(x + 5, y + 5);
+                    ctx.moveTo(x + 5, y - 5); ctx.lineTo(x - 5, y + 5); ctx.stroke();
+                }
+            }
+
+            ctx.fillStyle = '#64748b'; ctx.font = '10px monospace'; ctx.textAlign = 'left'; ctx.fillText("B-Field: ⊗ (into page)", SHIELD_X + 15, 60);
+
+            if (!vacuumOn) {
+                ctx.fillStyle = '#94a3b8';
+                gasParticles.forEach(g => {
+                    g.x += g.vx; g.y += g.vy;
+                    const wallLeft = SHIELD_X - 5;
+                    const wallRight = SHIELD_X + 5;
+                    if(g.x < 0) { g.x = 0; g.vx *= -1; }
+                    if(g.x > width) { g.x = width; g.vx *= -1; }
+                    if(g.y < 0) { g.y = 0; g.vy *= -1; }
+                    if(g.y > height) { g.y = height; g.vy *= -1; }
+                    if (g.x > wallLeft && g.x < wallRight) {
+                        if (g.x - g.vx <= wallLeft) { g.x = wallLeft; g.vx *= -1; }
+                        else if (g.x - g.vx >= wallRight) { g.x = wallRight; g.vx *= -1; }
+                    }
+                    if (g.y < 45) { g.y = 45; g.vy *= -1; }
+                    ctx.beginPath(); ctx.arc(g.x, g.y, g.radius, 0, Math.PI * 2); ctx.fill();
+                });
+            }
+
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(SHIELD_X - 5, 0, 10, APERTURE_Y - (APERTURE_WIDTH/2));
+            ctx.fillRect(SHIELD_X - 5, APERTURE_Y + (APERTURE_WIDTH/2), 10, height);
+
+            ctx.fillStyle = '#334155'; ctx.fillRect(center - 60, height - 10, 120, 10);
+            ctx.fillStyle = '#f59e0b'; ctx.fillRect(center - (DETECTOR_WIDTH/2), height - 12, DETECTOR_WIDTH, 12);
+            ctx.fillStyle = '#64748b'; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = "center";
+            ctx.fillText("DETECTOR SLIT", center, height - 25);
+        }
+
+        function loop() {
+            ctx.clearRect(0, 0, width, height);
+            drawEnvironment();
+            particles.forEach((p, i) => {
+                p.update(); p.draw();
+                if (!p.active && p.history.length === 0) particles.splice(i, 1);
+            });
+            requestAnimationFrame(loop);
+        }
+
+        eToggleBtn.addEventListener('click', () => {
+            eFieldOn = !eFieldOn;
+            eToggleBtn.textContent = `E-Field: ${eFieldOn ? 'ON' : 'OFF'}`;
+            eToggleBtn.className = `w-full py-2 px-4 rounded-lg font-bold transition-all ${eFieldOn ? 'bg-green-600' : 'bg-red-500'} text-white shadow-lg`;
+        });
+
+        vToggleBtn.addEventListener('click', () => {
+            vacuumOn = !vacuumOn; if(!vacuumOn) initGas();
+            vToggleBtn.textContent = `Vacuum: ${vacuumOn ? 'ON' : 'OFF'}`;
+            vToggleBtn.className = `w-full py-2 px-4 rounded-lg font-bold transition-all ${vacuumOn ? 'bg-green-600' : 'bg-slate-500'} text-white shadow-lg`;
+        });
+
+        fireBtn.addEventListener('click', () => {
+            if(particles.length > 8) particles.shift();
+            particles.push(new Particle(mzRatio, bFieldStrength, eFieldOn));
+        });
+        clearBtn.addEventListener('click', () => { particles = []; updateSyncStatus("READY", "text-yellow-400"); });
+        
+        bSlider.addEventListener('input', (e) => {
+            bFieldStrength = parseFloat(e.target.value);
+            bValText.textContent = bFieldStrength.toFixed(2);
+        });
+        
+        massSlider.addEventListener('input', (e) => {
+            ionMass = Math.round(parseFloat(e.target.value));
+            massValText.textContent = ionMass;
+            updateMZ();
+        });
+        
+        const setCharge = (c) => {
+            ionCharge = c;
+            z1Btn.className = c === 1 ? "py-2 rounded-md font-bold transition-all bg-indigo-600 text-white border border-indigo-700" : "py-2 rounded-md font-bold transition-all bg-white text-indigo-600 border border-indigo-200 hover:border-indigo-400";
+            z2Btn.className = c === 2 ? "py-2 rounded-md font-bold transition-all bg-indigo-600 text-white border border-indigo-700" : "py-2 rounded-md font-bold transition-all bg-white text-indigo-600 border border-indigo-200 hover:border-indigo-400";
+            refreshBLimits();
+            updateMZ();
+        };
+        z1Btn.addEventListener('click', () => setCharge(1));
+        z2Btn.addEventListener('click', () => setCharge(2));
+
+        autoTuneBtn.addEventListener('click', () => {
+            let idealMZ = bFieldStrength * CALIBRATION_MZ;
+            let snappedMass = Math.round(idealMZ * ionCharge);
+            if (snappedMass > MAX_MASS) snappedMass = MAX_MASS;
+            
+            ionMass = snappedMass;
+            massSlider.value = ionMass;
+            massValText.textContent = ionMass;
+            
+            let adjustedMZ = ionMass / ionCharge;
+            let adjustedB = adjustedMZ / CALIBRATION_MZ;
+            
+            bFieldStrength = adjustedB;
+            bSlider.value = adjustedB.toFixed(2);
+            bValText.textContent = adjustedB.toFixed(2);
+            
+            updateMZ();
+            if (eFieldOn && vacuumOn) {
+                particles = [new Particle(mzRatio, bFieldStrength, true)];
+            }
+            showMessage(`Auto-Tune: Mass ${ionMass} @ B ${adjustedB.toFixed(2)}`, "success");
+        });
+
+        window.onload = () => {
+            refreshBLimits();
+            loop();
+        };
+    </script>
+</body>
+</html>
