@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Successive Ionization Energy Lab</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .major-jump-highlight { background-color: #fee2e2; border-left: 4px solid #ef4444; }
+        .valence-highlight { background-color: #f0fdf4; border-left: 4px solid #22c55e; }
+        canvas { max-height: 400px; width: 100% !important; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        
+        /* Range Slider Styling */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 8px;
+            cursor: pointer;
+            background: #e2e8f0;
+            border-radius: 4px;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #3b82f6;
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -6px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen font-sans text-slate-900">
+
+    <div class="max-w-6xl mx-auto p-4 md:p-8">
+        <header class="mb-8 text-center">
+            <h1 class="text-3xl font-bold text-slate-800 mb-2">Successive Ionization Energy Lab</h1>
+            <p class="text-slate-600 max-w-2xl mx-auto text-sm">
+                Identify shell boundaries based on electronic structure. 
+                <span class="text-green-600 font-bold">Green</span> = Valence. 
+                <span class="text-red-600 font-bold">Red</span> = Major Shell Jump.
+            </p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="lg:col-span-1 space-y-6">
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <div class="flex justify-between items-center mb-4">
+                        <label for="elementSlider" class="text-sm font-semibold text-slate-700">Select Element (Z):</label>
+                        <span id="sliderValue" class="text-xs font-bold bg-blue-600 text-white px-2 py-1 rounded">Al (13)</span>
+                    </div>
+                    <input type="range" id="elementSlider" min="0" max="17" step="1" value="12" class="w-full">
+                    <div class="flex justify-between mt-2 text-[10px] text-slate-400 font-bold px-1">
+                        <span>H (1)</span>
+                        <span>Ar (18)</span>
+                    </div>
+                    
+                    <div id="atomInfo" class="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-100">
+                        <div class="flex justify-between items-start">
+                            <h2 id="elementName" class="text-xl font-bold text-blue-800">-</h2>
+                            <span id="atomicNumBadge" class="bg-blue-200 text-blue-800 text-[10px] font-bold px-2 py-1 rounded">Z=-</span>
+                        </div>
+                        <div class="mt-4 space-y-3">
+                            <div>
+                                <div class="text-[11px] text-blue-400 uppercase font-bold tracking-wider">Noble Gas Configuration</div>
+                                <p id="elementConfig" class="text-sm text-blue-700 font-mono">-</p>
+                            </div>
+                            <div>
+                                <div class="text-[11px] text-blue-400 uppercase font-bold tracking-wider">Full Configuration</div>
+                                <p id="elementFullConfig" class="text-[11px] text-blue-600 font-mono break-all">-</p>
+                            </div>
+                            <div>
+                                <div class="text-[11px] text-blue-400 uppercase font-bold tracking-wider">Electronic Structure (Outer → Inner)</div>
+                                <p id="shellStructureDisplay" class="text-lg font-bold text-slate-700">-</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <h3 class="text-lg font-bold mb-4 flex items-center text-slate-800 border-b pb-2 text-sm uppercase tracking-tight">Analysis Log</h3>
+                    <div id="explanationText" class="space-y-4"></div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-2 space-y-6">
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-bold text-slate-700 text-sm">Energy Trends (Log Scale)</h3>
+                        <!-- Key/Legend -->
+                        <div class="flex gap-4 text-[10px] font-bold uppercase tracking-wider">
+                            <div class="flex items-center gap-1.5">
+                                <span class="w-3 h-3 rounded-full bg-green-500"></span>
+                                <span class="text-green-700">Valence</span>
+                            </div>
+                            <div class="flex items-center gap-1.5">
+                                <span class="w-3 h-3 rounded-full bg-red-500"></span>
+                                <span class="text-red-700">Shell Jump</span>
+                            </div>
+                            <div class="flex items-center gap-1.5">
+                                <span class="w-3 h-3 rounded-full bg-blue-500"></span>
+                                <span class="text-blue-700">Inner Shell</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="relative h-80">
+                        <canvas id="ieChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="max-h-[400px] overflow-y-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-slate-50 border-b border-slate-200 sticky top-0 z-10">
+                                <tr>
+                                    <th class="px-4 py-3 font-semibold text-slate-700">Electron</th>
+                                    <th class="px-4 py-3 font-semibold text-slate-700">IE (kJ/mol)</th>
+                                    <th class="px-4 py-3 font-semibold text-slate-700">Ratio</th>
+                                    <th class="px-4 py-3 font-semibold text-slate-700">Classification</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dataTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const elementData = [
+            { symbol: 'H', name: 'Hydrogen', z: 1, config: '1s¹', full: '1s¹', shellConfig: [1], ie: [1312] },
+            { symbol: 'He', name: 'Helium', z: 2, config: '1s²', full: '1s²', shellConfig: [2], ie: [2372, 5250] },
+            { symbol: 'Li', name: 'Lithium', z: 3, config: '[He] 2s¹', full: '1s² 2s¹', shellConfig: [1, 2], ie: [520, 7298, 11815] },
+            { symbol: 'Be', name: 'Beryllium', z: 4, config: '[He] 2s²', full: '1s² 2s²', shellConfig: [2, 2], ie: [900, 1757, 14848, 21006] },
+            { symbol: 'B', name: 'Boron', z: 5, config: '[He] 2s² 2p¹', full: '1s² 2s² 2p¹', shellConfig: [3, 2], ie: [801, 2427, 3660, 25026, 32827] },
+            { symbol: 'C', name: 'Carbon', z: 6, config: '[He] 2s² 2p²', full: '1s² 2s² 2p²', shellConfig: [4, 2], ie: [1086, 2353, 4620, 6223, 37831, 47277] },
+            { symbol: 'N', name: 'Nitrogen', z: 7, config: '[He] 2s² 2p³', full: '1s² 2s² 2p³', shellConfig: [5, 2], ie: [1402, 2856, 4578, 7475, 9445, 53267, 64360] },
+            { symbol: 'O', name: 'Oxygen', z: 8, config: '[He] 2s² 2p⁴', full: '1s² 2s² 2p⁴', shellConfig: [6, 2], ie: [1314, 3388, 5300, 7469, 10989, 13326, 71330, 84078] },
+            { symbol: 'F', name: 'Fluorine', z: 9, config: '[He] 2s² 2p⁵', full: '1s² 2s² 2p⁵', shellConfig: [7, 2], ie: [1681, 3374, 6050, 8408, 11023, 15164, 17868, 92038, 106434] },
+            { symbol: 'Ne', name: 'Neon', z: 10, config: '[He] 2s² 2p⁶', full: '1s² 2s² 2p⁶', shellConfig: [8, 2], ie: [2081, 3952, 6122, 9371, 12177, 15238, 19999, 23069, 115379, 131432] },
+            { symbol: 'Na', name: 'Sodium', z: 11, config: '[Ne] 3s¹', full: '1s² 2s² 2p⁶ 3s¹', shellConfig: [1, 8, 2], ie: [496, 4562, 6910, 9543, 13354, 16613, 20117, 25496, 28932, 141362, 159075] },
+            { symbol: 'Mg', name: 'Magnesium', z: 12, config: '[Ne] 3s²', full: '1s² 2s² 2p⁶ 3s²', shellConfig: [2, 8, 2], ie: [738, 1451, 7733, 10540, 13630, 18020, 21711, 25661, 31653, 35458, 169988, 189368] },
+            { symbol: 'Al', name: 'Aluminium', z: 13, config: '[Ne] 3s² 3p¹', full: '1s² 2s² 2p⁶ 3s² 3p¹', shellConfig: [3, 8, 2], ie: [578, 1817, 2745, 11577, 14842, 18379, 23326, 27465, 31853, 38473, 42647, 201266, 222316] },
+            { symbol: 'Si', name: 'Silicon', z: 14, config: '[Ne] 3s² 3p²', full: '1s² 2s² 2p⁶ 3s² 3p²', shellConfig: [4, 8, 2], ie: [786, 1577, 3232, 4356, 16091, 19805, 23780, 29287, 33878, 38726, 45962, 50502, 235196, 257923] },
+            { symbol: 'P', name: 'Phosphorus', z: 15, config: '[Ne] 3s² 3p³', full: '1s² 2s² 2p⁶ 3s² 3p³', shellConfig: [5, 8, 2], ie: [1012, 1907, 2914, 4964, 6274, 21267, 25431, 29872, 35905, 40950, 46261, 54114, 59024, 271783, 296119] },
+            { symbol: 'S', name: 'Sulfur', z: 16, config: '[Ne] 3s² 3p⁴', full: '1s² 2s² 2p⁶ 3s² 3p⁴', shellConfig: [6, 8, 2], ie: [1000, 2252, 3357, 4556, 7004, 8496, 27107, 31719, 36621, 43177, 48710, 54460, 62930, 68216, 311048, 337138] },
+            { symbol: 'Cl', name: 'Chlorine', z: 17, config: '[Ne] 3s² 3p⁵', full: '1s² 2s² 2p⁶ 3s² 3p⁵', shellConfig: [7, 8, 2], ie: [1251, 2298, 3822, 5159, 6542, 9362, 11018, 33604, 38600, 43961, 51068, 57119, 63363, 72373, 78095, 352994, 380760] },
+            { symbol: 'Ar', name: 'Argon', z: 18, config: '[Ne] 3s² 3p⁶', full: '1s² 2s² 2p⁶ 3s² 3p⁶', shellConfig: [8, 8, 2], ie: [1521, 2666, 3931, 5771, 7238, 8781, 11995, 13842, 40760, 46186, 52002, 59653, 66199, 72918, 82473, 88576, 397605, 427066] }
+        ];
+
+        const slider = document.getElementById('elementSlider');
+        const sliderValDisplay = document.getElementById('sliderValue');
+        const dataTableBody = document.getElementById('dataTableBody');
+        const explanationEl = document.getElementById('explanationText');
+        const ctx = document.getElementById('ieChart').getContext('2d');
+        let chart;
+
+        function getBoundaries(shellConfig) {
+            const majorJumps = [];
+            let cumulative = 0;
+            for (let i = 0; i < shellConfig.length - 1; i++) {
+                cumulative += shellConfig[i];
+                majorJumps.push(cumulative);
+            }
+            return majorJumps;
+        }
+
+        function updateUI(index) {
+            const data = elementData[index];
+            const majorJumpIndices = getBoundaries(data.shellConfig);
+            const valenceCount = data.shellConfig[0];
+            const totalShells = data.shellConfig.length;
+            
+            sliderValDisplay.textContent = `${data.symbol} (${data.z})`;
+            
+            document.getElementById('elementName').textContent = data.name;
+            document.getElementById('atomicNumBadge').textContent = `Z=${data.z}`;
+            document.getElementById('elementConfig').textContent = data.config;
+            document.getElementById('elementFullConfig').textContent = data.full;
+            document.getElementById('shellStructureDisplay').textContent = data.shellConfig.join(' , ');
+
+            explanationEl.innerHTML = `
+                <div class="p-4 bg-red-50 border-l-4 border-red-500 rounded text-xs leading-relaxed">
+                    <span class="font-bold block text-red-700 mb-1 uppercase tracking-tight">Principal Shell Jumps</span>
+                    Major energy jumps occur at electron ${majorJumpIndices.length > 0 ? majorJumpIndices.map(j => j+1).join(', ') : 'N/A'}. 
+                    <div class="mt-2 pt-2 border-t border-red-200">
+                        <strong>Deduction:</strong> Each jump indicates crossing into a new shell. 
+                        Including the outermost shell, this atom contains <span class="bg-red-200 px-1.5 py-0.5 rounded font-bold">${totalShells} electron shell(s)</span>.
+                    </div>
+                </div>
+                <div class="p-4 bg-green-50 border-l-4 border-green-500 rounded text-xs leading-relaxed">
+                    <span class="font-bold block text-green-700 mb-1 uppercase tracking-tight">Valence Electrons Profile</span>
+                    The energy remains relatively consistent for the first <strong>${valenceCount}</strong> electron(s). 
+                    These are identified as being in the outermost shell.
+                </div>
+            `;
+
+            dataTableBody.innerHTML = '';
+            data.ie.forEach((val, i) => {
+                const ratio = i > 0 ? (val / data.ie[i - 1]).toFixed(1) : '-';
+                const isMajorJump = majorJumpIndices.includes(i);
+                const isValence = i < valenceCount;
+
+                const tr = document.createElement('tr');
+                if (isMajorJump) tr.className = 'major-jump-highlight';
+                else if (isValence) tr.className = 'valence-highlight border-b border-slate-100';
+                else tr.className = 'border-b border-slate-100';
+
+                let classification = isValence ? 'Valence' : 'Inner Shell';
+                if (isMajorJump) classification = 'MAJOR SHELL JUMP';
+
+                tr.innerHTML = `
+                    <td class="px-4 py-3 font-medium text-slate-500">${i + 1}</td>
+                    <td class="px-4 py-3 font-bold">${val.toLocaleString()}</td>
+                    <td class="px-4 py-3 font-mono text-slate-400">${ratio}</td>
+                    <td class="px-4 py-3 text-[10px] font-bold uppercase ${isMajorJump ? 'text-red-600' : (isValence ? 'text-green-600' : 'text-slate-400')}">
+                        ${classification}
+                    </td>
+                `;
+                dataTableBody.appendChild(tr);
+            });
+
+            updateChart(data, majorJumpIndices, valenceCount);
+        }
+
+        function updateChart(data, majorJumps, valence) {
+            const labels = data.ie.map((_, i) => i + 1);
+            const pointColors = data.ie.map((_, i) => {
+                if (majorJumps.includes(i)) return '#ef4444';
+                if (i < valence) return '#22c55e';
+                return '#3b82f6';
+            });
+
+            if (chart) chart.destroy();
+
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'IE (kJ/mol)',
+                        data: data.ie,
+                        borderColor: '#cbd5e1',
+                        borderWidth: 2,
+                        pointBackgroundColor: pointColors,
+                        pointRadius: 6,
+                        pointHoverRadius: 8,
+                        fill: false,
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { type: 'logarithmic', title: { display: true, text: 'Energy (Log Scale)' } },
+                        x: { title: { display: true, text: 'Electron Removed' } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        slider.addEventListener('input', (e) => updateUI(e.target.value));
+        window.onload = () => { updateUI(12); }; // Default to Aluminium
+    </script>
+</body>
+</html>
