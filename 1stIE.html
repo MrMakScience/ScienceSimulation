@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ionization Energy Lab</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        // Lucide Icons implementation (SVG mapping)
+        const Icons = {
+            ChevronLeft: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>,
+            ChevronRight: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>,
+            Zap: ({className}) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M4 14.71 13.44 4 11 10.29h9L10.56 21 13 14.71z"/></svg>,
+            Info: ({size=24}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>,
+            Layers: ({size=24}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.1 6.27a2 2 0 0 0 0 3.46l9.07 4.09a2 2 0 0 0 1.66 0l9.07-4.09a2 2 0 0 0 0-3.46z"/><path d="m2.1 14.27 9.07 4.09a2 2 0 0 0 1.66 0l9.07-4.09"/><path d="m2.1 10.27 9.07 4.09a2 2 0 0 0 1.66 0l9.07-4.09"/></svg>,
+            Target: ({size=24}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>,
+            ArrowRightLeft: ({size=24}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/></svg>,
+            Cpu: ({size=24}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="16" height="16" x="4" y="4" rx="2"/><rect width="6" height="6" x="9" y="9" rx="1"/><path d="M15 2v2"/><path d="M15 20v2"/><path d="M2 15h2"/><path d="M2 9h2"/><path d="M20 15h2"/><path d="M20 9h2"/><path d="M9 2v2"/><path d="M9 20v2"/></svg>,
+            TrendingUp: ({size=24}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>,
+            FlaskConical: ({size=24}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 2v7.31"/><path d="M14 2v7.31"/><path d="M8.5 2h7"/><path d="M14 9.3c.7.4 1.2 1.1 1.5 1.9l4.1 8.2c.4.9.1 2-.8 2.4-.3.1-.6.2-.9.2H6.1c-1 0-1.8-.8-1.8-1.8 0-.3.1-.6.2-.9l4.1-8.2c.3-.8.8-1.5 1.5-1.9V2"/><path d="M8.5 14h7"/></svg>
+        };
+
+        const { useState, useEffect, useMemo } = React;
+
+        const IonizationEnergyLab = () => {
+            const elements = [
+                { z: 1, symbol: 'H', name: 'Hydrogen', period: 1, group: 1, ie: 1312, shells: [1], radius: 37, config: { s: 1, p: 0 } },
+                { z: 2, symbol: 'He', name: 'Helium', period: 1, group: 18, ie: 2372, shells: [2], radius: 31, config: { s: 2, p: 0 } },
+                { z: 3, symbol: 'Li', name: 'Lithium', period: 2, group: 1, ie: 520, shells: [2, 1], radius: 152, config: { s: 1, p: 0 } },
+                { z: 4, symbol: 'Be', name: 'Beryllium', period: 2, group: 2, ie: 900, shells: [2, 2], radius: 112, config: { s: 2, p: 0 } },
+                { z: 5, symbol: 'B', name: 'Boron', period: 2, group: 13, ie: 801, shells: [2, 3], radius: 88, config: { s: 2, p: 1 } },
+                { z: 6, symbol: 'C', name: 'Carbon', period: 2, group: 14, ie: 1086, shells: [2, 4], radius: 77, config: { s: 2, p: 2 } },
+                { z: 7, symbol: 'N', name: 'Nitrogen', period: 2, group: 15, ie: 1402, shells: [2, 5], radius: 70, config: { s: 2, p: 3 } },
+                { z: 8, symbol: 'O', name: 'Oxygen', period: 2, group: 16, ie: 1314, shells: [2, 6], radius: 66, config: { s: 2, p: 4 } },
+                { z: 9, symbol: 'F', name: 'Fluorine', period: 2, group: 17, ie: 1681, shells: [2, 7], radius: 64, config: { s: 2, p: 5 } },
+                { z: 10, symbol: 'Ne', name: 'Neon', period: 2, group: 18, ie: 2081, shells: [2, 8], radius: 58, config: { s: 2, p: 6 } },
+                { z: 11, symbol: 'Na', name: 'Sodium', period: 3, group: 1, ie: 496, shells: [2, 8, 1], radius: 186, config: { s: 1, p: 0 } },
+                { z: 12, symbol: 'Mg', name: 'Magnesium', period: 3, group: 2, ie: 738, shells: [2, 8, 2], radius: 160, config: { s: 2, p: 0 } },
+                { z: 13, symbol: 'Al', name: 'Aluminum', period: 3, group: 13, ie: 578, shells: [2, 8, 3], radius: 143, config: { s: 2, p: 1 } },
+                { z: 14, symbol: 'Si', name: 'Silicon', period: 3, group: 14, ie: 786, shells: [2, 8, 4], radius: 118, config: { s: 2, p: 2 } },
+                { z: 15, symbol: 'P', name: 'Phosphorus', period: 3, group: 15, ie: 1012, shells: [2, 8, 5], radius: 110, config: { s: 2, p: 3 } },
+                { z: 16, symbol: 'S', name: 'Sulfur', period: 3, group: 16, ie: 1000, shells: [2, 8, 6], radius: 104, config: { s: 2, p: 4 } },
+                { z: 17, symbol: 'Cl', name: 'Chlorine', period: 3, group: 17, ie: 1251, shells: [2, 8, 7], radius: 99, config: { s: 2, p: 5 } },
+                { z: 18, symbol: 'Ar', name: 'Argon', period: 3, group: 18, ie: 1521, shells: [2, 8, 8], radius: 88, config: { s: 2, p: 6 } }
+            ];
+
+            const [currentIndex, setCurrentIndex] = useState(0);
+            const [history, setHistory] = useState([elements[0]]);
+            
+            const currentAtom = elements[currentIndex];
+            const previousAtom = history.length > 1 ? history[history.length - 2] : null;
+
+            useEffect(() => {
+                if (history[history.length - 1]?.z !== currentAtom.z) {
+                    setHistory(prev => [...prev, currentAtom]);
+                }
+            }, [currentIndex, currentAtom, history]);
+
+            const handleNext = () => {
+                if (currentIndex < elements.length - 1) setCurrentIndex(currentIndex + 1);
+            };
+
+            const handlePrev = () => {
+                if (currentIndex > 0) setCurrentIndex(currentIndex - 1);
+            };
+
+            const selectElement = (z) => {
+                const idx = elements.findIndex(e => e.z === z);
+                if (idx !== -1) setCurrentIndex(idx);
+            };
+
+            const OrbitalBox = ({ atom, isSmall = false }) => {
+                if (!atom) return null;
+                const { s, p } = atom.config;
+                const n = atom.period;
+
+                const renderBox = (label, count, max) => {
+                    const boxes = [];
+                    const boxSize = isSmall ? "w-9 h-9" : "w-11 h-11";
+                    const arrowSize = isSmall ? "text-sm" : "text-base";
+                    const electronsPerBox = Array(max).fill(0);
+                    for (let i = 0; i < count; i++) electronsPerBox[i % max]++;
+
+                    for (let i = 0; i < max; i++) {
+                        boxes.push(
+                            <div key={i} className={`${boxSize} border-2 border-slate-300 flex flex-row items-center justify-center gap-1 relative bg-white rounded-sm shadow-inner`}>
+                                {electronsPerBox[i] >= 1 && <span className={`${arrowSize} text-blue-600 font-bold`}>↑</span>}
+                                {electronsPerBox[i] >= 2 && <span className={`${arrowSize} text-red-500 font-bold`}>↓</span>}
+                            </div>
+                        );
+                    }
+
+                    return (
+                        <div className="flex flex-col items-center gap-1">
+                            <div className="flex gap-0.5">{boxes}</div>
+                            <div className="text-[11px] font-bold text-slate-400 lowercase italic tracking-tight">{label}</div>
+                        </div>
+                    );
+                };
+
+                let coreShorthand = null;
+                if (n === 2) coreShorthand = "[He]";
+                if (n === 3) coreShorthand = "[Ne]";
+
+                return (
+                    <div className={`flex items-end gap-3`}>
+                        {coreShorthand && (
+                            <div className={`flex flex-col items-center gap-1`}>
+                                <div className={`${isSmall ? "w-9 h-9" : "w-11 h-11"} flex items-center justify-center font-bold text-slate-500 bg-slate-50 border-2 border-slate-200 rounded-sm`}>
+                                    {coreShorthand}
+                                </div>
+                                <div className="text-[11px] font-bold text-slate-300 italic tracking-tight">core</div>
+                            </div>
+                        )}
+                        {renderBox(`${n}s`, s, 1)}
+                        {atom.period > 1 && renderBox(`${n}p`, p, 3)}
+                    </div>
+                );
+            };
+
+            const BohrModel = ({ atom, size = 380, isSmall = false }) => {
+                if (!atom) return null;
+                
+                const nucleusRadius = isSmall ? 18 : 22;
+                const nucleusFontSize = isSmall ? 14 : 16;
+                const electronRadius = isSmall ? 5 : 6.5;
+
+                const maxRadius = 186; 
+                const baseScaling = (atom.radius / maxRadius);
+                const radiusFactor = 0.55 + (baseScaling * 0.45); 
+
+                return (
+                    <div className="flex flex-col items-center w-full">
+                        <svg viewBox="0 0 400 400" className={`w-full h-auto drop-shadow-md max-w-[${size}px]`}>
+                            <circle cx="200" cy="200" r={nucleusRadius} fill="#ef4444" className="animate-pulse" />
+                            <text 
+                                x="200" 
+                                y={200 + (nucleusFontSize / 3)} 
+                                textAnchor="middle" 
+                                fill="white" 
+                                fontSize={nucleusFontSize} 
+                                fontWeight="900"
+                                className="select-none"
+                            >
+                                +{atom.z}
+                            </text>
+                            
+                            {atom.shells.map((count, sIdx) => {
+                                const shellSpacing = 55;
+                                const shellRadius = (nucleusRadius + 25 + (sIdx * shellSpacing)) * radiusFactor;
+                                
+                                return (
+                                    <g key={sIdx}>
+                                        <circle cx="200" cy="200" r={shellRadius} fill="none" stroke="#cbd5e1" strokeWidth="1.5" strokeDasharray="6 4" />
+                                        {Array.from({ length: count }).map((_, eIdx) => {
+                                            const angle = (eIdx / count) * 2 * Math.PI - Math.PI / 2;
+                                            const ex = 200 + shellRadius * Math.cos(angle);
+                                            const ey = 200 + shellRadius * Math.sin(angle);
+                                            const isValence = sIdx === atom.shells.length - 1;
+                                            return (
+                                                <circle 
+                                                    key={eIdx} 
+                                                    cx={ex} 
+                                                    cy={ey} 
+                                                    r={isValence ? electronRadius : electronRadius * 0.75} 
+                                                    fill={isValence ? "#3b82f6" : "#94a3b8"} 
+                                                    className={isValence ? "animate-pulse" : ""} 
+                                                />
+                                            );
+                                        })}
+                                    </g>
+                                );
+                            })}
+                        </svg>
+                        <div className="mt-1 text-center">
+                            <div className="text-lg font-black text-slate-800 leading-none">{atom.symbol}</div>
+                            <div className="text-xs font-bold text-slate-400 mb-1">Z = {atom.z}</div>
+                            <div className="px-3 py-1 bg-blue-50 rounded-full text-[11px] font-bold text-blue-600 border border-blue-100 shadow-sm inline-block">
+                                r<sub>atom</sub> = {atom.radius} pm
+                            </div>
+                        </div>
+                    </div>
+                );
+            };
+
+            const TrendChart = () => {
+                const maxIE = 2500;
+                const width = 800;
+                const height = 220;
+                const paddingLeft = 65; 
+                const paddingRight = 40;
+                const paddingTop = 40;
+                const paddingBottom = 45;
+
+                const points = elements.map((el, i) => ({
+                    x: paddingLeft + (i * (width - paddingLeft - paddingRight)) / (elements.length - 1),
+                    y: height - paddingBottom - (el.ie / maxIE) * (height - paddingBottom - paddingTop),
+                    ...el
+                }));
+
+                const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+
+                return (
+                    <div className="w-full bg-white p-6 rounded-2xl border border-slate-200 shadow-sm mt-6 overflow-x-auto text-left">
+                        <h2 className="text-lg font-semibold mb-6 flex items-center gap-2 text-slate-700">
+                            <Icons.TrendingUp size={20} /> Ionization Energy Trend (Z = 1 to 18)
+                        </h2>
+                        <div className="min-w-[700px] relative h-[240px]">
+                            <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full overflow-visible">
+                                {[0, 500, 1000, 1500, 2000, 2500].map(val => {
+                                    const y = height - paddingBottom - (val / maxIE) * (height - paddingBottom - paddingTop);
+                                    return (
+                                        <g key={val}>
+                                            <line x1={paddingLeft} y1={y} x2={width - paddingRight} y2={y} stroke="#f1f5f9" strokeWidth="1" />
+                                            <text x={paddingLeft - 8} y={y + 4} textAnchor="end" fontSize="10" className="fill-slate-400 font-medium">{val}</text>
+                                        </g>
+                                    );
+                                })}
+                                
+                                <path d={linePath} fill="none" stroke="#cbd5e1" strokeWidth="2" strokeLinejoin="round" />
+                                
+                                {points.map((p, i) => {
+                                    const isCurrent = p.z === currentAtom.z;
+                                    const isPrevious = previousAtom && p.z === previousAtom.z;
+                                    
+                                    return (
+                                        <g key={p.z} onClick={() => selectElement(p.z)} className="cursor-pointer group">
+                                            <circle 
+                                                cx={p.x} cy={p.y} 
+                                                r={isCurrent ? 7 : (isPrevious ? 5 : 3.5)} 
+                                                fill={isCurrent ? "#3b82f6" : (isPrevious ? "#94a3b8" : "#fff")}
+                                                stroke={isCurrent ? "#3b82f6" : (isPrevious ? "#94a3b8" : "#cbd5e1")}
+                                                strokeWidth={2}
+                                                className={isCurrent ? "animate-pulse" : "hover:stroke-blue-400"}
+                                            />
+                                            {isCurrent && (
+                                                <circle cx={p.x} cy={p.y} r={12} fill="none" stroke="#3b82f6" strokeWidth="1" className="animate-ping opacity-30" />
+                                            )}
+                                            <text 
+                                                x={p.x} y={p.y - 12} 
+                                                textAnchor="middle" 
+                                                fontSize={isCurrent ? "12" : "10"} 
+                                                fontWeight={isCurrent ? "bold" : "normal"}
+                                                className={isCurrent ? "fill-blue-600" : (isPrevious ? "fill-slate-500" : "fill-slate-400 group-hover:fill-blue-400")}
+                                            >
+                                                {p.symbol}
+                                            </text>
+                                        </g>
+                                    );
+                                })}
+                                
+                                <text x={paddingLeft + (width - paddingLeft - paddingRight) / 2} y={height - 5} textAnchor="middle" fontSize="11" className="fill-slate-400 font-bold uppercase tracking-widest">Atomic Number (Z)</text>
+                                <text x={15} y={(height - paddingTop - paddingBottom) / 2 + paddingTop} transform={`rotate(-90, 15, ${(height - paddingTop - paddingBottom) / 2 + paddingTop})`} textAnchor="middle" fontSize="10" className="fill-slate-400 font-bold uppercase tracking-widest">IE (kJ/mol)</text>
+                            </svg>
+                        </div>
+                    </div>
+                );
+            };
+
+            const getExplanation = () => {
+                if (!previousAtom) return <p>Select another atom to compare trends!</p>;
+                
+                const [lowZ, highZ] = currentAtom.z < previousAtom.z 
+                    ? [currentAtom, previousAtom] 
+                    : [previousAtom, currentAtom];
+
+                const isExceptionPair = (a, b, gA, gB) => 
+                    (a.group === gA && b.group === gB) || (a.group === gB && b.group === gA);
+
+                if (lowZ.period !== highZ.period && highZ.z === lowZ.z + 1) {
+                    return (
+                        <div className="bg-sky-50 p-3 rounded border border-sky-200 text-sm text-sky-900 leading-relaxed text-left">
+                            <span className="font-bold text-sky-800 flex items-center gap-1"><Icons.Info size={14} /> New Shell Transition ({lowZ.symbol} to {highZ.symbol}):</span>
+                            IE drops sharply because {highZ.symbol} starts a <strong>new electron shell</strong>. The increased <strong>distance</strong> (r<sub>atom</sub>: {lowZ.radius}pm → {highZ.radius}pm) and increased electron <strong>shielding</strong> (extra core shell) <strong>outweighs</strong> the effect of the higher nuclear charge (+{highZ.z}).
+                        </div>
+                    );
+                }
+
+                if (lowZ.period === highZ.period) {
+                    if (isExceptionPair(lowZ, highZ, 2, 13)) {
+                        const bAtom = lowZ.group === 13 ? lowZ : highZ;
+                        const beAtom = lowZ.group === 2 ? lowZ : highZ;
+                        return (
+                            <div className="bg-amber-50 p-3 rounded border border-amber-200 text-sm text-amber-900 leading-relaxed text-left">
+                                <span className="font-bold text-amber-800 flex items-center gap-1"><Icons.Info size={14} /> Orbital Energy Exception:</span>
+                                Valence electron in {bAtom.symbol} is in a <strong><i className="font-serif italic">p</i> orbital</strong> (higher energy) than the <i className="font-serif italic">s</i> orbital in {beAtom.symbol}. This higher energy level <strong>outweighs the combined effect</strong> of the <strong>smaller atomic radius</strong> ({bAtom.radius}pm) and <strong>increased nuclear charge</strong> (+{bAtom.z}), both of which would otherwise increase the IE.
+                            </div>
+                        );
+                    }
+                    
+                    if (isExceptionPair(lowZ, highZ, 15, 16)) {
+                        const oAtom = lowZ.group === 16 ? lowZ : highZ;
+                        const nAtom = lowZ.group === 15 ? lowZ : highZ;
+                        return (
+                            <div className="bg-amber-50 p-3 rounded border border-amber-200 text-sm text-amber-900 leading-relaxed text-left">
+                                <span className="font-bold text-amber-800 flex items-center gap-1"><Icons.Info size={14} /> Electron Pairing Exception:</span>
+                                In {oAtom.symbol}, the first <strong>electron pair</strong> in the <i className="font-serif italic">p</i> subshell experiences electrostatic repulsion. This repulsion <strong>outweighs the combined effect</strong> of the <strong>smaller atomic radius</strong> ({oAtom.radius}pm) and <strong>increased nuclear charge</strong> (+{oAtom.z}), both of which would otherwise increase the IE.
+                            </div>
+                        );
+                    }
+
+                    return (
+                        <div className="space-y-2 text-left">
+                            <p className="font-semibold text-blue-700">Across Period {lowZ.period} (Trend from {lowZ.symbol} to {highZ.symbol}):</p>
+                            <ul className="list-disc ml-5 text-sm space-y-1 text-slate-600">
+                                <li><strong>Nuclear Charge:</strong> {highZ.name} has more protons (+{highZ.z}), creating a stronger nuclear attraction.</li>
+                                <li><strong>Atomic Radius:</strong> {highZ.symbol} ({highZ.radius}pm) is <strong>smaller</strong> than {lowZ.symbol} ({lowZ.radius}pm), placing valence electrons closer to the nucleus.</li>
+                                <li><strong>Result:</strong> These factors work together to increase the net attraction, so IE generally increases.</li>
+                            </ul>
+                        </div>
+                    );
+                } else if (lowZ.group === highZ.group) {
+                    return (
+                        <div className="space-y-2 text-sm text-left">
+                            <p className="font-semibold text-green-700">Down Group {lowZ.group} (Trend from {lowZ.symbol} to {highZ.symbol}):</p>
+                            <ul className="list-disc ml-5 space-y-1 text-slate-600">
+                                <li><strong>Distance:</strong> {highZ.symbol} ({highZ.radius}pm) is significantly <strong>larger</strong> than {lowZ.symbol} ({lowZ.radius}pm).</li>
+                                <li><strong>Shielding:</strong> Extra core shells screen the nuclear charge more effectively.</li>
+                                <li><strong>Result:</strong> IE decreases because the effects of <strong>increased distance and shielding</strong> outweigh the increased nuclear charge.</li>
+                            </ul>
+                        </div>
+                    );
+                }
+                
+                return <p className="text-left">Comparison across different groups and periods. Select elements in the same row or column to see trends.</p>;
+            };
+
+            return (
+                <div className="min-h-screen bg-slate-50 p-4 md:p-6 font-sans text-slate-800 text-center">
+                    <div className="max-w-6xl mx-auto">
+                        <header className="mb-6">
+                            <h1 className="text-3xl font-bold text-slate-900 flex items-center justify-center gap-2">
+                                <Icons.Zap className="text-yellow-500 fill-yellow-500" /> Periodicity of 1st Ionization Energy
+                            </h1>
+                            <p className="text-slate-600 mt-1">Visualize atomic orbitals, periodic trends, and exceptions for Periods 1-3.</p>
+                        </header>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                            <div className="lg:col-span-1 space-y-4">
+                                <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 text-left">
+                                    <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-slate-700"><Icons.Target size={20} /> Navigation</h2>
+                                    <div className="flex items-center justify-between gap-2 mb-6">
+                                        <button onClick={handlePrev} disabled={currentIndex === 0} className="p-2 rounded-full bg-slate-100 hover:bg-slate-200 disabled:opacity-30"><Icons.ChevronLeft /></button>
+                                        <div className="text-center">
+                                            <div className="text-4xl font-black text-blue-600 tracking-tighter leading-none">{currentAtom.symbol}</div>
+                                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{currentAtom.name}</div>
+                                        </div>
+                                        <button onClick={handleNext} disabled={currentIndex === elements.length - 1} className="p-2 rounded-full bg-slate-100 hover:bg-slate-200 disabled:opacity-30"><Icons.ChevronRight /></button>
+                                    </div>
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="text-xs font-bold uppercase text-slate-400 block mb-1">Jump to Period</label>
+                                            <div className="flex gap-2">
+                                                {[1, 2, 3].map(p => (
+                                                    <button key={p} onClick={() => selectElement(elements.find(e => e.period === p).z)} className={`flex-1 py-1 rounded text-sm font-medium border ${currentAtom.period === p ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white border-slate-200 hover:border-blue-400'}`}>{p}</button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="text-xs font-bold uppercase text-slate-400 block mb-1">Specific Anomalies</label>
+                                            <div className="grid grid-cols-2 gap-2">
+                                                <button onClick={() => { selectElement(4); setTimeout(() => selectElement(5), 50); }} className="px-1 py-1.5 rounded text-[10px] font-bold border bg-white border-slate-200 hover:border-amber-400 transition-colors">Be vs B</button>
+                                                <button onClick={() => { selectElement(12); setTimeout(() => selectElement(13), 50); }} className="px-1 py-1.5 rounded text-[10px] font-bold border bg-white border-slate-200 hover:border-amber-400 transition-colors">Mg vs Al</button>
+                                                <button onClick={() => { selectElement(7); setTimeout(() => selectElement(8), 50); }} className="px-1 py-1.5 rounded text-[10px] font-bold border bg-white border-slate-200 hover:border-amber-400 transition-colors">N vs O</button>
+                                                <button onClick={() => { selectElement(15); setTimeout(() => selectElement(16), 50); }} className="px-1 py-1.5 rounded text-[10px] font-bold border bg-white border-slate-200 hover:border-amber-400 transition-colors">P vs S</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="bg-blue-900 text-white p-6 rounded-2xl shadow-lg relative overflow-hidden">
+                                    <div className="relative z-10 text-left">
+                                        <div className="text-xs font-bold opacity-70 uppercase tracking-widest">First IE</div>
+                                        <div className="text-3xl font-mono mt-1">{currentAtom.ie} <span className="text-sm text-blue-200">kJ/mol</span></div>
+                                        {previousAtom && (
+                                            <div className={`mt-2 inline-flex items-center text-xs font-bold px-2 py-0.5 rounded ${currentAtom.ie >= previousAtom.ie ? 'bg-green-500/30 text-green-200' : 'bg-red-500/30 text-red-200'}`}>
+                                                {currentAtom.ie >= previousAtom.ie ? '↑' : '↓'} {Math.abs(currentAtom.ie - previousAtom.ie)} vs {previousAtom.symbol}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <Icons.Zap className="absolute -bottom-4 -right-4 w-20 h-20 text-white opacity-10 rotate-12" />
+                                </div>
+
+                                <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 text-left">
+                                    <h2 className="text-sm font-black uppercase tracking-wider text-slate-800 mb-3 flex items-center gap-2">
+                                        <Icons.FlaskConical size={16} className="text-blue-500" /> 
+                                        <span className="normal-case">FACTORS AFFECTING 1<span className="lowercase">st</span> IE</span>
+                                    </h2>
+                                    <ul className="space-y-2 text-[13px]">
+                                        <li className="flex items-start gap-2 text-slate-600">
+                                            <span className="w-4 h-4 bg-blue-50 text-blue-600 rounded flex items-center justify-center font-bold flex-shrink-0">1</span>
+                                            <span>Nuclear Charge (protons in nucleus)</span>
+                                        </li>
+                                        <li className="flex items-start gap-2 text-slate-600">
+                                            <span className="w-4 h-4 bg-blue-50 text-blue-600 rounded flex items-center justify-center font-bold flex-shrink-0">2</span>
+                                            <span>Distance between e⁻ and nucleus (r<sub>atom</sub>)</span>
+                                        </li>
+                                        <li className="flex items-start gap-2 text-slate-600">
+                                            <span className="w-4 h-4 bg-blue-50 text-blue-600 rounded flex items-center justify-center font-bold flex-shrink-0">3</span>
+                                            <span>Inner shell e⁻ shielding</span>
+                                        </li>
+                                        <li className="flex items-start gap-2 text-slate-600">
+                                            <span className="w-4 h-4 bg-blue-50 text-blue-600 rounded flex items-center justify-center font-bold flex-shrink-0">4</span>
+                                            <span>Orbital energy level (e.g. <i>s</i> vs <i>p</i>)</span>
+                                        </li>
+                                        <li className="flex items-start gap-2 text-slate-600">
+                                            <span className="w-4 h-4 bg-blue-50 text-blue-600 rounded flex items-center justify-center font-bold flex-shrink-0">5</span>
+                                            <span>e⁻—e⁻ repulsion in orbital (pairing)</span>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div className="lg:col-span-3 space-y-6">
+                                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col text-left">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <h2 className="text-lg font-semibold flex items-center gap-2 text-slate-700"><Icons.Layers size={20} /> Comparative Models</h2>
+                                    </div>
+                                    
+                                    <div className="flex-grow flex flex-col gap-4 relative bg-slate-50 rounded-2xl border border-dashed border-slate-300 py-8 px-2 overflow-hidden">
+                                        <div className="flex items-center justify-around w-full gap-4 relative z-10">
+                                            {previousAtom && previousAtom.z !== currentAtom.z ? (
+                                                <React.Fragment>
+                                                    <div className="flex-1 flex flex-col items-center max-w-[45%]">
+                                                        <BohrModel atom={previousAtom} size={280} isSmall={true} />
+                                                        <div className="mt-2 p-2 bg-white rounded-xl border border-slate-200 shadow-sm"><OrbitalBox atom={previousAtom} isSmall={true} /></div>
+                                                    </div>
+                                                    <div className="flex flex-col items-center text-slate-400 bg-white/50 p-2 rounded-full border border-slate-200"><Icons.ArrowRightLeft size={28} /></div>
+                                                    <div className="flex-1 flex flex-col items-center max-w-[45%]">
+                                                        <BohrModel atom={currentAtom} size={280} isSmall={true} />
+                                                        <div className="mt-2 p-2 bg-white rounded-xl border border-blue-200 shadow-sm ring-2 ring-blue-50/50"><OrbitalBox atom={currentAtom} isSmall={true} /></div>
+                                                    </div>
+                                                </React.Fragment>
+                                            ) : (
+                                                <div className="flex flex-col items-center w-full max-w-lg mx-auto">
+                                                    <BohrModel atom={currentAtom} size={360} />
+                                                    <div className="mt-4 p-4 bg-white rounded-2xl border border-blue-200 shadow-lg"><OrbitalBox atom={currentAtom} /></div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-6 p-4 bg-slate-50 rounded-xl border border-slate-200 flex items-start gap-4">
+                                        <div className="mt-1 p-2 bg-blue-100 rounded-xl text-blue-600"><Icons.Cpu size={22} /></div>
+                                        <div className="flex-grow">
+                                            <h3 className="text-sm font-black text-slate-700 uppercase tracking-tight mb-1">Electronic explanation</h3>
+                                            <div className="text-slate-600 leading-relaxed">{getExplanation()}</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <TrendChart />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<IonizationEnergyLab />);
+    </script>
+</body>
+</html>
