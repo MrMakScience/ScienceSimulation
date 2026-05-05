@@ -44,11 +44,23 @@
     <div class="max-w-6xl mx-auto p-4 md:p-8">
         <header class="mb-8 text-center">
             <h1 class="text-3xl font-bold text-slate-800 mb-2">Successive Ionization Energy Lab</h1>
-            <p class="text-slate-600 max-w-2xl mx-auto text-sm">
-                Identify shell boundaries based on electronic structure. 
-                <span class="text-green-600 font-bold">Green</span> = Valence. 
-                <span class="text-red-600 font-bold">Red</span> = Major Shell Jump.
+            <p class="text-slate-600 max-w-2xl mx-auto text-sm mb-4">
+                Identify shell boundaries based on electronic structure.
             </p>
+            <div class="flex flex-wrap justify-center gap-4 text-xs font-bold">
+                <div class="flex items-center gap-1.5 px-3 py-1 bg-white border border-slate-200 rounded-full shadow-sm">
+                    <span class="w-3 h-3 rounded-full bg-green-500"></span>
+                    <span class="text-green-700">Valence</span>
+                </div>
+                <div class="flex items-center gap-1.5 px-3 py-1 bg-white border border-slate-200 rounded-full shadow-sm">
+                    <span class="w-3 h-3 rounded-full bg-blue-500"></span>
+                    <span class="text-blue-700">Inner Shell</span>
+                </div>
+                <div class="flex items-center gap-1.5 px-3 py-1 bg-white border border-slate-200 rounded-full shadow-sm">
+                    <span class="w-3 h-3 rounded-full bg-red-500"></span>
+                    <span class="text-red-700">Major Shell Jump</span>
+                </div>
+            </div>
         </header>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -56,9 +68,9 @@
                 <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                     <div class="flex justify-between items-center mb-4">
                         <label for="elementSlider" class="text-sm font-semibold text-slate-700">Select Element (Z):</label>
-                        <span id="sliderValue" class="text-xs font-bold bg-blue-600 text-white px-2 py-1 rounded">Al (13)</span>
+                        <span id="sliderValue" class="text-xs font-bold bg-blue-600 text-white px-2 py-1 rounded">H (1)</span>
                     </div>
-                    <input type="range" id="elementSlider" min="0" max="17" step="1" value="12" class="w-full">
+                    <input type="range" id="elementSlider" min="0" max="17" step="1" value="0" class="w-full">
                     <div class="flex justify-between mt-2 text-[10px] text-slate-400 font-bold px-1">
                         <span>H (1)</span>
                         <span>Ar (18)</span>
@@ -94,24 +106,7 @@
 
             <div class="lg:col-span-2 space-y-6">
                 <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="font-bold text-slate-700 text-sm">Energy Trends (Log Scale)</h3>
-                        <!-- Key/Legend -->
-                        <div class="flex gap-4 text-[10px] font-bold uppercase tracking-wider">
-                            <div class="flex items-center gap-1.5">
-                                <span class="w-3 h-3 rounded-full bg-green-500"></span>
-                                <span class="text-green-700">Valence</span>
-                            </div>
-                            <div class="flex items-center gap-1.5">
-                                <span class="w-3 h-3 rounded-full bg-red-500"></span>
-                                <span class="text-red-700">Shell Jump</span>
-                            </div>
-                            <div class="flex items-center gap-1.5">
-                                <span class="w-3 h-3 rounded-full bg-blue-500"></span>
-                                <span class="text-blue-700">Inner Shell</span>
-                            </div>
-                        </div>
-                    </div>
+                    <h3 class="font-bold text-slate-700 text-sm mb-4">Energy Trends (Log Scale)</h3>
                     <div class="relative h-80">
                         <canvas id="ieChart"></canvas>
                     </div>
@@ -177,10 +172,13 @@
 
         function updateUI(index) {
             const data = elementData[index];
+            if (!data) return;
+
             const majorJumpIndices = getBoundaries(data.shellConfig);
             const valenceCount = data.shellConfig[0];
             const totalShells = data.shellConfig.length;
             
+            // Update slider label
             sliderValDisplay.textContent = `${data.symbol} (${data.z})`;
             
             document.getElementById('elementName').textContent = data.name;
@@ -263,16 +261,34 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     scales: {
-                        y: { type: 'logarithmic', title: { display: true, text: 'Energy (Log Scale)' } },
-                        x: { title: { display: true, text: 'Electron Removed' } }
+                        y: { 
+                            type: 'logarithmic', 
+                            title: { display: true, text: 'Energy (Log Scale)' },
+                            min: 100
+                        },
+                        x: { 
+                            title: { display: true, text: 'Electron Removed' } 
+                        }
                     },
-                    plugins: { legend: { display: false } }
+                    plugins: { 
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `IE: ${context.parsed.y.toLocaleString()} kJ/mol`;
+                                }
+                            }
+                        }
+                    }
                 }
             });
         }
 
-        slider.addEventListener('input', (e) => updateUI(e.target.value));
-        window.onload = () => { updateUI(12); }; // Default to Aluminium
+        slider.addEventListener('input', (e) => updateUI(parseInt(e.target.value)));
+        window.onload = () => { 
+            // Small delay to ensure canvas is ready for Chart.js
+            setTimeout(() => updateUI(0), 100); 
+        };
     </script>
 </body>
 </html>
