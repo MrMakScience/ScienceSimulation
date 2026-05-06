@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chemical Solubility Particle Simulator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #f8fafc; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        canvas { border-radius: 12px; background: #fff; box-shadow: inset 0 2px 10px rgba(0,0,0,0.1); width: 100%; height: 400px; touch-action: none; }
+        .tab-active { border-bottom: 3px solid #3b82f6; color: #3b82f6; font-weight: bold; }
+        .control-btn { transition: all 0.2s; }
+        .control-btn:active { transform: scale(0.95); }
+        .legend-item { display: flex; align-items: center; gap: 10px; font-size: 0.8rem; color: #475569; padding: 4px 0; }
+        
+        .dot { width: 16px; height: 16px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.1); flex-shrink: 0; display: flex; align-items: center; justify-content: center; color: white; font-size: 10px; font-weight: bold; }
+        .dot-electron { width: 6px; height: 6px; background: #fbbf24; border-radius: 50%; margin: 5px; }
+        
+        .water-icon { position: relative; width: 14px; height: 14px; }
+        .water-o { width: 10px; height: 10px; background: #ef4444; border-radius: 50%; position: absolute; top: 2px; left: 2px; z-index: 2; }
+        .water-h { width: 6px; height: 6px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 50%; position: absolute; }
+
+        /* Custom Diatomic Icon for Legend */
+        .diatomic-icon { position: relative; width: 18px; height: 10px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+        .diatomic-circle { width: 10px; height: 10px; border-radius: 50%; background-color: #a855f7; border: 1px solid rgba(0,0,0,0.1); }
+        .diatomic-bridge { width: 12px; height: 4px; background-color: #a855f7; position: absolute; left: 3px; z-index: -1; }
+
+        .btn-selected { background-color: #eff6ff !important; border-color: #3b82f6 !important; color: #1d4ed8 !important; }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <div class="max-w-5xl mx-auto">
+        <header class="mb-8 text-center">
+            <h1 class="text-3xl font-extrabold text-slate-800">Solubility Particle Simulator</h1>
+            <p class="text-slate-600 mt-2">Analyze attractions between solute and solvent at the microscopic level.</p>
+        </header>
+
+        <div class="flex wrap border-b border-slate-200 mb-6 bg-white rounded-t-xl">
+            <button onclick="setTab('metallic')" id="tab-metallic" class="px-6 py-3 text-slate-500 hover:text-blue-500 transition-colors">Giant Metallic</button>
+            <button onclick="setTab('covalent')" id="tab-covalent" class="px-6 py-3 text-slate-500 hover:text-blue-500 transition-colors">Giant Covalent</button>
+            <button onclick="setTab('ionic')" id="tab-ionic" class="px-6 py-3 text-slate-500 hover:text-blue-500 transition-colors">Giant Ionic</button>
+            <button onclick="setTab('molecular')" id="tab-molecular" class="px-6 py-3 text-slate-500 hover:text-blue-500 transition-colors">Simple Molecular</button>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="lg:col-span-2 space-y-4">
+                <div class="relative bg-white p-2 rounded-xl shadow-lg">
+                    <canvas id="simCanvas"></canvas>
+                    <div id="statusOverlay" class="absolute top-4 left-4 bg-black/70 text-white px-3 py-1 rounded-full text-sm font-medium">
+                        Initial State
+                    </div>
+                </div>
+                
+                <div class="bg-white p-6 rounded-xl shadow-md">
+                    <h3 class="font-bold text-lg text-slate-800 mb-2">Microscopic Analysis</h3>
+                    <div id="analysisText" class="text-slate-600 leading-relaxed">
+                        <span class="italic">Select a solvent to begin the dissolution process and observe particle interactions.</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-6">
+                <div class="bg-white p-6 rounded-xl shadow-md border-t-4 border-blue-500">
+                    <h3 class="font-bold text-slate-800 mb-4 uppercase text-xs tracking-wider">Experiment Controls</h3>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-2">Solvent Type</label>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button onclick="setSolvent('water')" id="btn-water" class="control-btn py-2 px-4 rounded-lg border-2 border-slate-200 hover:border-blue-300">Water</button>
+                                <button onclick="setSolvent('organic')" id="btn-organic" class="control-btn py-2 px-4 rounded-lg border-2 border-slate-200 hover:border-blue-300">Organic solvent</button>
+                            </div>
+                        </div>
+
+                        <div id="specialOptions" class="hidden">
+                            <label class="block text-sm font-medium text-slate-700 mb-2">Specific Substance</label>
+                            <div id="ionicOptions" class="hidden grid grid-cols-2 gap-2">
+                                <button onclick="setSpecific('NaCl')" id="btn-NaCl" class="control-btn py-2 px-4 rounded-lg border-2 border-slate-200 hover:border-blue-300">NaCl</button>
+                                <button onclick="setSpecific('AgCl')" id="btn-AgCl" class="control-btn py-2 px-4 rounded-lg border-2 border-slate-200 hover:border-blue-300">AgCl</button>
+                            </div>
+                            <div id="molecularOptions" class="hidden grid grid-cols-2 gap-2">
+                                <button onclick="setSpecific('Iodine')" id="btn-Iodine" class="control-btn py-2 px-4 rounded-lg border-2 border-slate-200 hover:border-blue-300">Iodine (I₂)</button>
+                                <button onclick="setSpecific('CitricAcid')" id="btn-CitricAcid" class="control-btn py-2 px-4 rounded-lg border-2 border-slate-200 hover:border-blue-300">Citric Acid</button>
+                            </div>
+                        </div>
+
+                        <button onclick="startSimulation()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition-all">
+                            Add Solvent
+                        </button>
+                        <button onclick="resetSim()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium py-2 px-4 rounded-xl transition-all">
+                            Reset Block
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-blue-50 p-4 rounded-xl border border-blue-100">
+                    <h4 class="text-blue-800 font-bold text-sm mb-1">Theoretical Rule:</h4>
+                    <p class="text-xs text-blue-700">
+                        Dissolution occurs if: <br>
+                        <strong>Attraction<sub>(Solute-Solvent)</sub> > Attraction<sub>(Solute-Solute)</sub> + Attraction<sub>(Solvent-Solvent)</sub></strong>
+                    </p>
+                </div>
+
+                <div class="bg-white p-5 rounded-xl shadow-md border border-slate-100">
+                    <h3 class="font-bold text-slate-800 mb-3 uppercase text-[10px] tracking-widest">Active Particles Key</h3>
+                    <div id="dynamicLegend" class="space-y-1">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class Particle {
+            constructor(x, y, type, color, charge = 0) {
+                this.x = x; this.y = y; this.homeX = x; this.homeY = y;
+                this.type = type; this.color = color; this.charge = charge;
+                this.vx = (Math.random() - 0.5) * 1.2; this.vy = (Math.random() - 0.5) * 1.2;
+                this.radius = type === 'electron' ? 3 : 8;
+                this.isFree = (type === 'solvent'); 
+                this.angle = Math.random() * Math.PI * 2;
+                this.rotationSpeed = (Math.random() - 0.5) * 0.04;
+                
+                // Hydration Shell Properties
+                this.assignedIon = null;
+                this.offsetAngle = 0;
+                this.offsetDist = 24;
+                this.isBonded = false;
+                this.shellIndex = -1; 
+
+                // Metallic Electron "Sea" Logic
+                if (type === 'electron') {
+                    this.vx = (Math.random() - 0.5) * 2;
+                    this.vy = (Math.random() - 0.5) * 2;
+                }
+            }
+
+            draw() {
+                if (this.type === 'solvent' && currentSolvent === 'water') {
+                    this.drawH2O();
+                } else if (this.type === 'molecule' && currentSpecific === 'Iodine') {
+                    this.drawDiatomicIodine();
+                } else {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = this.color;
+                    ctx.fill();
+                    if (this.type === 'ion' && (currentTab === 'ionic' || currentTab === 'metallic')) {
+                        ctx.fillStyle = 'white'; ctx.font = 'bold 10px Arial'; ctx.textAlign = 'center';
+                        ctx.fillText(this.charge > 0 ? '+' : '-', this.x, this.y + 4);
+                    }
+                    ctx.closePath();
+                }
+            }
+
+            drawDiatomicIodine() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.angle);
+                const d = 5; // offset for atoms
+                ctx.beginPath();
+                ctx.arc(-d, 0, this.radius, 0, Math.PI * 2);
+                ctx.arc(d, 0, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+                // Connecting bridge
+                ctx.fillRect(-d, -2, d*2, 4);
+                ctx.restore();
+            }
+
+            drawH2O() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.angle);
+                ctx.beginPath();
+                ctx.arc(0, 0, 7, 0, Math.PI * 2);
+                ctx.fillStyle = '#ef4444'; 
+                ctx.fill();
+                const hDist = 8, hRadius = 4, hAngle = 0.8;
+                [hAngle, -hAngle].forEach(a => {
+                    const hx = Math.cos(a + Math.PI) * hDist;
+                    const hy = Math.sin(a + Math.PI) * hDist;
+                    ctx.beginPath();
+                    ctx.arc(hx, hy, hRadius, 0, Math.PI * 2);
+                    ctx.fillStyle = '#f8fafc'; ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 1;
+                    ctx.fill(); ctx.stroke();
+                });
+                ctx.restore();
+            }
+
+            update() {
+                if (this.type === 'electron') {
+                    this.x += this.vx;
+                    this.y += this.vy;
+                    if (this.x < blockBounds.x || this.x > blockBounds.x + blockBounds.w) this.vx *= -1;
+                    if (this.y < blockBounds.y || this.y > blockBounds.y + blockBounds.h) this.vy *= -1;
+                    return;
+                }
+
+                if (this.isFree) {
+                    if (this.type === 'solvent' && this.assignedIon) {
+                        this.offsetAngle = (this.shellIndex / 8) * Math.PI * 2;
+                        const targetX = this.assignedIon.x + Math.cos(this.offsetAngle) * this.offsetDist;
+                        const targetY = this.assignedIon.y + Math.sin(this.offsetAngle) * this.offsetDist;
+                        this.x = targetX;
+                        this.y = targetY;
+                        const angleToIon = Math.atan2(this.assignedIon.y - this.y, this.assignedIon.x - this.x);
+                        const targetAngle = (this.assignedIon.charge > 0) ? angleToIon : angleToIon + Math.PI;
+                        let diff = targetAngle - this.angle;
+                        while (diff < -Math.PI) diff += Math.PI * 2;
+                        while (diff > Math.PI) diff -= Math.PI * 2;
+                        this.angle += diff * 0.05;
+                        return;
+                    }
+
+                    this.x += this.vx; this.y += this.vy; this.angle += this.rotationSpeed;
+                    if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
+                    if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
+
+                    if (this.type === 'solvent' && currentSolvent === 'water' && !this.assignedIon) {
+                        for (let p of particles) {
+                            if (p.isFree && p.type === 'ion' && p.shellCount < 8) {
+                                const d = Math.hypot(this.x - p.x, this.y - p.y);
+                                if (d < 35) {
+                                    this.assignedIon = p;
+                                    this.shellIndex = p.shellCount;
+                                    p.shellCount++;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    
+                    if (this.type === 'solvent' && !isSoluteDissolved()) {
+                        const buffer = 15;
+                        if (this.x > blockBounds.x - buffer && this.x < blockBounds.x + blockBounds.w + buffer && this.y > blockBounds.y - buffer) {
+                            if (this.y < blockBounds.y) { this.vy *= -1; this.y = blockBounds.y - buffer; }
+                            else if (this.x < blockBounds.x) { this.vx *= -1; this.x = blockBounds.x - buffer; }
+                            else if (this.x > blockBounds.x + blockBounds.w) { this.vx *= -1; this.x = blockBounds.x + blockBounds.w + buffer; }
+                        }
+                    }
+                } else {
+                    this.x = this.homeX + (Math.random() - 0.5) * 0.5;
+                    this.y = this.homeY + (Math.random() - 0.5) * 0.5;
+                }
+            }
+        }
+
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+        const statusOverlay = document.getElementById('statusOverlay');
+        const analysisText = document.getElementById('analysisText');
+        const dynamicLegend = document.getElementById('dynamicLegend');
+
+        let currentTab = 'metallic'; let currentSolvent = null; let currentSpecific = 'default';
+        let particles = []; let solventParticles = []; let isSimulating = false;
+        let animationFrame; let blockBounds = { x: 0, y: 0, w: 0, h: 0 };
+        let dissolutionTimer = 0;
+
+        function updateLegend() {
+            let html = '';
+            if (currentTab === 'metallic') {
+                html += `<div class="legend-item"><div class="dot bg-[#94a3b8]">+</div> Metal Ion (+)</div>`;
+                html += `<div class="legend-item"><div class="dot-electron"></div> Delocalized Electron (-)</div>`;
+            } else if (currentTab === 'covalent') {
+                html += `<div class="legend-item"><div class="dot bg-[#475569]"></div> Atom (e.g. C)</div>`;
+            } else if (currentTab === 'ionic') {
+                const cationName = currentSpecific === 'NaCl' ? 'sodium ion (Na+)' : 'silver ion (Ag+)';
+                const cationColor = currentSpecific === 'NaCl' ? '#ef4444' : '#06b6d4'; 
+                html += `<div class="legend-item"><div class="dot" style="background-color: ${cationColor}">+</div> ${cationName}</div>`;
+                html += `<div class="legend-item"><div class="dot bg-[#3b82f6]">-</div> chloride ions (Cl-)</div>`;
+            } else if (currentTab === 'molecular') {
+                if (currentSpecific === 'CitricAcid') {
+                    html += `<div class="legend-item"><div class="dot bg-[#fde047]"></div> Citric acid molecule (simplified)</div>`;
+                } else {
+                    // Match visual simulation style for I2 diatomic molecule
+                    html += `<div class="legend-item">
+                                <div class="diatomic-icon">
+                                    <div class="diatomic-circle"></div>
+                                    <div class="diatomic-bridge"></div>
+                                    <div class="diatomic-circle" style="margin-left: -2px;"></div>
+                                </div>
+                                Iodine molecule (I₂)
+                             </div>`;
+                }
+            }
+            if (isSimulating || currentSolvent) {
+                if (currentSolvent === 'water') {
+                    html += `<div class="legend-item"><div class="water-icon"><div class="water-o"></div><div class="water-h" style="top:0; left:0;"></div><div class="water-h" style="top:0; left:8px;"></div></div> Water (Solvent)</div>`;
+                } else if (currentSolvent === 'organic') {
+                    html += `<div class="legend-item"><div class="dot bg-[#fb923c]"></div> Organic solvent</div>`;
+                }
+            }
+            dynamicLegend.innerHTML = html || '<div class="text-xs text-slate-400 italic">Select options</div>';
+        }
+
+        function isSoluteDissolved() { return particles.some(p => p.isFree && p.type !== 'electron'); }
+
+        function initSolute() {
+            particles = [];
+            const cols = 4, rows = 3, offset = 45;
+            const blockWidth = (cols - 1) * offset;
+            const blockHeight = (rows - 1) * offset;
+            const startX = (canvas.width / 2) - (blockWidth / 2);
+            const startY = canvas.height - blockHeight - 40;
+            blockBounds = { x: startX, y: startY, w: blockWidth, h: blockHeight };
+
+            for (let i = 0; i < cols; i++) {
+                for (let j = 0; j < rows; j++) {
+                    const x = startX + i * offset; const y = startY + j * offset;
+                    let p;
+                    if (currentTab === 'metallic') {
+                        p = new Particle(x, y, 'ion', '#94a3b8', 1);
+                        const e = new Particle(x + (Math.random()-0.5)*15, y + (Math.random()-0.5)*15, 'electron', '#fbbf24', -1);
+                        particles.push(e);
+                    } else if (currentTab === 'covalent') {
+                        p = new Particle(x, y, 'atom', '#475569');
+                    } else if (currentTab === 'ionic') {
+                        const isCation = (i + j) % 2 === 0;
+                        const color = isCation ? (currentSpecific === 'NaCl' ? '#ef4444' : '#06b6d4') : '#3b82f6';
+                        p = new Particle(x, y, 'ion', color, isCation ? 1 : -1);
+                    } else if (currentTab === 'molecular') {
+                        const color = currentSpecific === 'CitricAcid' ? '#fde047' : '#a855f7';
+                        p = new Particle(x, y, 'molecule', color);
+                    }
+                    p.shellCount = 0;
+                    particles.push(p);
+                }
+            }
+            updateLegend();
+        }
+
+        function resize() { canvas.width = canvas.parentElement.clientWidth; canvas.height = 400; initSolute(); }
+
+        function initSolvent() {
+            solventParticles = [];
+            let count = 180;
+            if (currentSolvent === 'water') {
+                if (currentTab === 'ionic' && currentSpecific === 'NaCl') count = 110;
+                else if (currentTab === 'molecular') count = 140; 
+            } else {
+                count = 160;
+            }
+
+            const color = currentSolvent === 'water' ? '#60a5fa' : '#fb923c';
+            for (let i = 0; i < count; i++) {
+                const p = new Particle(Math.random() * canvas.width, Math.random() * (canvas.height - 180), 'solvent', color);
+                p.isFree = true;
+                solventParticles.push(p);
+            }
+            updateLegend();
+        }
+
+        function resetSim() {
+            isSimulating = false; if (animationFrame) cancelAnimationFrame(animationFrame);
+            initSolute(); solventParticles = []; dissolutionTimer = 0;
+            statusOverlay.textContent = 'Initial State';
+            statusOverlay.className = "absolute top-4 left-4 bg-black/70 text-white px-3 py-1 rounded-full text-sm font-medium";
+            analysisText.innerHTML = '<span class="italic">Block initialized. Select a solvent and click \'Add Solvent\' to start simulation.</span>';
+            updateLegend();
+            draw();
+        }
+
+        function setTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('[id^="tab-"]').forEach(el => el.classList.remove('tab-active'));
+            document.getElementById(`tab-${tab}`).classList.add('tab-active');
+            document.getElementById('specialOptions').classList.toggle('hidden', !(tab === 'ionic' || tab === 'molecular'));
+            document.getElementById('ionicOptions').classList.toggle('hidden', tab !== 'ionic');
+            document.getElementById('molecularOptions').classList.toggle('hidden', tab !== 'molecular');
+            currentSpecific = (tab === 'ionic') ? 'NaCl' : (tab === 'molecular' ? 'Iodine' : 'default');
+            updateSpecificButtonStyles(); resetSim();
+        }
+
+        function setSolvent(solvent) {
+            currentSolvent = solvent;
+            document.querySelectorAll('#btn-water, #btn-organic').forEach(el => el.classList.remove('btn-selected'));
+            document.getElementById(`btn-${solvent}`).classList.add('btn-selected');
+            resetSim();
+        }
+
+        function setSpecific(spec) { currentSpecific = spec; updateSpecificButtonStyles(); resetSim(); }
+
+        function updateSpecificButtonStyles() {
+            document.querySelectorAll('#ionicOptions button, #molecularOptions button').forEach(el => el.classList.remove('btn-selected'));
+            const activeBtn = document.getElementById(`btn-${currentSpecific}`);
+            if (activeBtn) activeBtn.classList.add('btn-selected');
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.beginPath(); ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 1;
+            particles.forEach(p1 => {
+                if (p1.isFree && p1.type !== 'electron') return; 
+                if (p1.type === 'electron') return;
+                particles.forEach(p2 => {
+                    if ((p2.isFree && p2.type !== 'electron') || p2.type === 'electron' || p1 === p2) return;
+                    const dist = Math.hypot(p1.x-p2.x, p1.y-p2.y);
+                    if (dist < 55) { ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); }
+                });
+            });
+            ctx.stroke();
+            solventParticles.forEach(p => { p.update(); p.draw(); });
+            particles.forEach(p => { p.update(); p.draw(); });
+            if (isSimulating) updateSimulationLogic();
+            animationFrame = requestAnimationFrame(draw);
+        }
+
+        function updateSimulationLogic() {
+            let soluble = false; let reason = "";
+            const sName = currentSolvent === 'water' ? "Water" : "Organic solvent";
+            if (currentTab === 'metallic') reason = `The attraction between ${sName} and metal ions cannot overcome strong metallic bonds.`;
+            else if (currentTab === 'covalent') reason = `The attraction cannot overcome the strong covalent network bonds.`;
+            else if (currentTab === 'ionic') {
+                if (currentSolvent === 'water' && currentSpecific !== 'AgCl') { soluble = true; reason = `Ion-dipole forces between water and ions overcome the ionic lattice.`; }
+                else reason = currentSpecific === 'AgCl' ? `AgCl is insoluble as ionic bonds are too strong for water to break.` : `Organic solvents cannot solvate ions significantly.`;
+            } else if (currentTab === 'molecular') {
+                if (currentSpecific === 'CitricAcid') {
+                    if (currentSolvent === 'water') {
+                        soluble = true;
+                        reason = `Citric Acid is polar and contains -OH groups that form hydrogen bonds with water.`;
+                    } else {
+                        reason = `Citric acid is highly polar; it has limited solubility in non-polar organic solvents.`;
+                    }
+                } else {
+                    if (currentSolvent === 'organic') { soluble = true; reason = `Iodine is non-polar and dissolves in organic solvents via dispersion forces.`; }
+                    else reason = `Water's H-bonds are too strong to be broken by the weak dispersion forces of non-polar Iodine.`;
+                }
+            }
+
+            if (soluble) {
+                statusOverlay.textContent = "SOLUBLE";
+                statusOverlay.className = "absolute top-4 left-4 bg-green-500 text-white px-3 py-1 rounded-full text-sm font-bold shadow-lg";
+                dissolutionTimer++;
+                if (dissolutionTimer % 45 === 0) { 
+                    const stuck = particles.find(p => !p.isFree && p.type !== 'electron');
+                    if (stuck) stuck.isFree = true;
+                }
+            } else {
+                statusOverlay.textContent = "INSOLUBLE";
+                statusOverlay.className = "absolute top-4 left-4 bg-red-500 text-white px-3 py-1 rounded-full text-sm font-bold shadow-lg";
+            }
+            analysisText.innerHTML = reason;
+        }
+
+        function startSimulation() {
+            if (!currentSolvent) return;
+            initSolvent(); isSimulating = true;
+        }
+
+        window.addEventListener('resize', resize);
+        resize(); setTab('metallic'); draw();
+    </script>
+</body>
+</html>
