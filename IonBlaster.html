@@ -436,10 +436,12 @@
             updateTimerDisplay();
             initGrid();
             startTimer();
+            MusicEngine.start();
         }
 
         function backToLibrary() {
             clearInterval(timerInterval);
+            MusicEngine.stop();
             document.getElementById('tab-play').classList.add('hidden');
             document.getElementById('tab-library').classList.remove('hidden');
             document.getElementById('modal-overlay').classList.add('hidden');
@@ -735,6 +737,7 @@
 
         function endGame() {
             clearInterval(timerInterval);
+            MusicEngine.stop();
             document.getElementById('final-score').innerText = score;
             document.getElementById('quiz-view').classList.add('hidden');
             document.getElementById('confirm-restart-view').classList.add('hidden');
@@ -753,9 +756,156 @@
 
         function closeModal() { document.getElementById('modal-overlay').classList.add('hidden'); }
 
+        // --- Background Music Engine ---
+        const MusicEngine = {
+            ctx: null,
+            masterGain: null,
+            isPlaying: false,
+            scheduleAheadTime: 0.1,
+            nextNoteTime: 0.0,
+            currentBeat: 0,
+            timerID: null,
+
+            // Upbeat pentatonic melody in C major
+            melodyNotes: [523.25, 587.33, 659.25, 783.99, 880.00, 1046.50, 987.77, 783.99, 659.25, 587.33, 523.25, 659.25, 783.99, 880.00, 659.25, 523.25],
+            bassNotes:   [130.81, 130.81, 164.81, 164.81, 196.00, 196.00, 174.61, 174.61, 130.81, 130.81, 146.83, 146.83, 196.00, 196.00, 164.81, 164.81],
+            tempo: 128, // BPM
+
+            init() {
+                if (!this.ctx) {
+                    this.ctx = SoundEngine.ctx || new (window.AudioContext || window.webkitAudioContext)();
+                    SoundEngine.ctx = this.ctx;
+                    this.masterGain = this.ctx.createGain();
+                    this.masterGain.gain.setValueAtTime(0.18, this.ctx.currentTime);
+                    this.masterGain.connect(this.ctx.destination);
+                }
+            },
+
+            scheduleNote(freq, time, duration, type = 'triangle', vol = 0.15) {
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, time);
+                gain.gain.setValueAtTime(0, time);
+                gain.gain.linearRampToValueAtTime(vol, time + 0.01);
+                gain.gain.setValueAtTime(vol, time + duration * 0.7);
+                gain.gain.linearRampToValueAtTime(0, time + duration);
+                osc.connect(gain);
+                gain.connect(this.masterGain);
+                osc.start(time);
+                osc.stop(time + duration);
+            },
+
+            scheduleKick(time) {
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(150, time);
+                osc.frequency.exponentialRampToValueAtTime(40, time + 0.08);
+                gain.gain.setValueAtTime(0.35, time);
+                gain.gain.exponentialRampToValueAtTime(0.01, time + 0.12);
+                osc.connect(gain);
+                gain.connect(this.masterGain);
+                osc.start(time);
+                osc.stop(time + 0.15);
+            },
+
+            scheduleHihat(time, vol = 0.05) {
+                const bufSize = this.ctx.sampleRate * 0.05;
+                const buffer = this.ctx.createBuffer(1, bufSize, this.ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1;
+                const src = this.ctx.createBufferSource();
+                src.buffer = buffer;
+                const filter = this.ctx.createBiquadFilter();
+                filter.type = 'highpass';
+                filter.frequency.setValueAtTime(6000, time);
+                const gain = this.ctx.createGain();
+                gain.gain.setValueAtTime(vol, time);
+                gain.gain.exponentialRampToValueAtTime(0.001, time + 0.05);
+                src.connect(filter);
+                filter.connect(gain);
+                gain.connect(this.masterGain);
+                src.start(time);
+            },
+
+            tick() {
+                const secondsPerBeat = 60.0 / this.tempo;
+                const sixteenth = secondsPerBeat / 4;
+
+                while (this.nextNoteTime < this.ctx.currentTime + this.scheduleAheadTime) {
+                    const beat = this.currentBeat % 16;
+
+                    // Kick on beats 0, 4, 8, 12 (quarter notes)
+                    if (beat % 4 === 0) this.scheduleKick(this.nextNoteTime);
+
+                    // Hi-hat every 16th note, accent on 8th notes
+                    this.scheduleHihat(this.nextNoteTime, beat % 2 === 0 ? 0.07 : 0.04);
+
+                    // Bass line (every 2 beats)
+                    if (beat % 2 === 0) {
+                        const bassIdx = Math.floor(beat / 2) % this.bassNotes.length;
+                        this.scheduleNote(this.bassNotes[bassIdx], this.nextNoteTime, sixteenth * 1.8, 'sawtooth', 0.07);
+                    }
+
+                    // Melody (every beat)
+                    if (beat % 1 === 0) {
+                        const melIdx = beat % this.melodyNotes.length;
+                        this.scheduleNote(this.melodyNotes[melIdx], this.nextNoteTime, sixteenth * 0.9, 'triangle', 0.1);
+                    }
+
+                    this.nextNoteTime += sixteenth;
+                    this.currentBeat = (this.currentBeat + 1) % 64;
+                }
+
+                this.timerID = setTimeout(() => this.tick(), 25);
+            },
+
+            start() {
+                if (this.isPlaying) return;
+                this.init();
+                if (this.ctx.state === 'suspended') this.ctx.resume();
+                this.isPlaying = true;
+                this.nextNoteTime = this.ctx.currentTime + 0.05;
+                this.currentBeat = 0;
+                this.tick();
+                // Fade in
+                this.masterGain.gain.setValueAtTime(0, this.ctx.currentTime);
+                this.masterGain.gain.linearRampToValueAtTime(0.18, this.ctx.currentTime + 1.5);
+            },
+
+            stop() {
+                if (!this.isPlaying) return;
+                this.isPlaying = false;
+                clearTimeout(this.timerID);
+                if (this.masterGain) {
+                    this.masterGain.gain.setValueAtTime(this.masterGain.gain.value, this.ctx.currentTime);
+                    this.masterGain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.5);
+                }
+            },
+
+            setVolume(on) {
+                if (!this.masterGain) return;
+                const now = this.ctx.currentTime;
+                this.masterGain.gain.cancelScheduledValues(now);
+                this.masterGain.gain.setValueAtTime(this.masterGain.gain.value, now);
+                this.masterGain.gain.linearRampToValueAtTime(on ? 0.18 : 0, now + 0.4);
+            }
+        };
+
         function toggleSound() {
             isSoundEnabled = !isSoundEnabled;
             document.getElementById('sound-status').innerText = isSoundEnabled ? "Sound On" : "Sound Off";
+            if (MusicEngine.isPlaying) {
+                MusicEngine.setVolume(isSoundEnabled);
+            }
+            // Update icon to reflect muted/unmuted state
+            const iconEl = document.getElementById('sound-icon');
+            if (isSoundEnabled) {
+                iconEl.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>`;
+            } else {
+                iconEl.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>`;
+            }
         }
 
         window.onload = renderLibrary;
