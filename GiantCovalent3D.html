@@ -7,7 +7,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { margin: 0; overflow: hidden; font-family: sans-serif; background-color: #1a1a1a; color: white; }
+        body { margin: 0; overflow: hidden; font-family: sans-serif; background-color: #1a1a1a; color: white; touch-action: none; }
         canvas { display: block; }
         .controls {
             position: absolute;
@@ -197,10 +197,17 @@ Each C atom forms 4 covalent bonds.</div>
             resetToOriginal(); 
 
             window.addEventListener('resize', onWindowResize);
+            
+            // Mouse Events
             document.addEventListener('mousedown', onMouseDown);
             document.addEventListener('mouseup', onMouseUp);
             document.addEventListener('mousemove', onMouseMove);
             document.addEventListener('wheel', onWheel, { passive: false });
+
+            // Touch Events (iPad/Mobile)
+            document.addEventListener('touchstart', onTouchStart, { passive: false });
+            document.addEventListener('touchmove', onTouchMove, { passive: false });
+            document.addEventListener('touchend', onTouchEnd);
             
             animate();
         }
@@ -208,7 +215,7 @@ Each C atom forms 4 covalent bonds.</div>
         function updateLegend(type) {
             const container = document.getElementById('legend-content');
             const items = structures[type].legend;
-            container.innerHTML = items.map(item => {
+            let html = items.map(item => {
                 let swatchHtml = '';
                 if (item.type === 'atom') {
                     swatchHtml = `<div class="swatch" style="background-color: ${item.color}"></div>`;
@@ -224,6 +231,18 @@ Each C atom forms 4 covalent bonds.</div>
                     </div>
                 `;
             }).join('');
+
+            // Add instruction key for rotation
+            html += `
+                <div class="mt-4 pt-3 border-t border-gray-700">
+                    <div class="legend-item text-blue-400 font-medium">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 21-6-6m6 6v-4.8m0 4.8h-4.8"></path><path d="M3 16.2V21m0 0h4.8M3 21l6-6"></path><path d="M21 7.8V3m0 0h-4.8M21 3l-6 6"></path><path d="M3 7.8V3m0 0h4.8M3 3l6 6"></path></svg>
+                        <span>Drag to rotate</span>
+                    </div>
+                </div>
+            `;
+            
+            container.innerHTML = html;
         }
 
         function createAtom(pos, color, size = ATOM_SCALE) {
@@ -394,6 +413,17 @@ Each C atom forms 4 covalent bonds.</div>
             camera.position.set(0, 0, isFocusMode ? 12 : 20);
         }
 
+        // --- INTERACTION LOGIC (Mouse & Touch) ---
+
+        function handleDrag(x, y) {
+            const deltaX = x - previousMouse.x;
+            const deltaY = y - previousMouse.y;
+            currentGroup.rotation.y += deltaX * 0.01;
+            currentGroup.rotation.x += deltaY * 0.01;
+            previousMouse.x = x;
+            previousMouse.y = y;
+        }
+
         function onMouseDown(e) {
             isDragging = true;
             previousMouse.x = e.clientX;
@@ -404,14 +434,30 @@ Each C atom forms 4 covalent bonds.</div>
 
         function onMouseMove(e) {
             if (isDragging) {
-                const deltaX = e.clientX - previousMouse.x;
-                const deltaY = e.clientY - previousMouse.y;
-                currentGroup.rotation.y += deltaX * 0.01;
-                currentGroup.rotation.x += deltaY * 0.01;
-                previousMouse.x = e.clientX;
-                previousMouse.y = e.clientY;
+                handleDrag(e.clientX, e.clientY);
             }
         }
+
+        function onTouchStart(e) {
+            if (e.touches.length === 1) {
+                isDragging = true;
+                previousMouse.x = e.touches[0].clientX;
+                previousMouse.y = e.touches[0].clientY;
+                // Only prevent default if we aren't touching a button or scrollable UI
+                if (e.target.tagName !== 'BUTTON' && !e.target.closest('.controls')) {
+                    e.preventDefault();
+                }
+            }
+        }
+
+        function onTouchMove(e) {
+            if (isDragging && e.touches.length === 1) {
+                handleDrag(e.touches[0].clientX, e.touches[0].clientY);
+                e.preventDefault();
+            }
+        }
+
+        function onTouchEnd() { isDragging = false; }
 
         function onWheel(e) {
             camera.position.z += e.deltaY * 0.015;
