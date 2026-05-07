@@ -44,7 +44,7 @@
         <div id="quiz-container" class="p-8">
             <div class="mb-8 text-center">
                 <h2 class="text-lg text-gray-600 mb-2">Identify the structure of:</h2>
-                <div id="substance-display" class="text-4xl font-bold text-gray-900 bg-gray-50 py-8 rounded-xl border-2 border-dashed border-gray-200 min-h-[120px] flex items-center justify-center px-4">
+                <div id="substance-display" class="text-4xl font-bold text-gray-900 bg-gray-50 py-8 rounded-xl border-2 border-dashed border-gray-200 min-h-[120px] flex items-center justify-center px-4 text-center">
                     Loading...
                 </div>
             </div>
@@ -55,7 +55,7 @@
                     <span class="inline-block w-8 h-8 bg-gray-100 group-hover:bg-indigo-200 rounded-lg text-center leading-8 font-bold mr-3">A</span>
                     <span class="text-gray-700 font-semibold">Giant metallic structure</span>
                 </button>
-                <button onclick="checkAnswer('B')" class="option-card p-4 border-2 border-gray-200 rounded-xl text-left hover:border-indigo-500 hover:bg-indigo-50 group">
+                <button onclick="buttonBClicked()" class="option-card p-4 border-2 border-gray-200 rounded-xl text-left hover:border-indigo-500 hover:bg-indigo-50 group">
                     <span class="inline-block w-8 h-8 bg-gray-100 group-hover:bg-indigo-200 rounded-lg text-center leading-8 font-bold mr-3">B</span>
                     <span class="text-gray-700 font-semibold">Giant covalent structure</span>
                 </button>
@@ -70,19 +70,37 @@
             </div>
         </div>
 
-        <!-- Result Section (Hidden by default) -->
+        <!-- Result Section -->
         <div id="result-container" class="hidden p-8 text-center">
             <div class="mb-6">
                 <div id="result-icon" class="text-6xl mb-4">🏆</div>
                 <h2 class="text-3xl font-bold text-gray-900">Quiz Completed!</h2>
                 <p id="final-score" class="text-xl text-gray-600 mt-2 font-semibold">Your score: 0/15</p>
+                
+                <div id="failure-feedback" class="hidden">
+                    <p class="mt-4 text-red-600 font-bold">You should retake the quiz to improve your understanding!</p>
+                    
+                    <!-- Hints Section (Only shown on fail) -->
+                    <div class="mt-6 p-4 bg-amber-50 rounded-xl border border-amber-200 text-left">
+                        <h3 class="text-amber-800 font-bold text-sm mb-2 flex items-center">
+                            <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20"><path d="M11 3a1 1 0 10-2 0v1a1 1 0 102 0V3zM5.884 6.68a1 1 0 101.44-1.388L6.754 4.722a1 1 0 00-1.44 1.388l.57 1.57zM14.116 6.68l-.57-1.57a1 1 0 00-1.44-1.388l.57 1.57a1 1 0 101.44 1.388zM5 10a1 1 0 011-1h1a1 1 0 100-2H6a3 3 0 00-3 3v2a1 1 0 102 0v-2zM14 9a1 1 0 100 2v2a1 1 0 102 0v-2a3 3 0 00-3-3h-1a1 1 0 100 2h1zM12 13a1 1 0 11-2 0c0-.552.448-1 1-1h.01c.552 0 1 .448 1 1zM8 13a1 1 0 11-2 0c0-.552.448-1 1-1h.01c.552 0 1 .448 1 1z"></path></svg>
+                            Study Hints:
+                        </h3>
+                        <ul class="text-xs text-amber-900 space-y-1 list-disc pl-4">
+                            <li>All metals are <strong>GMS</strong>.</li>
+                            <li>All compounds formed by metals and non-metals are <strong>GIS</strong> (Ammonium compounds are an exception).</li>
+                            <li>Only <strong>Si, SiO₂, graphite, and diamond</strong> are <strong>GCS</strong>.</li>
+                            <li>All compounds formed by non-metals are <strong>SMS</strong> (Ammonium compounds are an exception).</li>
+                        </ul>
+                    </div>
+                </div>
             </div>
             <button onclick="restartQuiz()" class="bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-indigo-700 transition-colors">
                 Try Again
             </button>
         </div>
 
-        <!-- Feedback Modal -->
+        <!-- Feedback Modal (Per Question) -->
         <div id="feedback-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
             <div class="bg-white rounded-2xl p-6 max-w-sm w-full text-center shadow-2xl">
                 <div id="feedback-icon" class="text-4xl mb-2"></div>
@@ -98,33 +116,68 @@
     <script>
         const substances = [
             // Giant Metallic (A)
+            { name: "Lead", symbol: "Pb", type: "A", detail: "A heavy metal consisting of a giant metallic lattice." },
             { name: "Copper", symbol: "Cu", type: "A", detail: "Metals consist of giant metallic lattices." },
-            { name: "Magnesium", symbol: "Mg", type: "A", detail: "Mg is a metal with a giant metallic structure." },
-            { name: "Iron", symbol: "Fe", type: "A", detail: "A typical transition metal with metallic bonding." },
+            { name: "Iron", symbol: "Fe", type: "A", detail: "Transition metal with strong metallic bonding." },
+            { name: "Sodium", symbol: "Na", type: "A", detail: "Alkali metal with a giant metallic structure." },
+            { name: "Magnesium", symbol: "Mg", type: "A", detail: "Alkaline earth metal in a giant metallic lattice." },
             { name: "Aluminium", symbol: "Al", type: "A", detail: "A metal with a giant metallic structure." },
+            { name: "Lithium", symbol: "Li", type: "A", detail: "Smallest alkali metal with metallic bonding." },
+            { name: "Silver", symbol: "Ag", type: "A", detail: "Highly conductive metal with a giant lattice." },
+            { name: "Zinc", symbol: "Zn", type: "A", detail: "Transition metal with a giant metallic structure." },
+            { name: "Nickel", symbol: "Ni", type: "A", detail: "Metal used in alloys, giant metallic structure." },
+            { name: "Cobalt", symbol: "Co", type: "A", detail: "Magnetic transition metal with metallic bonding." },
+            { name: "Manganese", symbol: "Mn", type: "A", detail: "Hard metal with a giant metallic lattice." },
             
             // Giant Covalent (B)
-            { name: "Diamond", symbol: "C (Diamond)", type: "B", detail: "An allotrope of carbon with a giant covalent tetrahedral structure." },
-            { name: "Silicon", symbol: "Si", type: "B", detail: "Silicon elements form a giant covalent lattice similar to diamond." },
-            { name: "Silicon dioxide", symbol: "SiO₂", type: "B", detail: "Also known as silica, this has a giant covalent structure." },
-            { name: "Graphite", symbol: "C (Graphite)", type: "B", detail: "Layers of carbon atoms held by strong covalent bonds in a giant lattice." },
+            { name: "Diamond", symbol: "C (Diamond)", type: "B", detail: "Carbon allotrope with a giant covalent tetrahedral structure." },
+            { name: "Silicon", symbol: "Si", type: "B", detail: "Formed of atoms linked by strong covalent bonds in a giant lattice." },
+            { name: "Silicon dioxide", symbol: "SiO₂", type: "B", detail: "Every silicon atom is bonded to four oxygen atoms in a giant lattice." },
+            { name: "Graphite", symbol: "C (Graphite)", type: "B", detail: "Hexagonal layers of carbon atoms in a giant covalent structure." },
             
             // Giant Ionic (C)
-            { name: "Sodium Chloride", symbol: "NaCl", type: "C", detail: "Composed of Na+ and Cl- ions in a giant lattice." },
-            { name: "Ammonium Chloride", symbol: "NH₄Cl", type: "C", detail: "Contains polyatomic ammonium ions (NH₄+) and Cl- ions." },
-            { name: "Magnesium Oxide", symbol: "MgO", type: "C", detail: "A giant ionic lattice with Mg2+ and O2- ions." },
-            { name: "Ammonium Nitrate", symbol: "NH₄NO₃", type: "C", detail: "An ionic compound formed from ammonium and nitrate ions." },
-            { name: "Potassium Bromide", symbol: "KBr", type: "C", detail: "A giant ionic lattice of K+ and Br- ions." },
-            { name: "Calcium Carbonate", symbol: "CaCO₃", type: "C", detail: "Contains Ca2+ and CO3 2- ions in an ionic lattice." },
-            
+            { name: "Lithium Fluoride", symbol: "LiF", type: "C", detail: "Ionic lattice of Li+ and F- ions." },
+            { name: "Sodium Nitrate", symbol: "NaNO₃", type: "C", detail: "Contains Na+ and polyatomic NO₃- ions." },
+            { name: "Potassium Permanganate", symbol: "KMnO₄", type: "C", detail: "Ionic compound with K+ and MnO₄- ions." },
+            { name: "Silver Chloride", symbol: "AgCl", type: "C", detail: "Giant ionic lattice of Ag+ and Cl- ions." },
+            { name: "Ammonium Sulphate", symbol: "(NH₄)₂SO₄", type: "C", detail: "Lattice of ammonium (NH₄+) and sulphate (SO₄²-) ions." },
+            { name: "Magnesium Hydroxide", symbol: "Mg(OH)₂", type: "C", detail: "Mg²⁺ and OH⁻ ions in a giant ionic structure." },
+            { name: "Calcium Carbonate", symbol: "CaCO₃", type: "C", detail: "Contains Ca²⁺ and CO₃²⁻ ions." },
+            { name: "Barium Chloride", symbol: "BaCl₂", type: "C", detail: "Ionic lattice of Ba²⁺ and Cl⁻ ions." },
+            { name: "Zinc Oxide", symbol: "ZnO", type: "C", detail: "Giant ionic structure with Zn²⁺ and O²⁻ ions." },
+            { name: "Iron(II) Sulphate", symbol: "FeSO₄", type: "C", detail: "Contains Fe²⁺ and SO₄²⁻ ions." },
+            { name: "Copper(II) Nitrate", symbol: "Cu(NO₃)₂", type: "C", detail: "Ionic lattice of Cu²⁺ and NO₃⁻ ions." },
+            { name: "Cobalt(II) Chloride", symbol: "CoCl₂", type: "C", detail: "Ionic compound with Co²⁺ and Cl⁻ ions." },
+            { name: "Nickel(II) Carbonate", symbol: "NiCO₃", type: "C", detail: "Contains Ni²⁺ and CO₃²⁻ ions." },
+            { name: "Manganese(II) Sulphide", symbol: "MnS", type: "C", detail: "Giant ionic lattice of Mn²⁺ and S²⁻ ions." },
+            { name: "Lead(II) Bromide", symbol: "PbBr₂", type: "C", detail: "Contains Pb²⁺ and Br⁻ ions." },
+            { name: "Aluminium Oxide", symbol: "Al₂O₃", type: "C", detail: "Strong ionic bonds between Al³⁺ and O²⁻ ions." },
+            { name: "Iron(III) Chloride", symbol: "FeCl₃", type: "C", detail: "Giant ionic lattice of Fe³⁺ and Cl⁻ ions." },
+            { name: "Chromium(III) Sulphate", symbol: "Cr₂(SO₄)₃", type: "C", detail: "Contains Cr³⁺ and SO₄²⁻ ions." },
+            { name: "Sodium Dichromate", symbol: "Na₂Cr₂O₇", type: "C", detail: "Contains Na+ and the large dichromate ion." },
+            { name: "Potassium Phosphate", symbol: "K₃PO₄", type: "C", detail: "Ionic lattice of K+ and PO₄³⁻ ions." },
+
             // Simple Molecular (D)
-            { name: "Water", symbol: "H₂O", type: "D", detail: "Small discrete molecules held by weak intermolecular forces." },
-            { name: "Carbon Dioxide", symbol: "CO₂", type: "D", detail: "Gas at RT, consists of simple discrete molecules." },
-            { name: "Iodine", symbol: "I₂", type: "D", detail: "Simple molecules held together by weak Van der Waals forces." },
-            { name: "Chlorine", symbol: "Cl₂", type: "D", detail: "A diatomic gas with a simple molecular structure." },
-            { name: "Methane", symbol: "CH₄", type: "D", detail: "A simple molecular gas with covalent bonds." },
-            { name: "Oxygen", symbol: "O₂", type: "D", detail: "Double covalent bonds within simple diatomic molecules." },
-            { name: "Ammonia", symbol: "NH₃", type: "D", detail: "Simple molecular structure with polar covalent bonds." }
+            { name: "Water", symbol: "H₂O", type: "D", detail: "Discrete molecules where atoms share electrons to reach a stable configuration." },
+            { name: "Carbon Dioxide", symbol: "CO₂", type: "D", detail: "Simple molecules with double covalent bonds." },
+            { name: "Iodine", symbol: "I₂", type: "D", detail: "Simple diatomic molecules in a molecular lattice." },
+            { name: "Methane", symbol: "CH₄", type: "D", detail: "A simple molecule with four C-H covalent bonds." },
+            { name: "Ammonia", symbol: "NH₃", type: "D", detail: "Pyramidal molecules where nitrogen follows the octet rule." },
+            { name: "Sulfur Dioxide", symbol: "SO₂", type: "D", detail: "Discrete molecules with covalent bonding." },
+            { name: "Nitrogen", symbol: "N₂", type: "D", detail: "Diatomic molecules with a strong triple covalent bond." },
+            { name: "Carbon Tetrabromide", symbol: "CBr₄", type: "D", detail: "Tetrahedral molecules with an octet structure around all atoms." },
+            { name: "Sulfur Hexafluoride", symbol: "SF₆", type: "D", detail: "Discrete molecules; although an expanded octet, it is a classic simple molecular gas." },
+            { name: "Nitrogen Trichloride", symbol: "NCl₃", type: "D", detail: "Simple molecular compound following the octet rule." },
+            { name: "Hydrogen Sulphide", symbol: "H₂S", type: "D", detail: "Simple molecules similar in shape to water." },
+            { name: "Bromine", symbol: "Br₂", type: "D", detail: "Diatomic liquid with weak intermolecular forces." },
+            { name: "Fluorine", symbol: "F₂", type: "D", detail: "Reactive diatomic gas with simple molecular structure." },
+            { name: "Carbon Disulphide", symbol: "CS₂", type: "D", detail: "Linear molecules with double covalent bonds." },
+            { name: "Silicon Tetrafluoride", symbol: "SiF₄", type: "D", detail: "Discrete molecules with covalent Si-F bonds." },
+            { name: "Phosphorus Tribromide", symbol: "PBr₃", type: "D", detail: "Simple molecular structure with covalent bonds." },
+            { name: "Dichlorine Oxide", symbol: "Cl₂O", type: "D", detail: "Small bent molecules with covalent bonding." },
+            { name: "Oxygen", symbol: "O₂", type: "D", detail: "Simple diatomic molecules with a double bond." },
+            { name: "Hydrofluoric Acid", symbol: "HF", type: "D", detail: "Small polar molecules with covalent bonding." },
+            { name: "Phosphorus Oxychloride", symbol: "POCl₃", type: "D", detail: "Discrete molecular structure with covalent bonds." }
         ];
 
         let currentQuestion = 0;
@@ -137,29 +190,22 @@
         }
 
         function initQuiz() {
-            // Group substances by type
             const typeA = shuffle(substances.filter(s => s.type === 'A'));
             const typeB = shuffle(substances.filter(s => s.type === 'B'));
             const typeC = shuffle(substances.filter(s => s.type === 'C'));
             const typeD = shuffle(substances.filter(s => s.type === 'D'));
 
-            // Select exactly 2 from A and B as requested
             const selectedA = typeA.slice(0, 2);
             const selectedB = typeB.slice(0, 2);
             
-            // Remaining 11 questions from C and D (approx half each)
             const remainingPool = shuffle([...typeC, ...typeD]);
             const selectedOthers = remainingPool.slice(0, 11);
 
-            // Combine and shuffle the final set of 15
             const finalPool = shuffle([...selectedA, ...selectedB, ...selectedOthers]);
             
             quizData = finalPool.map(q => {
                 const showSymbol = Math.random() > 0.5;
-                return {
-                    ...q,
-                    displayText: showSymbol ? q.symbol : q.name
-                };
+                return { ...q, displayText: showSymbol ? q.symbol : q.name };
             });
             
             currentQuestion = 0;
@@ -168,6 +214,7 @@
             
             document.getElementById('quiz-container').classList.remove('hidden');
             document.getElementById('result-container').classList.add('hidden');
+            document.getElementById('failure-feedback').classList.add('hidden');
         }
 
         function updateUI() {
@@ -207,10 +254,11 @@
             modal.classList.remove('hidden');
         }
 
+        window.buttonBClicked = function() { checkAnswer('B'); };
+
         function nextQuestion() {
             document.getElementById('feedback-modal').classList.add('hidden');
             currentQuestion++;
-            
             if (currentQuestion < TOTAL_QUESTIONS) {
                 updateUI();
             } else {
@@ -223,7 +271,15 @@
             document.getElementById('result-container').classList.remove('hidden');
             document.getElementById('final-score').innerText = `Your score: ${score} / ${TOTAL_QUESTIONS}`;
             
+            const failureSection = document.getElementById('failure-feedback');
             const icon = document.getElementById('result-icon');
+            
+            if (score < 12) {
+                failureSection.classList.remove('hidden');
+            } else {
+                failureSection.classList.add('hidden');
+            }
+
             if (score === TOTAL_QUESTIONS) icon.innerText = "👑";
             else if (score >= 12) icon.innerText = "🌟";
             else if (score >= 8) icon.innerText = "👍";
