@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Metal Reactions in Water Simulation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #0f172a;
+            color: #f8fafc;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            margin: 0;
+        }
+
+        #canvas-container {
+            position: relative;
+            width: 100%;
+            height: 40vh;
+            background: #cbd5e1; 
+            border-bottom: 8px solid #1e293b;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        /* The trough container */
+        .trough {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 50%; 
+            height: 65%; 
+            background: transparent;
+            border: 4px solid rgba(255, 255, 255, 0.6);
+            border-top: none;
+            border-bottom-left-radius: 12px;
+            border-bottom-right-radius: 12px;
+            z-index: 10; /* Higher than litmus so paper goes behind front wall */
+            pointer-events: none; /* Allow interaction through the trough */
+        }
+
+        /* The water fill inside the trough */
+        #water-body {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 70%; 
+            background: linear-gradient(180deg, rgba(56, 189, 248, 0.4) 0%, rgba(3, 105, 161, 0.6) 100%);
+            z-index: -1;
+            border-bottom-left-radius: 8px;
+            border-bottom-right-radius: 8px;
+        }
+
+        /* The meniscus/surface line */
+        .water-surface {
+            position: absolute;
+            bottom: calc(10px + (0.65 * 40vh * 0.7)); 
+            left: 25%; 
+            width: 50%;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 0 12px rgba(56, 189, 248, 0.6);
+            z-index: 15; /* Highest layer to show paper dipped behind it */
+            pointer-events: none;
+        }
+
+        .control-panel {
+            padding: 20px;
+            background: #1e293b;
+            height: 60vh;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            overflow-y: auto;
+        }
+
+        .metal-btn {
+            transition: all 0.2s;
+            letter-spacing: 1px;
+            font-weight: bold;
+        }
+
+        .metal-btn:active {
+            transform: scale(0.95);
+        }
+
+        #observation-box {
+            background: #0f172a;
+            border-left: 4px solid #38bdf8;
+            padding: 15px;
+            border-radius: 4px;
+            flex-grow: 1;
+            font-family: monospace;
+        }
+
+        .particle {
+            position: absolute;
+            pointer-events: none;
+            border-radius: 50%;
+        }
+
+        .bubble {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        #metal-piece {
+            transition: border-radius 1.5s ease-in-out, box-shadow 1s ease;
+        }
+
+        /* Litmus Paper Tool */
+        #litmus-paper {
+            position: absolute;
+            width: 25px;
+            height: 100px;
+            background: #f87171; /* Red */
+            border: 1px solid #b91c1c;
+            cursor: grab;
+            z-index: 5; /* Lower than trough and meniscus to appear "inside" */
+            display: none;
+            user-select: none;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        #litmus-paper:active {
+            cursor: grabbing;
+        }
+
+        #litmus-wet-part {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 0%;
+            background: #ef4444; /* Darker red (dampened) */
+            transition: background 0.5s ease;
+        }
+
+        #litmus-paper.turned-blue #litmus-wet-part {
+            background: #3b82f6; /* Blue */
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container">
+        <div class="trough" id="main-trough">
+            <div id="water-body"></div>
+        </div>
+        <div class="water-surface" id="surface-line"></div>
+        <div id="simulation-area" class="relative w-full h-full"></div>
+
+        <!-- Red Litmus Paper -->
+        <div id="litmus-paper" style="left: 20px; top: 20px;">
+            <div id="litmus-wet-part"></div>
+        </div>
+    </div>
+
+    <div class="control-panel">
+        <div class="flex flex-col gap-4">
+            <div class="flex justify-center gap-4 flex-wrap">
+                <button onclick="startReaction('sodium')" class="metal-btn bg-yellow-600 hover:bg-yellow-500 text-white py-3 px-6 rounded-lg shadow-lg">Sodium (Na)</button>
+                <button onclick="startReaction('potassium')" class="metal-btn bg-purple-600 hover:bg-purple-500 text-white py-3 px-6 rounded-lg shadow-lg">Potassium (K)</button>
+                <button onclick="startReaction('calcium')" class="metal-btn bg-gray-400 hover:bg-gray-300 text-slate-900 py-3 px-6 rounded-lg shadow-lg">Calcium (Ca)</button>
+                <button onclick="resetSim()" class="metal-btn bg-red-900 hover:bg-red-800 text-white py-3 px-6 rounded-lg">Reset</button>
+            </div>
+
+            <div class="flex justify-center items-center gap-4 border-t border-slate-700 pt-4">
+                <span class="text-slate-400 font-bold uppercase text-xs tracking-widest">Tools:</span>
+                <label class="inline-flex items-center cursor-pointer">
+                    <input type="checkbox" value="" class="sr-only peer" id="litmus-toggle" onchange="toggleLitmus()">
+                    <div class="relative w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-500"></div>
+                    <span class="ms-3 text-sm font-medium text-slate-300">Red Litmus Paper</span>
+                </label>
+            </div>
+        </div>
+
+        <div id="observation-box">
+            <h3 class="text-sky-400 font-bold mb-2">Observations:</h3>
+            <ul id="observation-list" class="text-sm list-disc list-inside space-y-1">
+                <li>Select a metal to drop into the narrow trough of water.</li>
+            </ul>
+            <div id="equation-container" class="mt-4 flex flex-col items-center gap-1">
+                <div id="chemical-equation" class="text-lg italic text-sky-200"></div>
+                <div id="word-equation" class="text-sm text-sky-400 opacity-80"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const simArea = document.getElementById('simulation-area');
+        const obsList = document.getElementById('observation-list');
+        const chemicalEqDiv = document.getElementById('chemical-equation');
+        const wordEqDiv = document.getElementById('word-equation');
+        const surfaceLine = document.getElementById('surface-line');
+        const troughElement = document.getElementById('main-trough');
+        const waterBody = document.getElementById('water-body');
+        const litmusPaper = document.getElementById('litmus-paper');
+        const litmusWetPart = document.getElementById('litmus-wet-part');
+        
+        let audioCtx = null;
+        let reactionInterval = null;
+        let activeMetal = null;
+        let isSolutionAlkaline = false;
+
+        const DATA = {
+            sodium: {
+                name: "Sodium",
+                symbol: "Na",
+                equation: "2Na(s) + 2H₂O(l) → 2NaOH(aq) + H₂(g)",
+                wordEquation: "Sodium + Water → Sodium hydroxide + Hydrogen",
+                observations: [
+                    "Na melts to form a silvery ball.",
+                    "Hissing sound is generated.",
+                    "Na moves rapidly on water surface.",
+                    "Na burns with golden yellow flame.",
+                    "The resultant solution turns the red litmus paper to blue due to sodium hydroxide formation."
+                ],
+                color: "#cbd5e1",
+                flameColor: "rgba(255, 215, 0, 0.9)",
+                behavior: "float",
+                shrinkSpeed: 0.08,
+                moveSpeed: 6,
+                bubbleProb: 0.5,
+                hissVolume: 0.03,
+                hissPitch: 1400
+            },
+            potassium: {
+                name: "Potassium",
+                symbol: "K",
+                equation: "2K(s) + 2H₂O(l) → 2KOH(aq) + H₂(g)",
+                wordEquation: "Potassium + Water → Potassium hydroxide + Hydrogen",
+                observations: [
+                    "K melts to form a silvery ball.",
+                    "Hissing sound is generated.",
+                    "K moves rapidly on water surface.",
+                    "K burns with lilac flame.",
+                    "The resultant solution turns the red litmus paper to blue due to potassium hydroxide formation."
+                ],
+                color: "#cbd5e1",
+                flameColor: "rgba(230, 190, 255, 0.9)",
+                behavior: "float",
+                shrinkSpeed: 0.22, 
+                moveSpeed: 12,
+                bubbleProb: 0.95,
+                hissVolume: 0.12, 
+                hissPitch: 2200
+            },
+            calcium: {
+                name: "Calcium",
+                symbol: "Ca",
+                equation: "Ca(s) + 2H₂O(l) → Ca(OH)₂(aq) + H₂(g)",
+                wordEquation: "Calcium + Water → Calcium hydroxide + Hydrogen",
+                observations: [
+                    "Ca sinks and dissolves.",
+                    "Colourless gas bubbles are evolved.",
+                    "The resultant solution turns the red litmus paper to blue due to calcium hydroxide formation."
+                ],
+                color: "#94a3b8",
+                flameColor: "transparent",
+                behavior: "sink",
+                shrinkSpeed: 0.07,
+                moveSpeed: 0,
+                bubbleProb: 1.0,
+                hissVolume: 0, 
+                hissPitch: 0
+            }
+        };
+
+        let isDragging = false;
+        let dragOffset = { x: 0, y: 0 };
+
+        litmusPaper.addEventListener('mousedown', startDrag);
+        window.addEventListener('mousemove', drag);
+        window.addEventListener('mouseup', endDrag);
+
+        function startDrag(e) {
+            isDragging = true;
+            const rect = litmusPaper.getBoundingClientRect();
+            dragOffset.x = e.clientX - rect.left;
+            dragOffset.y = e.clientY - rect.top;
+        }
+
+        function drag(e) {
+            if (!isDragging) return;
+            const containerRect = document.getElementById('canvas-container').getBoundingClientRect();
+            let newX = e.clientX - containerRect.left - dragOffset.x;
+            let newY = e.clientY - containerRect.top - dragOffset.y;
+            
+            litmusPaper.style.left = newX + 'px';
+            litmusPaper.style.top = newY + 'px';
+            
+            checkLitmusSubmersion();
+        }
+
+        function endDrag() { isDragging = false; }
+
+        function checkLitmusSubmersion() {
+            const paperRect = litmusPaper.getBoundingClientRect();
+            const waterRect = waterBody.getBoundingClientRect();
+            
+            // Check horizontal bounds of the trough relative to the simulation container
+            const troughRect = troughElement.getBoundingClientRect();
+            const containerRect = document.getElementById('canvas-container').getBoundingClientRect();
+            
+            const withinTroughX = paperRect.right > troughRect.left && paperRect.left < troughRect.right;
+
+            if (withinTroughX && paperRect.bottom > waterRect.top) {
+                const overlapPixels = Math.min(paperRect.bottom, waterRect.bottom) - waterRect.top;
+                const percentage = Math.max(0, Math.min(100, (overlapPixels / paperRect.height) * 100));
+                
+                const currentHeight = parseFloat(litmusWetPart.style.height) || 0;
+                if (percentage > currentHeight) {
+                    litmusWetPart.style.height = percentage + '%';
+                }
+
+                if (isSolutionAlkaline) {
+                    litmusPaper.classList.add('turned-blue');
+                }
+            }
+        }
+
+        function toggleLitmus() {
+            const isChecked = document.getElementById('litmus-toggle').checked;
+            litmusPaper.style.display = isChecked ? 'block' : 'none';
+        }
+
+        function alignWaterLevel() {
+            const troughRect = troughElement.getBoundingClientRect();
+            const waterHeight = troughElement.offsetHeight * 0.7; 
+            const containerRect = document.getElementById('canvas-container').getBoundingClientRect();
+            const surfaceTop = (troughRect.bottom - waterHeight) - containerRect.top;
+            surfaceLine.style.top = surfaceTop + 'px';
+        }
+
+        window.addEventListener('resize', alignWaterLevel);
+        window.addEventListener('load', alignWaterLevel);
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playExplosionSound() {
+            if (!audioCtx) return;
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(150, now);
+            osc.frequency.exponentialRampToValueAtTime(40, now + 0.3);
+            gain.gain.setValueAtTime(1.5, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(now + 0.5);
+
+            const bufferSize = audioCtx.sampleRate * 0.5;
+            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+            const noise = audioCtx.createBufferSource();
+            noise.buffer = buffer;
+            const nGain = audioCtx.createGain();
+            nGain.gain.setValueAtTime(0.6, now);
+            nGain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+            noise.connect(nGain);
+            nGain.connect(audioCtx.destination);
+            noise.start();
+        }
+
+        function playHiss(active, type) {
+            if (!audioCtx) return;
+            const config = DATA[type];
+            if (active && config.hissVolume > 0) {
+                if (this.hissNode) return;
+                const bufferSize = audioCtx.sampleRate * 2;
+                const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+                const noise = audioCtx.createBufferSource();
+                noise.buffer = buffer;
+                noise.loop = true;
+                const filter = audioCtx.createBiquadFilter();
+                filter.type = 'highpass';
+                filter.frequency.value = config.hissPitch;
+                const gain = audioCtx.createGain();
+                gain.gain.value = config.hissVolume;
+                noise.connect(filter);
+                filter.connect(gain);
+                gain.connect(audioCtx.destination);
+                noise.start();
+                this.hissNode = { noise, gain };
+            } else if (this.hissNode) {
+                this.hissNode.gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+                const currentHiss = this.hissNode;
+                setTimeout(() => {
+                    try { currentHiss.noise.stop(); } catch(e) {}
+                }, 300);
+                this.hissNode = null;
+            }
+        }
+
+        function createBubble(x, y) {
+            const bubble = document.createElement('div');
+            bubble.className = 'bubble';
+            const size = Math.random() * 6 + 2;
+            bubble.style.width = size + 'px';
+            bubble.style.height = size + 'px';
+            bubble.style.left = x + 'px';
+            bubble.style.top = y + 'px';
+            bubble.style.zIndex = "2";
+            simArea.appendChild(bubble);
+
+            const startTime = Date.now();
+            const duration = 1200;
+            const surfaceY = surfaceLine.offsetTop;
+
+            const animate = () => {
+                const elapsed = Date.now() - startTime;
+                const progress = elapsed / duration;
+                if (progress >= 1) { bubble.remove(); return; }
+                let currentY = y - (progress * 250);
+                if (currentY < surfaceY) { bubble.remove(); return; }
+                bubble.style.top = currentY + 'px';
+                bubble.style.opacity = (1 - progress);
+                requestAnimationFrame(animate);
+            };
+            requestAnimationFrame(animate);
+        }
+
+        function createFlame(x, y, color, scale = 1) {
+            const flame = document.createElement('div');
+            flame.className = 'particle';
+            const size = (Math.random() * 25 + 10) * scale;
+            flame.style.width = size + 'px';
+            flame.style.height = size + 'px';
+            flame.style.left = (x - size/2) + 'px';
+            flame.style.top = (y - size) + 'px';
+            flame.style.backgroundColor = color;
+            flame.style.filter = 'blur(6px)';
+            flame.style.zIndex = "10";
+            simArea.appendChild(flame);
+
+            const startTime = Date.now();
+            const duration = 250;
+            const animate = () => {
+                const elapsed = Date.now() - startTime;
+                const progress = elapsed / duration;
+                if (progress >= 1) { flame.remove(); return; }
+                flame.style.transform = `translateY(${-progress * 40}px) scale(${1 - progress})`;
+                flame.style.opacity = 1 - progress;
+                requestAnimationFrame(animate);
+            };
+            requestAnimationFrame(animate);
+        }
+
+        function triggerExplosion(x, y, color) {
+            playExplosionSound();
+            for (let i = 0; i < 35; i++) {
+                const spark = document.createElement('div');
+                spark.className = 'particle';
+                const sSize = Math.random() * 10 + 3;
+                spark.style.width = sSize + 'px';
+                spark.style.height = sSize + 'px';
+                spark.style.backgroundColor = i % 2 === 0 ? color : '#ffffff';
+                spark.style.left = x + 'px';
+                spark.style.top = y + 'px';
+                simArea.appendChild(spark);
+
+                const angle = Math.random() * Math.PI * 2;
+                const dist = Math.random() * 250 + 100;
+                const duration = 800 + Math.random() * 600;
+                const start = Date.now();
+
+                const anim = () => {
+                    const elapsed = Date.now() - start;
+                    const p = elapsed / duration;
+                    if (p >= 1) { spark.remove(); return; }
+                    spark.style.left = (x + Math.cos(angle) * dist * p) + 'px';
+                    spark.style.top = (y + Math.sin(angle) * dist * p + (p * p * 400)) + 'px';
+                    spark.style.opacity = 1 - p;
+                    requestAnimationFrame(anim);
+                };
+                requestAnimationFrame(anim);
+            }
+        }
+
+        function resetSim() {
+            clearInterval(reactionInterval);
+            simArea.innerHTML = '';
+            obsList.innerHTML = '<li>Select a metal to drop into the narrow trough.</li>';
+            chemicalEqDiv.innerHTML = '';
+            wordEqDiv.innerHTML = '';
+            playHiss(false);
+            activeMetal = null;
+            isSolutionAlkaline = false;
+            litmusPaper.classList.remove('turned-blue');
+            litmusWetPart.style.height = '0%';
+            alignWaterLevel();
+        }
+
+        function startReaction(type) {
+            initAudio();
+            resetSim();
+            alignWaterLevel();
+            const metal = DATA[type];
+            activeMetal = type;
+
+            obsList.innerHTML = '';
+            metal.observations.forEach(text => {
+                const li = document.createElement('li');
+                li.innerText = text;
+                obsList.appendChild(li);
+            });
+            chemicalEqDiv.innerHTML = metal.equation;
+            wordEqDiv.innerHTML = metal.wordEquation;
+
+            const el = document.createElement('div');
+            el.id = 'metal-piece';
+            el.className = 'absolute z-20 shadow-lg';
+            
+            let size = 40;
+            let posX = simArea.clientWidth / 2 - 20;
+            let surfaceY = surfaceLine.offsetTop;
+            let posY = 0;
+            
+            const floorY = (troughElement.offsetTop + troughElement.offsetHeight) - 8; 
+            
+            el.style.width = size + 'px';
+            el.style.height = size + 'px';
+            el.style.backgroundColor = metal.color;
+            el.style.left = posX + 'px';
+            el.style.top = posY + 'px';
+            el.style.borderRadius = '2px';
+            simArea.appendChild(el);
+
+            let isReacting = false;
+            let moveAngle = Math.random() * Math.PI * 2;
+            let melted = false;
+            let grounded = false;
+
+            const leftLimit = simArea.clientWidth * 0.25 + 10;
+            const rightLimit = simArea.clientWidth * 0.75 - 10;
+
+            reactionInterval = setInterval(() => {
+                if (!isReacting) {
+                    let target = metal.behavior === 'float' ? surfaceY - (size/2) : surfaceY;
+                    let dropSpeed = 12;
+                    if (posY < target) { posY += dropSpeed; } 
+                    else {
+                        posY = target;
+                        isReacting = true;
+                        isSolutionAlkaline = true;
+                        playHiss(true, type);
+                    }
+                } else {
+                    size -= metal.shrinkSpeed;
+                    
+                    if (!melted && type !== 'calcium' && size < 38) {
+                        melted = true;
+                        el.style.borderRadius = '50%';
+                        el.style.boxShadow = 'inset -3px -3px 8px rgba(0,0,0,0.5), 0 0 10px rgba(255,255,255,0.7)';
+                    }
+
+                    if (type === 'potassium' && size <= 14) {
+                        triggerExplosion(posX + size/2, posY + size/2, metal.flameColor);
+                        clearInterval(reactionInterval);
+                        el.remove();
+                        playHiss(false);
+                        return;
+                    }
+
+                    if (size <= 4) {
+                        clearInterval(reactionInterval);
+                        el.remove();
+                        playHiss(false);
+                        return;
+                    }
+
+                    if (metal.behavior === 'float') {
+                        posY = surfaceY - (size * 0.75); 
+                        posX += Math.cos(moveAngle) * metal.moveSpeed;
+                        if (Math.random() > 0.92) moveAngle = Math.random() * Math.PI * 2;
+                        
+                        if (posX < leftLimit) { posX = leftLimit; moveAngle = 0; }
+                        if (posX > rightLimit - size) { posX = rightLimit - size; moveAngle = Math.PI; }
+                        
+                        createFlame(posX + size/2, posY + size/2, metal.flameColor, type === 'potassium' ? 1.6 : 1.1);
+                        if (Math.random() < metal.bubbleProb) createBubble(posX + size/2, posY + size);
+                    } else {
+                        if (!grounded) {
+                            if (posY < floorY - size) {
+                                posY += 8;
+                            } else {
+                                posY = floorY - size;
+                                grounded = true;
+                            }
+                        } else {
+                            posY = floorY - size;
+                        }
+                        
+                        createBubble(posX + Math.random() * size, posY);
+                        if (Math.random() < 0.8) createBubble(posX + Math.random() * size, posY);
+                    }
+                }
+                el.style.width = size + 'px';
+                el.style.height = size + 'px';
+                el.style.left = posX + 'px';
+                el.style.top = posY + 'px';
+                checkLitmusSubmersion();
+            }, 40);
+        }
+
+        window.onbeforeunload = () => playHiss(false);
+        setTimeout(alignWaterLevel, 200);
+    </script>
+</body>
+</html>
