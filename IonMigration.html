@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Migration of Ions Simulation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .u-tube-container {
+            position: relative;
+            width: 300px;
+            height: 340px;
+        }
+
+        .glass-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: visible; 
+        }
+
+        .switch-arm {
+            transition: transform 0.2s ease-in-out;
+        }
+
+        .solution-btn.active {
+            background-color: #1e293b;
+            color: white;
+            border-color: #334155;
+        }
+
+        .crystal-btn.active {
+            background-color: #4f46e5;
+            color: white;
+            border-color: #4338ca;
+        }
+
+        .ion-spot {
+            mix-blend-mode: multiply;
+            transition: opacity 0.3s ease;
+        }
+        
+        .light-theme-multiply {
+            isolation: isolate;
+        }
+
+        .u-ion-cloud {
+            mix-blend-mode: multiply;
+            filter: blur(4px);
+            pointer-events: none;
+        }
+
+        /* Tab styling for active/inactive states */
+        .tab-active {
+            color: #2563eb;
+            border-bottom: 2px solid #2563eb;
+        }
+        .tab-inactive {
+            color: #64748b;
+            border-bottom: 2px solid transparent;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen p-4 md:p-8 font-sans">
+    <div class="max-w-4xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200">
+        <!-- Header -->
+        <header class="bg-slate-800 text-white p-6">
+            <h1 class="text-2xl font-bold">Chemistry Lab: Migration of Ions</h1>
+            <p class="text-slate-300 text-sm mt-1">Simulating the movement of charged particles toward electrodes.</p>
+        </header>
+
+        <!-- Tabs -->
+        <div class="flex border-b border-slate-200">
+            <button onclick="switchTab('filter')" id="tab-filter" class="flex-1 py-4 font-semibold tab-active transition-all">
+                Filter Paper Method
+            </button>
+            <button onclick="switchTab('utube')" id="tab-utube" class="flex-1 py-4 font-semibold tab-inactive hover:bg-slate-50 transition-all">
+                U-Tube Simulation
+            </button>
+        </div>
+
+        <!-- Main Controls -->
+        <div class="p-6 bg-slate-100 flex flex-wrap items-center justify-between gap-4 border-b border-slate-200">
+            <div class="flex items-center gap-3">
+                <button id="powerBtn" onclick="togglePower()" class="px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg transition-colors shadow-md min-w-[120px]">
+                    Power: OFF
+                </button>
+                <button onclick="reversePolarity()" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-lg transition-colors shadow-md flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10v4h10v-4h-4V4H11v6z"/><path d="M17 14v4h-4v4h-2v-4H7v-4h4V8h2v6z"/></svg>
+                    Reverse Polarity
+                </button>
+                <button onclick="resetSim()" class="px-6 py-2 bg-slate-500 hover:bg-slate-600 text-white font-bold rounded-lg transition-colors shadow-md">
+                    Reset
+                </button>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="text-sm font-medium text-slate-600">Voltage:</span>
+                <input type="range" id="voltage" min="1" max="10" value="5" class="w-32 accent-blue-600">
+                <span id="voltValue" class="text-sm font-bold w-8 text-center text-slate-800">5V</span>
+            </div>
+        </div>
+
+        <!-- Selection Bar -->
+        <div class="px-6 py-3 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center gap-4">
+            <span class="text-xs font-bold text-slate-500 uppercase">Compound:</span>
+            <div class="flex flex-wrap gap-2">
+                <button onclick="setCompound('kmno4')" id="btn-kmno4" class="crystal-btn active px-3 py-1 text-xs font-semibold rounded border border-slate-300 hover:bg-slate-100 transition-colors">Potassium Permanganate</button>
+                <button onclick="setCompound('cucro4')" id="btn-cucro4" class="crystal-btn px-3 py-1 text-xs font-semibold rounded border border-slate-300 hover:bg-slate-100 transition-colors">Copper(II) Chromate</button>
+                <button onclick="setCompound('feso4')" id="btn-feso4" class="crystal-btn px-3 py-1 text-xs font-semibold rounded border border-slate-300 hover:bg-slate-100 transition-colors">Iron(II) Sulphate</button>
+            </div>
+        </div>
+
+        <div id="solution-panel" class="px-6 py-3 bg-slate-50 border-b border-slate-200 flex items-center gap-4">
+            <span class="text-xs font-bold text-slate-500 uppercase">Soaking Solution:</span>
+            <div class="flex gap-2">
+                <button onclick="setSolution('hcl')" id="btn-hcl" class="solution-btn active px-3 py-1 text-xs font-semibold rounded border border-slate-300 hover:bg-slate-200 transition-colors">HCl (aq)</button>
+                <button onclick="setSolution('nacl')" id="btn-nacl" class="solution-btn px-3 py-1 text-xs font-semibold rounded border border-slate-300 hover:bg-slate-200 transition-colors">NaCl (aq)</button>
+                <button onclick="setSolution('ethanol')" id="btn-ethanol" class="solution-btn px-3 py-1 text-xs font-semibold rounded border border-slate-300 hover:bg-slate-200 transition-colors">Ethanol</button>
+            </div>
+        </div>
+
+        <!-- Simulation Area -->
+        <div class="relative h-[480px] w-full bg-slate-200 overflow-hidden flex items-center justify-center p-4">
+            
+            <!-- Setup 1: Filter Paper -->
+            <div id="sim-filter" class="relative w-full h-full flex flex-col items-center justify-center light-theme-multiply">
+                <svg width="400" height="340" viewBox="0 0 400 340" class="relative overflow-visible">
+                    <defs>
+                        <pattern id="dot-pattern" width="10" height="10" patternUnits="userSpaceOnUse">
+                            <circle cx="2" cy="2" r="0.5" fill="#cbd5e1" />
+                        </pattern>
+                        <radialGradient id="grad-purple"><stop offset="10%" stop-color="#a855f7"/><stop offset="100%" stop-color="#6b21a8" stop-opacity="0"/></radialGradient>
+                        <radialGradient id="grad-yellow"><stop offset="10%" stop-color="#facc15"/><stop offset="100%" stop-color="#ca8a04" stop-opacity="0"/></radialGradient>
+                        <radialGradient id="grad-blue"><stop offset="10%" stop-color="#3b82f6"/><stop offset="100%" stop-color="#1d4ed8" stop-opacity="0"/></radialGradient>
+                        <radialGradient id="grad-green"><stop offset="10%" stop-color="#4ade80"/><stop offset="100%" stop-color="#166534" stop-opacity="0"/></radialGradient>
+                        <filter id="glow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+                    </defs>
+
+                    <!-- Filter Paper -->
+                    <rect x="50" y="100" width="300" height="180" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1" rx="2" />
+                    <rect x="50" y="100" width="300" height="180" fill="url(#dot-pattern)" rx="2" />
+                    
+                    <!-- Left Electrode -->
+                    <rect x="55" y="120" width="15" height="140" fill="#333" rx="1" />
+                    <rect id="filter-left-color" x="55" y="120" width="15" height="4" fill="#ef4444" />
+                    <text id="filter-left-label" x="62" y="115" text-anchor="middle" fill="#ef4444" font-size="12" font-weight="bold">+</text>
+                    
+                    <!-- Right Electrode -->
+                    <rect x="330" y="120" width="15" height="140" fill="#333" rx="1" />
+                    <rect id="filter-right-color" x="330" y="120" width="15" height="4" fill="#3b82f6" />
+                    <text id="filter-right-label" x="337" y="115" text-anchor="middle" fill="#3b82f6" font-size="12" font-weight="bold">-</text>
+
+                    <!-- Main circuit lines -->
+                    <path d="M 62 120 L 62 50 L 135 50" fill="none" stroke="#333" stroke-width="2" />
+                    <path d="M 230 50 L 337 50 L 337 120" fill="none" stroke="#333" stroke-width="2" />
+
+                    <!-- Component Group -->
+                    <g transform="translate(135, 50)">
+                        <circle cx="0" cy="0" r="3" fill="#333" />
+                        <circle cx="30" cy="0" r="3" fill="#333" />
+                        <line id="switch-arm-filter" x1="0" y1="0" x2="30" y2="0" stroke="#333" stroke-width="3" style="transform-origin: 0px 0px; transform: rotate(-35deg);" class="switch-arm" />
+                        <text x="15" y="25" text-anchor="middle" fill="#475569" font-size="10" font-weight="bold">SWITCH</text>
+                        <line x1="30" y1="0" x2="55" y2="0" stroke="#333" stroke-width="2" />
+                        
+                        <!-- Battery Cell Group -->
+                        <g id="filter-battery-group" transform="translate(55, 0)">
+                            <line id="filter-batt-plate-pos" x1="5" y1="-12" x2="5" y2="12" stroke="#333" stroke-width="3" /> 
+                            <line id="filter-batt-plate-neg" x1="15" y1="-6" x2="15" y2="6" stroke="#333" stroke-width="5" /> 
+                            <text id="filter-batt-sign-pos" x="5" y="-18" text-anchor="middle" fill="#333" font-size="11" font-weight="bold">+</text>
+                            <text id="filter-batt-sign-neg" x="15" y="-18" text-anchor="middle" fill="#333" font-size="11" font-weight="bold">-</text>
+                            <line x1="15" y1="0" x2="40" y2="0" stroke="#333" stroke-width="2" />
+                        </g>
+                    </g>
+
+                    <circle id="filter-ion-anion" class="ion-spot" cx="200" cy="190" r="16" fill="url(#grad-purple)" filter="url(#glow)" opacity="0.9" />
+                    <circle id="filter-ion-cation" class="ion-spot" cx="200" cy="190" r="16" fill="url(#grad-blue)" filter="url(#glow)" opacity="0.9" visibility="hidden" />
+                </svg>
+            </div>
+
+            <!-- Setup 2: U-Tube -->
+            <div id="sim-utube" class="hidden relative w-full h-full flex flex-col items-center justify-center light-theme-multiply">
+                <div class="u-tube-container">
+                    <svg class="glass-svg" viewBox="0 0 300 320">
+                        <defs>
+                            <path id="tube-path" d="M 80 60 L 80 240 A 70 70 0 0 0 220 240 L 220 60 L 180 60 L 180 240 A 30 30 0 0 1 120 240 L 120 60 Z" />
+                            <clipPath id="tube-clip"><use href="#tube-path" /></clipPath>
+                            <clipPath id="left-arm-clip"><rect x="80" y="110" width="40" height="100" /></clipPath>
+                            <clipPath id="right-arm-clip"><rect x="180" y="110" width="40" height="100" /></clipPath>
+                        </defs>
+                        
+                        <use href="#tube-path" fill="white" fill-opacity="0.5" stroke="#94a3b8" stroke-width="2" />
+                        
+                        <g clip-path="url(#tube-clip)">
+                            <path id="buffer-fill" d="M 80 205 L 80 240 A 70 70 0 0 0 220 240 L 220 205 L 180 205 L 180 240 A 30 30 0 0 1 120 240 L 120 205 Z" fill="#a855f7" opacity="0.4" />
+                            <rect x="80" y="110" width="40" height="95" fill="#bae6fd" opacity="0.3" />
+                            <rect x="180" y="110" width="40" height="95" fill="#bae6fd" opacity="0.3" />
+                            
+                            <g clip-path="url(#left-arm-clip)">
+                                <rect id="utube-left-cloud" class="u-ion-cloud" x="80" y="210" width="40" height="0" fill="#3b82f6" opacity="0" />
+                            </g>
+                            <g clip-path="url(#right-arm-clip)">
+                                <rect id="utube-right-cloud" class="u-ion-cloud" x="180" y="210" width="40" height="0" fill="#facc15" opacity="0" />
+                            </g>
+
+                            <line x1="80" y1="205" x2="120" y2="205" stroke="#94a3b8" stroke-width="1" stroke-dasharray="2,2" />
+                            <line x1="180" y1="205" x2="220" y2="205" stroke="#94a3b8" stroke-width="1" stroke-dasharray="2,2" />
+                            <line x1="80" y1="110" x2="120" y2="110" stroke="#0ea5e9" stroke-width="2" />
+                            <line x1="180" y1="110" x2="220" y2="110" stroke="#0ea5e9" stroke-width="2" />
+                        </g>
+                        
+                        <!-- Left Electrode (Rod) -->
+                        <g transform="translate(90, 30)">
+                            <rect width="20" height="140" fill="#333" rx="1" />
+                            <rect id="utube-left-color" width="20" height="4" fill="#3b82f6" />
+                            <text id="utube-left-label" x="10" y="25" text-anchor="middle" fill="white" font-size="12" font-weight="bold">-</text>
+                        </g>
+                        <!-- Right Electrode (Rod) -->
+                        <g transform="translate(190, 30)">
+                            <rect width="20" height="140" fill="#333" rx="1" />
+                            <rect id="utube-right-color" width="20" height="4" fill="#ef4444" />
+                            <text id="utube-right-label" x="10" y="25" text-anchor="middle" fill="white" font-size="12" font-weight="bold">+</text>
+                        </g>
+                        
+                        <!-- Circuitry -->
+                        <path d="M 100 30 L 100 15 L 110 15" fill="none" stroke="#333" stroke-width="2"/>
+                        <path d="M 185 15 L 200 15 L 200 30" fill="none" stroke="#333" stroke-width="2"/>
+                        
+                        <g transform="translate(110, 15)">
+                            <circle cx="0" cy="0" r="2.5" fill="#333" />
+                            <circle cx="20" cy="0" r="2.5" fill="#333" />
+                            <line id="switch-arm-utube" x1="0" y1="0" x2="20" y2="0" stroke="#333" stroke-width="3" style="transform-origin: 0px 0px; transform: rotate(-35deg);" class="switch-arm" />
+                            <text x="10" y="16" text-anchor="middle" fill="#475569" font-size="8" font-weight="bold">SWITCH</text>
+                            <line x1="20" y1="0" x2="45" y2="0" stroke="#333" stroke-width="1.5" />
+                            
+                            <!-- UTube Battery Group -->
+                            <g id="utube-battery-group" transform="translate(45, 0)">
+                                <line id="utube-batt-plate-pos" x1="0" y1="-8" x2="0" y2="8" stroke="#333" stroke-width="2" /> 
+                                <line id="utube-batt-plate-neg" x1="10" y1="-4" x2="10" y2="4" stroke="#333" stroke-width="4" />
+                                <text id="utube-batt-sign-pos" x="0" y="-12" text-anchor="middle" fill="#333" font-size="8" font-weight="bold">+</text>
+                                <text id="utube-batt-sign-neg" x="10" y="-12" text-anchor="middle" fill="#333" font-size="8" font-weight="bold">-</text>
+                                <line x1="10" y1="0" x2="30" y2="0" stroke="#333" stroke-width="1.5" />
+                            </g>
+                        </g>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- Explanation Footer -->
+        <div class="p-6 bg-white border-t border-slate-200">
+            <h3 class="font-bold text-slate-800 mb-2">Teacher's Observation:</h3>
+            <div id="observationText" class="text-slate-600 text-sm italic min-h-[40px]">Circuit is OPEN. Switch is up.</div>
+            <div class="mt-4 grid grid-cols-2 gap-4">
+                <div class="p-3 bg-blue-50 rounded-lg border border-blue-100">
+                    <h4 class="text-xs font-bold text-blue-700 uppercase">Anions (-)</h4>
+                    <p class="text-sm" id="anion-info">Move toward the Positive Terminal (+).</p>
+                </div>
+                <div class="p-3 bg-red-50 rounded-lg border border-red-100">
+                    <h4 class="text-xs font-bold text-red-700 uppercase">Cations (+)</h4>
+                    <p class="text-sm" id="cation-info">Move toward the Negative Terminal (-).</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let isPowerOn = false;
+        let currentTab = 'filter';
+        let progress = 0;
+        let selectedSolution = 'hcl';
+        let selectedCompound = 'kmno4';
+        let polarityReversed = false; // false: Left=+, Right=- | true: Left=-, Right=+
+
+        const compounds = {
+            kmno4: {
+                name: "Potassium Permanganate",
+                cation: { color: "transparent", label: "K⁺ (Colorless)", grad: "" },
+                anion: { color: "#a855f7", label: "MnO₄⁻ (Purple)", grad: "url(#grad-purple)" },
+                uBuffer: "#a855f7"
+            },
+            cucro4: {
+                name: "Copper(II) Chromate",
+                cation: { color: "#3b82f6", label: "Cu²⁺ (Blue)", grad: "url(#grad-blue)" },
+                anion: { color: "#facc15", label: "CrO₄²⁻ (Yellow)", grad: "url(#grad-yellow)" },
+                uBuffer: "#4d7c0f"
+            },
+            feso4: {
+                name: "Iron(II) Sulphate",
+                cation: { color: "#4ade80", label: "Fe²⁺ (Green)", grad: "url(#grad-green)" },
+                anion: { color: "transparent", label: "SO₄²⁻ (Colorless)", grad: "" },
+                uBuffer: "#4ade80"
+            }
+        };
+
+        const powerBtn = document.getElementById('powerBtn');
+        const voltInput = document.getElementById('voltage');
+        const voltDisplay = document.getElementById('voltValue');
+        const obsText = document.getElementById('observationText');
+        
+        const fAnion = document.getElementById('filter-ion-anion');
+        const fCation = document.getElementById('filter-ion-cation');
+        const uLeftCloud = document.getElementById('utube-left-cloud');
+        const uRightCloud = document.getElementById('utube-right-cloud');
+        const uBufferFill = document.getElementById('buffer-fill');
+
+        function switchTab(tab) {
+            currentTab = tab;
+            document.getElementById('sim-filter').classList.toggle('hidden', tab !== 'filter');
+            document.getElementById('sim-utube').classList.toggle('hidden', tab !== 'utube');
+            
+            const filterTab = document.getElementById('tab-filter');
+            const utubeTab = document.getElementById('tab-utube');
+            
+            if (tab === 'filter') {
+                filterTab.className = "flex-1 py-4 font-semibold tab-active transition-all";
+                utubeTab.className = "flex-1 py-4 font-semibold tab-inactive hover:bg-slate-50 transition-all";
+            } else {
+                filterTab.className = "flex-1 py-4 font-semibold tab-inactive hover:bg-slate-50 transition-all";
+                utubeTab.className = "flex-1 py-4 font-semibold tab-active transition-all";
+            }
+            
+            resetSim();
+        }
+
+        function setCompound(comp) {
+            selectedCompound = comp;
+            document.querySelectorAll('.crystal-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`btn-${comp}`).classList.add('active');
+            
+            const c = compounds[comp];
+            fAnion.setAttribute('fill', c.anion.grad || "transparent");
+            fAnion.style.visibility = c.anion.color === "transparent" ? "hidden" : "visible";
+            fCation.setAttribute('fill', c.cation.grad || "transparent");
+            fCation.style.visibility = c.cation.color === "transparent" ? "hidden" : "visible";
+
+            uBufferFill.setAttribute('fill', c.uBuffer);
+            uBufferFill.setAttribute('opacity', 0.4);
+
+            document.getElementById('anion-info').innerHTML = `Move toward Positive Terminal (+). <br><span class="font-mono text-[11px]">${c.anion.label}</span>`;
+            document.getElementById('cation-info').innerHTML = `Move toward Negative Terminal (-). <br><span class="font-mono text-[11px]">${c.cation.label}</span>`;
+
+            resetSim();
+        }
+
+        function setSolution(sol) {
+            selectedSolution = sol;
+            document.querySelectorAll('.solution-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`btn-${sol}`).classList.add('active');
+            resetSim();
+        }
+
+        function togglePower() {
+            isPowerOn = !isPowerOn;
+            powerBtn.innerText = isPowerOn ? "Power: ON" : "Power: OFF";
+            powerBtn.className = isPowerOn ? "px-6 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg shadow-md min-w-[120px]" : "px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow-md min-w-[120px]";
+            
+            const rot = isPowerOn ? "rotate(0deg)" : "rotate(-35deg)";
+            document.getElementById('switch-arm-filter').style.transform = rot;
+            document.getElementById('switch-arm-utube').style.transform = rot;
+
+            if (isPowerOn) requestAnimationFrame(updateSim);
+            updateObservations();
+        }
+
+        function reversePolarity() {
+            polarityReversed = !polarityReversed;
+            
+            const fPlatePos = document.getElementById('filter-batt-plate-pos');
+            const fPlateNeg = document.getElementById('filter-batt-plate-neg');
+            const fSignPos = document.getElementById('filter-batt-sign-pos');
+            const fSignNeg = document.getElementById('filter-batt-sign-neg');
+
+            const uPlatePos = document.getElementById('utube-batt-plate-pos');
+            const uPlateNeg = document.getElementById('utube-batt-plate-neg');
+            const uSignPos = document.getElementById('utube-batt-sign-pos');
+            const uSignNeg = document.getElementById('utube-batt-sign-neg');
+
+            if (polarityReversed) {
+                fPlatePos.setAttribute('x1', '15'); fPlatePos.setAttribute('x2', '15');
+                fPlateNeg.setAttribute('x1', '5'); fPlateNeg.setAttribute('x2', '5');
+                fSignPos.setAttribute('x', '15'); fSignNeg.setAttribute('x', '5');
+                
+                document.getElementById('filter-left-label').textContent = '-';
+                document.getElementById('filter-left-label').setAttribute('fill', '#3b82f6');
+                document.getElementById('filter-left-color').setAttribute('fill', '#3b82f6');
+                document.getElementById('filter-right-label').textContent = '+';
+                document.getElementById('filter-right-label').setAttribute('fill', '#ef4444');
+                document.getElementById('filter-right-color').setAttribute('fill', '#ef4444');
+
+                uPlatePos.setAttribute('x1', '10'); uPlatePos.setAttribute('x2', '10');
+                uPlateNeg.setAttribute('x1', '0'); uPlateNeg.setAttribute('x2', '0');
+                uSignPos.setAttribute('x', '10'); uSignNeg.setAttribute('x', '0');
+                
+                document.getElementById('utube-left-label').textContent = '-';
+                document.getElementById('utube-left-color').setAttribute('fill', '#3b82f6');
+                document.getElementById('utube-right-label').textContent = '+';
+                document.getElementById('utube-right-color').setAttribute('fill', '#ef4444');
+
+            } else {
+                fPlatePos.setAttribute('x1', '5'); fPlatePos.setAttribute('x2', '5');
+                fPlateNeg.setAttribute('x1', '15'); fPlateNeg.setAttribute('x2', '15');
+                fSignPos.setAttribute('x', '5'); fSignNeg.setAttribute('x', '15');
+                
+                document.getElementById('filter-left-label').textContent = '+';
+                document.getElementById('filter-left-label').setAttribute('fill', '#ef4444');
+                document.getElementById('filter-left-color').setAttribute('fill', '#ef4444');
+                document.getElementById('filter-right-label').textContent = '-';
+                document.getElementById('filter-right-label').setAttribute('fill', '#3b82f6');
+                document.getElementById('filter-right-color').setAttribute('fill', '#3b82f6');
+
+                uPlatePos.setAttribute('x1', '0'); uPlatePos.setAttribute('x2', '0');
+                uPlateNeg.setAttribute('x1', '10'); uPlateNeg.setAttribute('x2', '10');
+                uSignPos.setAttribute('x', '0'); uSignNeg.setAttribute('x', '10');
+
+                document.getElementById('utube-left-label').textContent = '+';
+                document.getElementById('utube-left-color').setAttribute('fill', '#ef4444');
+                document.getElementById('utube-right-label').textContent = '-';
+                document.getElementById('utube-right-color').setAttribute('fill', '#3b82f6');
+            }
+
+            resetSim();
+        }
+
+        function resetSim() {
+            isPowerOn = false;
+            progress = 0;
+            powerBtn.innerText = "Power: OFF";
+            powerBtn.className = "px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow-md min-w-[120px]";
+            document.getElementById('switch-arm-filter').style.transform = "rotate(-35deg)";
+            document.getElementById('switch-arm-utube').style.transform = "rotate(-35deg)";
+
+            fAnion.setAttribute('cx', 200);
+            fCation.setAttribute('cx', 200);
+            
+            uLeftCloud.setAttribute('height', 0);
+            uLeftCloud.setAttribute('y', 210);
+            uLeftCloud.setAttribute('opacity', 0);
+
+            uRightCloud.setAttribute('height', 0);
+            uRightCloud.setAttribute('y', 210);
+            uRightCloud.setAttribute('opacity', 0);
+
+            uBufferFill.setAttribute('opacity', 0.4);
+            updateObservations();
+        }
+
+        function updateSim() {
+            if (!isPowerOn || selectedSolution === 'ethanol') return;
+
+            const speed = voltInput.value * 0.0015;
+            if (progress < 1) {
+                progress += speed;
+                
+                let anionDir = polarityReversed ? 1 : -1;
+                let cationDir = polarityReversed ? -1 : 1;
+
+                fAnion.setAttribute('cx', 200 + (progress * 130 * anionDir));
+                fCation.setAttribute('cx', 200 + (progress * 130 * cationDir));
+
+                const maxRise = 100;
+                const currentRise = progress * maxRise;
+                const c = compounds[selectedCompound];
+
+                if (polarityReversed) {
+                    uLeftCloud.setAttribute('fill', c.cation.color);
+                    uLeftCloud.style.visibility = c.cation.color === "transparent" ? "hidden" : "visible";
+                    uRightCloud.setAttribute('fill', c.anion.color);
+                    uRightCloud.style.visibility = c.anion.color === "transparent" ? "hidden" : "visible";
+                } else {
+                    uLeftCloud.setAttribute('fill', c.anion.color);
+                    uLeftCloud.style.visibility = c.anion.color === "transparent" ? "hidden" : "visible";
+                    uRightCloud.setAttribute('fill', c.cation.color);
+                    uRightCloud.style.visibility = c.cation.color === "transparent" ? "hidden" : "visible";
+                }
+
+                uLeftCloud.setAttribute('height', currentRise);
+                uLeftCloud.setAttribute('y', 210 - currentRise);
+                uLeftCloud.setAttribute('opacity', Math.min(progress * 2, 0.75));
+
+                uRightCloud.setAttribute('height', currentRise);
+                uRightCloud.setAttribute('y', 210 - currentRise);
+                uRightCloud.setAttribute('opacity', Math.min(progress * 2, 0.75));
+
+                uBufferFill.setAttribute('opacity', Math.max(0.4 * (1 - (progress * 0.9)), 0.05));
+            }
+            updateObservations();
+            if (isPowerOn) requestAnimationFrame(updateSim);
+        }
+
+        function updateObservations() {
+            if (!isPowerOn) {
+                obsText.innerText = "Circuit is OPEN. Switch is up.";
+                return;
+            }
+            
+            let explanation = "";
+            if (selectedSolution === 'hcl') {
+                explanation = "HCl (aq) contains mobile H⁺ and Cl⁻ ions, which can conduct electricity.";
+            } else if (selectedSolution === 'nacl') {
+                explanation = "NaCl (aq) contains mobile Na⁺ and Cl⁻ ions, which can conduct electricity.";
+            } else if (selectedSolution === 'ethanol') {
+                explanation = "Ethanol is a non-electrolyte. It does not contain mobile ions, so it cannot conduct electricity.";
+                obsText.innerText = "Circuit is CLOSED, but " + explanation;
+                return;
+            }
+
+            if (progress > 0.05) {
+                obsText.innerText = `${explanation} Current flows and ions from the compound are migrating toward the terminals.`;
+            } else {
+                obsText.innerText = `Circuit CLOSED. ${explanation}`;
+            }
+        }
+
+        voltInput.addEventListener('input', (e) => { voltDisplay.innerText = e.target.value + 'V'; });
+        setCompound('kmno4');
+    </script>
+</body>
+</html>
