@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ionic Compound Brittleness Simulation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #f8fafc;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        canvas {
+            border: 2px solid #334155;
+            border-radius: 8px;
+            background-color: #ffffff;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            touch-action: none;
+            cursor: default;
+        }
+        canvas.clickable {
+            cursor: pointer;
+        }
+        .controls {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .btn-hammer {
+            background-color: #ef4444;
+            color: white;
+        }
+        .btn-hammer:hover:not(:disabled) {
+            background-color: #dc2626;
+        }
+        .btn-hammer:disabled {
+            background-color: #94a3b8;
+            cursor: not-allowed;
+        }
+        .btn-reset {
+            background-color: #3b82f6;
+            color: white;
+        }
+        .btn-reset:hover {
+            background-color: #2563eb;
+        }
+        .mode-toggle {
+            display: flex;
+            background: #e2e8f0;
+            padding: 0.25rem;
+            border-radius: 0.5rem;
+            align-items: center;
+        }
+        .mode-btn {
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .mode-btn.active {
+            background: white;
+            color: #1e293b;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        #hammerIcon {
+            position: absolute;
+            left: -100px;
+            top: 20px; 
+            font-size: 70px;
+            pointer-events: none;
+            transform: scaleX(-1) rotate(45deg); 
+            opacity: 0;
+            z-index: 20;
+            filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.2));
+        }
+        .hammer-swing {
+            animation: strike 0.4s cubic-bezier(0.3, 0, 0.7, 1) forwards;
+            opacity: 1 !important;
+        }
+        @keyframes strike {
+            0% { transform: scaleX(-1) translate(0, 0) rotate(45deg); }
+            70% { transform: scaleX(-1) translate(75px, 40px) rotate(-15deg); }
+            100% { transform: scaleX(-1) translate(65px, 45px) rotate(-10deg); }
+        }
+
+        /* Updated Notification Style to not block diagram */
+        #shatterMessage {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            background-color: rgba(255, 255, 255, 0.95);
+            padding: 12px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border-left: 6px solid #ef4444;
+            z-index: 30;
+            pointer-events: none; /* Allows clicking canvas through the message area if needed, though we only click canvas below */
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center p-4 md:p-10">
+    <div class="max-w-3xl w-full text-center">
+        <h1 class="text-3xl font-bold text-slate-800 mb-2">Why are Ionic Crystals Brittle?</h1>
+        <p class="text-slate-600 mb-6">
+            In an ionic lattice, ions are held together by strong electrostatic forces. 
+            Watch what happens to the force directions when a physical force is applied.
+        </p>
+
+        <div class="relative inline-block">
+            <div id="hammerIcon">🔨</div>
+            
+            <canvas id="simCanvas"></canvas>
+            
+            <!-- Relocated message to the top to avoid blocking the lattice -->
+            <div id="shatterMessage" class="hidden">
+                <div class="flex flex-col items-center">
+                    <p id="messageTitle" class="text-red-600 font-bold text-lg uppercase leading-tight">Repulsion Occurring!</p>
+                    <p id="messageSub" class="text-xs text-slate-700">Like charges have aligned and are pushing apart.</p>
+                    <p id="manualPrompt" class="hidden mt-1 text-sm font-bold text-blue-600 animate-bounce">↓ CLICK CANVAS TO RELEASE ↓</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <div class="mode-toggle mr-4">
+                <button id="modeAuto" class="mode-btn active">Auto Split</button>
+                <button id="modeManual" class="mode-btn">Manual Split</button>
+            </div>
+            <button id="hammerBtn" class="btn btn-hammer">Apply Force (Hammer)</button>
+            <button id="resetBtn" class="btn btn-reset">Reset Structure</button>
+        </div>
+
+        <div class="mt-8 text-left bg-blue-50 p-6 rounded-xl border border-blue-100">
+            <h2 class="text-lg font-bold text-blue-900 mb-2">Key Concept:</h2>
+            <ul class="list-disc ml-5 text-blue-800 space-y-2">
+                <li><strong>Attraction (Green):</strong> Opposite charges pull toward each other.</li>
+                <li><strong>Repulsion (Red):</strong> Like charges push away from each other.</li>
+                <li><strong>Brittleness:</strong> Shifting layers causes like-charge alignment. In <strong>Manual mode</strong>, you can see this alignment frozen before the crystal shatters.</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+        const hammerBtn = document.getElementById('hammerBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const message = document.getElementById('shatterMessage');
+        const manualPrompt = document.getElementById('manualPrompt');
+        const hammerIcon = document.getElementById('hammerIcon');
+        const modeAuto = document.getElementById('modeAuto');
+        const modeManual = document.getElementById('modeManual');
+
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playImpactSound() {
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const oscGain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(150, now); 
+            osc.frequency.exponentialRampToValueAtTime(40, now + 0.15);
+            oscGain.gain.setValueAtTime(0.6, now);
+            oscGain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+            osc.connect(oscGain);
+            oscGain.connect(audioCtx.destination);
+            
+            const bufferSize = audioCtx.sampleRate * 0.1;
+            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) { data[i] = Math.random() * 2 - 1; }
+            const noise = audioCtx.createBufferSource();
+            noise.buffer = buffer;
+            const noiseFilter = audioCtx.createBiquadFilter();
+            noiseFilter.type = 'lowpass';
+            noiseFilter.frequency.setValueAtTime(1000, now);
+            const noiseGain = audioCtx.createGain();
+            noiseGain.gain.setValueAtTime(0.3, now);
+            noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+            noise.connect(noiseFilter);
+            noiseFilter.connect(noiseGain);
+            noiseGain.connect(audioCtx.destination);
+            osc.start(); osc.stop(now + 0.2);
+            noise.start(); noise.stop(now + 0.1);
+        }
+
+        const ROWS = 4;
+        const COLS = 6;
+        const ION_RADIUS = 25;
+        const SPACING = 85; 
+        
+        let ions = [];
+        let isShattered = false;
+        let isPausedForManual = false;
+        let splitMode = 'auto'; 
+        let animationFrame;
+
+        function init() {
+            ions = [];
+            isShattered = false;
+            isPausedForManual = false;
+            hammerBtn.disabled = false;
+            message.classList.add('hidden');
+            manualPrompt.classList.add('hidden');
+            canvas.classList.remove('clickable');
+            hammerIcon.classList.remove('hammer-swing');
+            hammerIcon.style.opacity = '0';
+            
+            const startX = (canvas.width - (COLS - 1) * SPACING) / 2;
+            const startY = (canvas.height - (ROWS - 1) * SPACING) / 2;
+
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    const type = (r + c) % 2 === 0 ? 'cation' : 'anion';
+                    ions.push({
+                        r, c,
+                        x: startX + c * SPACING,
+                        y: startY + r * SPACING,
+                        baseX: startX + c * SPACING,
+                        baseY: startY + r * SPACING,
+                        type: type,
+                        vx: 0,
+                        vy: 0
+                    });
+                }
+            }
+            draw();
+        }
+
+        function drawSingleArrow(ionA, ionB) {
+            const isAttracting = ionA.type !== ionB.type;
+            const color = isAttracting ? '#16a34a' : '#dc2626'; 
+            const dx = ionB.x - ionA.x;
+            const dy = ionB.y - ionA.y;
+            const angle = Math.atan2(dy, dx);
+            const headlen = 10;
+            const margin = 28; 
+
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 5;
+            ctx.beginPath();
+
+            const startX = ionA.x + Math.cos(angle) * margin;
+            const startY = ionA.y + Math.sin(angle) * margin;
+            const endX = ionB.x - Math.cos(angle) * margin;
+            const endY = ionB.y - Math.sin(angle) * margin;
+
+            ctx.moveTo(startX, startY);
+            ctx.lineTo(endX, endY);
+
+            // One head at A pointing toward B
+            ctx.moveTo(startX, startY);
+            ctx.lineTo(startX + headlen * Math.cos(angle + 0.6), startY + headlen * Math.sin(angle + 0.6));
+            ctx.moveTo(startX, startY);
+            ctx.lineTo(startX + headlen * Math.cos(angle - 0.6), startY + headlen * Math.sin(angle - 0.6));
+            
+            // One head at B pointing toward A
+            ctx.moveTo(endX, endY);
+            ctx.lineTo(endX + headlen * Math.cos(angle + 2.5), endY + headlen * Math.sin(angle + 2.5));
+            ctx.moveTo(endX, endY);
+            ctx.lineTo(endX + headlen * Math.cos(angle - 2.5), endY + headlen * Math.sin(angle - 2.5));
+            
+            ctx.stroke();
+        }
+
+        function drawAllForceArrows() {
+            for (let i = 0; i < ions.length; i++) {
+                const ionA = ions[i];
+                const rightNeighbor = ions.find(target => target.r === ionA.r && target.c === ionA.c + 1);
+                if (rightNeighbor) drawSingleArrow(ionA, rightNeighbor);
+
+                const bottomNeighbor = ions.find(target => target.c === ionA.c && target.r === ionA.r + 1);
+                if (bottomNeighbor) {
+                    if (ionA.r === 1) {
+                        const shiftedBottom = ions.filter(t => t.r === 2)
+                            .find(t => Math.abs(t.x - ionA.x) < SPACING / 2);
+                        if (shiftedBottom) drawSingleArrow(ionA, shiftedBottom);
+                    } else {
+                        drawSingleArrow(ionA, bottomNeighbor);
+                    }
+                }
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (!isShattered || isPausedForManual) {
+                drawAllForceArrows();
+            }
+
+            ions.forEach(ion => {
+                ctx.beginPath();
+                ctx.arc(ion.x, ion.y, ion.type === 'cation' ? ION_RADIUS * 0.85 : ION_RADIUS, 0, Math.PI * 2);
+                if (ion.type === 'cation') {
+                    ctx.fillStyle = '#3b82f6'; 
+                    ctx.fill();
+                    ctx.fillStyle = 'white';
+                    ctx.font = 'bold 20px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('+', ion.x, ion.y + 7);
+                } else {
+                    ctx.fillStyle = '#f97316'; 
+                    ctx.fill();
+                    ctx.fillStyle = 'white';
+                    ctx.font = 'bold 20px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('–', ion.x, ion.y + 7);
+                }
+                ctx.closePath();
+            });
+        }
+
+        function update() {
+            if (isShattered && !isPausedForManual) {
+                ions.forEach(ion => {
+                    if (ion.r < 2) ion.vy -= 1.5;
+                    else ion.vy += 1.5;
+                    ion.y += ion.vy;
+                });
+            }
+            
+            draw();
+            if (isShattered && !isPausedForManual && ions[0].y > -100 && ions[ions.length-1].y < canvas.height + 100) {
+                animationFrame = requestAnimationFrame(update);
+            }
+        }
+
+        function triggerShatter() {
+            isPausedForManual = false;
+            isShattered = true;
+            message.classList.add('hidden');
+            manualPrompt.classList.add('hidden');
+            canvas.classList.remove('clickable');
+            update();
+        }
+
+        hammerBtn.addEventListener('click', () => {
+            if (isShattered || isPausedForManual) return;
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            
+            hammerBtn.disabled = true;
+            hammerIcon.classList.add('hammer-swing');
+            
+            setTimeout(() => {
+                playImpactSound();
+                let shift = 0;
+                const shiftTarget = SPACING;
+                
+                const interval = setInterval(() => {
+                    shift += 4;
+                    ions.forEach(ion => { if (ion.r < 2) ion.x = ion.baseX + shift; });
+                    draw();
+
+                    if (shift >= shiftTarget) {
+                        clearInterval(interval);
+                        setTimeout(() => {
+                            message.classList.remove('hidden');
+                            if (splitMode === 'manual') {
+                                isPausedForManual = true;
+                                isShattered = true; 
+                                message.classList.remove('hidden');
+                                manualPrompt.classList.remove('hidden');
+                                canvas.classList.add('clickable');
+                                draw(); 
+                            } else {
+                                isShattered = true;
+                                update();
+                            }
+                        }, splitMode === 'manual' ? 100 : 800); 
+                    }
+                }, 16);
+            }, 280); 
+        });
+
+        canvas.addEventListener('click', () => {
+            if (isPausedForManual) {
+                triggerShatter();
+            }
+        });
+
+        resetBtn.addEventListener('click', () => {
+            cancelAnimationFrame(animationFrame);
+            init();
+        });
+
+        modeAuto.addEventListener('click', () => {
+            splitMode = 'auto';
+            modeAuto.classList.add('active');
+            modeManual.classList.remove('active');
+            init();
+        });
+
+        modeManual.addEventListener('click', () => {
+            splitMode = 'manual';
+            modeManual.classList.add('active');
+            modeAuto.classList.remove('active');
+            init();
+        });
+
+        window.onload = resize;
+        window.onresize = resize;
+        function resize() {
+            canvas.width = Math.min(window.innerWidth - 40, 600);
+            canvas.height = 450;
+            init();
+        }
+    </script>
+</body>
+</html>
