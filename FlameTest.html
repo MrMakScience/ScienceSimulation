@@ -331,7 +331,6 @@
             font-family: monospace;
             font-size: 14px;
             font-weight: bold;
-            text-transform: uppercase;
             letter-spacing: 0.05em;
             text-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
         }
@@ -457,10 +456,10 @@
         };
 
         const samples = {
-            'Cu': { name: 'Copper (II)', color: 'rgba(0, 255, 180, 0.8)', glow: 'rgba(0, 255, 150, 0.6)', powder: '#10b981' },
-            'K': { name: 'Potassium', color: 'rgba(200, 150, 255, 0.8)', glow: 'rgba(180, 100, 255, 0.6)', powder: '#ffffff' },
-            'Na': { name: 'Sodium', color: 'rgba(255, 200, 0, 0.9)', glow: 'rgba(255, 150, 0, 0.7)', powder: '#ffffff' },
-            'Ca': { name: 'Calcium', color: 'rgba(255, 80, 0, 0.8)', glow: 'rgba(255, 50, 0, 0.6)', powder: '#ffffff' }
+            'Cu': { name: 'copper (II)', color: 'rgba(0, 255, 180, 0.8)', glow: 'rgba(0, 255, 150, 0.6)', powder: '#10b981' },
+            'K': { name: 'potassium', color: 'rgba(200, 150, 255, 0.8)', glow: 'rgba(180, 100, 255, 0.6)', powder: '#ffffff' },
+            'Na': { name: 'sodium', color: 'rgba(255, 200, 0, 0.9)', glow: 'rgba(255, 150, 0, 0.7)', powder: '#ffffff' },
+            'Ca': { name: 'calcium', color: 'rgba(255, 80, 0, 0.8)', glow: 'rgba(255, 50, 0, 0.6)', powder: '#ffffff' }
         };
 
         const bench = document.getElementById('bench');
@@ -558,6 +557,12 @@
             for (let el of sampleElements) {
                 if (isColliding(tipRect, el.getBoundingClientRect())) {
                     const type = el.dataset.type;
+                    
+                    if (state.activeSample && state.activeSample !== type) {
+                        logEvent("WIRE MUST BE CLEAN WITH HCl FIRST BEFORE CONDUCTING ANOTHER TEST");
+                        return;
+                    }
+
                     if (!state.isWet) {
                         logEvent("Wire must be wet with HCl first");
                         return;
