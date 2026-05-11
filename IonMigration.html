@@ -48,11 +48,11 @@
 
         .u-ion-cloud {
             mix-blend-mode: multiply;
-            filter: blur(4px);
+            filter: blur(3px);
             pointer-events: none;
         }
 
-        /* Tab styling for active/inactive states */
+        /* Tab styling */
         .tab-active {
             color: #2563eb;
             border-bottom: 2px solid #2563eb;
@@ -145,25 +145,22 @@
                     <!-- Left Electrode -->
                     <rect x="55" y="95" width="15" height="120" fill="#333" rx="1" />
                     <rect id="filter-left-color" x="55" y="95" width="15" height="4" fill="#ef4444" />
-                    <text id="filter-left-label" x="62" y="90" text-anchor="middle" fill="#ef4444" font-size="12" font-weight="bold">+</text>
+                    <text id="filter-left-label" x="62.5" y="108" text-anchor="middle" fill="white" font-size="10" font-weight="bold">+</text>
                     
                     <!-- Right Electrode -->
                     <rect x="330" y="95" width="15" height="120" fill="#333" rx="1" />
                     <rect id="filter-right-color" x="330" y="95" width="15" height="4" fill="#3b82f6" />
-                    <text id="filter-right-label" x="337" y="90" text-anchor="middle" fill="#3b82f6" font-size="12" font-weight="bold">-</text>
+                    <text id="filter-right-label" x="337.5" y="108" text-anchor="middle" fill="white" font-size="10" font-weight="bold">-</text>
 
-                    <!-- Main circuit lines -->
+                    <!-- Circuit -->
                     <path d="M 62 95 L 62 45 L 135 45" fill="none" stroke="#333" stroke-width="2" />
                     <path d="M 230 45 L 337 45 L 337 95" fill="none" stroke="#333" stroke-width="2" />
 
-                    <!-- Component Group -->
                     <g transform="translate(135, 45)">
                         <circle cx="0" cy="0" r="3" fill="#333" />
                         <circle cx="30" cy="0" r="3" fill="#333" />
                         <line id="switch-arm-filter" x1="0" y1="0" x2="30" y2="0" stroke="#333" stroke-width="3" style="transform-origin: 0px 0px; transform: rotate(-35deg);" class="switch-arm" />
                         <line x1="30" y1="0" x2="55" y2="0" stroke="#333" stroke-width="2" />
-                        
-                        <!-- Battery Cell Group -->
                         <g id="filter-battery-group" transform="translate(55, 0)">
                             <line id="filter-batt-plate-pos" x1="5" y1="-10" x2="5" y2="10" stroke="#333" stroke-width="3" /> 
                             <line id="filter-batt-plate-neg" x1="15" y1="-5" x2="15" y2="5" stroke="#333" stroke-width="5" /> 
@@ -181,13 +178,11 @@
                 <div class="u-tube-container">
                     <svg class="glass-svg" viewBox="0 0 300 280">
                         <defs>
-                            <path id="tube-path" d="M 80 50 L 80 220 A 70 70 0 0 0 220 220 L 220 50 L 180 50 L 180 220 A 30 30 0 0 1 120 220 L 120 50 Z" />
-                            <clipPath id="tube-clip"><use href="#tube-path" /></clipPath>
-                            <clipPath id="left-arm-clip"><rect x="80" y="100" width="40" height="90" /></clipPath>
-                            <clipPath id="right-arm-clip"><rect x="180" y="100" width="40" height="90" /></clipPath>
+                            <path id="tube-shape" d="M 80 50 L 80 220 A 70 70 0 0 0 220 220 L 220 50 L 180 50 L 180 220 A 30 30 0 0 1 120 220 L 120 50 Z" />
+                            <clipPath id="tube-mask"><use href="#tube-shape" /></clipPath>
                         </defs>
                         
-                        <!-- Electrodes in the BACK -->
+                        <!-- Electrodes -->
                         <g transform="translate(90, 30)">
                             <rect width="20" height="120" fill="#333" rx="1" />
                         </g>
@@ -195,45 +190,40 @@
                             <rect width="20" height="120" fill="#333" rx="1" />
                         </g>
 
-                        <!-- The Solution and Meniscus in FRONT of rods -->
-                        <g clip-path="url(#tube-clip)">
-                            <!-- Buffer Fill -->
+                        <!-- Solution and Movement -->
+                        <g clip-path="url(#tube-mask)">
+                            <!-- Base buffer solution (U-part) -->
                             <path id="buffer-fill" d="M 80 185 L 80 220 A 70 70 0 0 0 220 220 L 220 185 L 180 185 L 180 220 A 30 30 0 0 1 120 220 L 120 185 Z" fill="#a855f7" opacity="0.4" />
                             
-                            <!-- Electrolyte Levels -->
+                            <!-- Electrolyte solution in arms -->
                             <rect x="80" y="100" width="40" height="85" fill="#bae6fd" opacity="0.3" />
                             <rect x="180" y="100" width="40" height="85" fill="#bae6fd" opacity="0.3" />
                             
-                            <!-- Moving Clouds -->
-                            <g clip-path="url(#left-arm-clip)">
-                                <rect id="utube-left-cloud" class="u-ion-cloud" x="80" y="190" width="40" height="0" fill="#3b82f6" opacity="0" />
-                            </g>
-                            <g clip-path="url(#right-arm-clip)">
-                                <rect id="utube-right-cloud" class="u-ion-cloud" x="180" y="190" width="40" height="0" fill="#facc15" opacity="0" />
-                            </g>
+                            <!-- Rising Ion Clouds -->
+                            <rect id="utube-left-cloud" class="u-ion-cloud" x="80" y="185" width="40" height="0" fill="#facc15" opacity="0" />
+                            <rect id="utube-right-cloud" class="u-ion-cloud" x="180" y="185" width="40" height="0" fill="#3b82f6" opacity="0" />
 
-                            <!-- The Meniscus line (Top surface of liquid) -->
+                            <!-- Interfaces -->
                             <line x1="80" y1="100" x2="120" y2="100" stroke="#0ea5e9" stroke-width="2.5" />
                             <line x1="180" y1="100" x2="220" y2="100" stroke="#0ea5e9" stroke-width="2.5" />
-                            
-                            <!-- Junction Lines -->
                             <line x1="80" y1="185" x2="120" y2="185" stroke="#94a3b8" stroke-width="1" stroke-dasharray="2,2" />
                             <line x1="180" y1="185" x2="220" y2="185" stroke="#94a3b8" stroke-width="1" stroke-dasharray="2,2" />
                         </g>
 
-                        <!-- Glass Outline and Labels -->
-                        <use href="#tube-path" fill="none" stroke="#94a3b8" stroke-width="2" />
+                        <!-- Glass Outline -->
+                        <use href="#tube-shape" fill="none" stroke="#94a3b8" stroke-width="2" />
                         
+                        <!-- Fixed Polarity: Left is Anode (+), Right is Cathode (-) -->
                         <g transform="translate(90, 30)">
-                            <rect id="utube-left-color" width="20" height="4" fill="#3b82f6" />
-                            <text id="utube-left-label" x="10" y="20" text-anchor="middle" fill="white" font-size="10" font-weight="bold">-</text>
+                            <rect id="utube-left-color" width="20" height="4" fill="#ef4444" />
+                            <text id="utube-left-label" x="10" y="12" text-anchor="middle" fill="white" font-size="11" font-weight="bold" pointer-events="none">+</text>
                         </g>
                         <g transform="translate(190, 30)">
-                            <rect id="utube-right-color" width="20" height="4" fill="#ef4444" />
-                            <text id="utube-right-label" x="10" y="20" text-anchor="middle" fill="white" font-size="10" font-weight="bold">+</text>
+                            <rect id="utube-right-color" width="20" height="4" fill="#3b82f6" />
+                            <text id="utube-right-label" x="10" y="12" text-anchor="middle" fill="white" font-size="11" font-weight="bold" pointer-events="none">-</text>
                         </g>
                         
-                        <!-- Circuitry - FIXED GAP: Extended right-side wire to bridge gap -->
+                        <!-- Circuitry -->
                         <path d="M 100 30 L 100 15 L 110 15" fill="none" stroke="#333" stroke-width="2"/>
                         <path d="M 175 15 L 200 15 L 200 30" fill="none" stroke="#333" stroke-width="2"/>
                         
@@ -241,13 +231,12 @@
                             <circle cx="0" cy="0" r="2.5" fill="#333" />
                             <circle cx="20" cy="0" r="2.5" fill="#333" />
                             <line id="switch-arm-utube" x1="0" y1="0" x2="20" y2="0" stroke="#333" stroke-width="3" style="transform-origin: 0px 0px; transform: rotate(-35deg);" class="switch-arm" />
-                            <line x1="20" y1="0" x2="40" y2="0" stroke="#333" stroke-width="1.5" />
+                            <line x1="20" y1="0" x2="40" y2="0" stroke="#333" stroke-width="2" />
                             
-                            <!-- Battery Group -->
                             <g id="utube-battery-group" transform="translate(40, 0)">
                                 <line id="utube-batt-plate-pos" x1="0" y1="-7" x2="0" y2="7" stroke="#333" stroke-width="2" /> 
-                                <line id="utube-batt-plate-neg" x1="8" y1="-3" x2="8" y2="3" stroke="#333" stroke-width="4" />
-                                <line x1="8" y1="0" x2="25" y2="0" stroke="#333" stroke-width="1.5" />
+                                <line id="utube-batt-plate-neg" x1="10" y1="-3" x2="10" y2="3" stroke="#333" stroke-width="4" />
+                                <line x1="10" y1="0" x2="50" y2="0" stroke="#333" stroke-width="2" />
                             </g>
                         </g>
                     </svg>
@@ -381,17 +370,16 @@
             const uPlateNeg = document.getElementById('utube-batt-plate-neg');
 
             if (polarityReversed) {
+                // Reverse battery symbols (Swap positions)
                 fPlatePos.setAttribute('x1', '15'); fPlatePos.setAttribute('x2', '15');
                 fPlateNeg.setAttribute('x1', '5'); fPlateNeg.setAttribute('x2', '5');
                 
                 document.getElementById('filter-left-label').textContent = '-';
-                document.getElementById('filter-left-label').setAttribute('fill', '#3b82f6');
                 document.getElementById('filter-left-color').setAttribute('fill', '#3b82f6');
                 document.getElementById('filter-right-label').textContent = '+';
-                document.getElementById('filter-right-label').setAttribute('fill', '#ef4444');
                 document.getElementById('filter-right-color').setAttribute('fill', '#ef4444');
 
-                uPlatePos.setAttribute('x1', '8'); uPlatePos.setAttribute('x2', '8');
+                uPlatePos.setAttribute('x1', '10'); uPlatePos.setAttribute('x2', '10');
                 uPlateNeg.setAttribute('x1', '0'); uPlateNeg.setAttribute('x2', '0');
                 
                 document.getElementById('utube-left-label').textContent = '-';
@@ -404,14 +392,12 @@
                 fPlateNeg.setAttribute('x1', '15'); fPlateNeg.setAttribute('x2', '15');
                 
                 document.getElementById('filter-left-label').textContent = '+';
-                document.getElementById('filter-left-label').setAttribute('fill', '#ef4444');
                 document.getElementById('filter-left-color').setAttribute('fill', '#ef4444');
                 document.getElementById('filter-right-label').textContent = '-';
-                document.getElementById('filter-right-label').setAttribute('fill', '#3b82f6');
                 document.getElementById('filter-right-color').setAttribute('fill', '#3b82f6');
 
                 uPlatePos.setAttribute('x1', '0'); uPlatePos.setAttribute('x2', '0');
-                uPlateNeg.setAttribute('x1', '8'); uPlateNeg.setAttribute('x2', '8');
+                uPlateNeg.setAttribute('x1', '10'); uPlateNeg.setAttribute('x2', '10');
 
                 document.getElementById('utube-left-label').textContent = '+';
                 document.getElementById('utube-left-color').setAttribute('fill', '#ef4444');
@@ -434,11 +420,11 @@
             fCation.setAttribute('cx', 200);
             
             uLeftCloud.setAttribute('height', 0);
-            uLeftCloud.setAttribute('y', 190);
+            uLeftCloud.setAttribute('y', 185);
             uLeftCloud.setAttribute('opacity', 0);
 
             uRightCloud.setAttribute('height', 0);
-            uRightCloud.setAttribute('y', 190);
+            uRightCloud.setAttribute('y', 185);
             uRightCloud.setAttribute('opacity', 0);
 
             uBufferFill.setAttribute('opacity', 0.4);
@@ -474,15 +460,16 @@
                     uRightCloud.style.visibility = c.cation.color === "transparent" ? "hidden" : "visible";
                 }
 
+                // Uniform rising front (rect moves upward)
                 uLeftCloud.setAttribute('height', currentRise);
-                uLeftCloud.setAttribute('y', 190 - currentRise);
-                uLeftCloud.setAttribute('opacity', Math.min(progress * 2, 0.75));
+                uLeftCloud.setAttribute('y', 185 - currentRise);
+                uLeftCloud.setAttribute('opacity', Math.min(progress * 2.5, 0.8));
 
                 uRightCloud.setAttribute('height', currentRise);
-                uRightCloud.setAttribute('y', 190 - currentRise);
-                uRightCloud.setAttribute('opacity', Math.min(progress * 2, 0.75));
+                uRightCloud.setAttribute('y', 185 - currentRise);
+                uRightCloud.setAttribute('opacity', Math.min(progress * 2.5, 0.8));
 
-                uBufferFill.setAttribute('opacity', Math.max(0.4 * (1 - (progress * 0.9)), 0.05));
+                uBufferFill.setAttribute('opacity', Math.max(0.4 * (1 - (progress * 0.8)), 0.1));
             }
             updateObservations();
             if (isPowerOn) requestAnimationFrame(updateSim);
@@ -513,6 +500,7 @@
         }
 
         voltInput.addEventListener('input', (e) => { voltDisplay.innerText = e.target.value + 'V'; });
+        // Initial call
         setCompound('kmno4');
     </script>
 </body>
