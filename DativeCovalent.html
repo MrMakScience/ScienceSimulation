@@ -101,6 +101,10 @@
         let activeCharge = null;
         let activeTargetId = null;
 
+        // Colors
+        const DONOR_MOL_COLOR = '#3b82f6';   // Consistent blue for donor side
+        const ACCEPTOR_MOL_COLOR = '#f59e0b'; // Consistent orange for acceptor side
+
         // SVG Symbol Generators
         const getCrossSVG = (color) => `<path d="M-4.5,-4.5 L4.5,4.5 M-4.5,4.5 L4.5,-4.5" stroke="${color}" stroke-width="2.5" fill="none" class="symbol-draw" />`;
         const getDotSVG = (color) => `<circle cx="0" cy="0" r="4.5" fill="${color}" class="symbol-fill" />`;
@@ -158,20 +162,11 @@
                 <text x="0" y="8" text-anchor="middle" class="atom-label" fill="${color}">${label}</text>`;
         }
 
-        /**
-         * Refined Lone Pair Logic: 
-         * Pairs rotate to follow the curvature of the shell circle.
-         * Top/Bottom (90/270) -> Horizontal alignment
-         * Left/Right (180/0) -> Vertical alignment
-         */
         function getLonePairHtml(angleDeg, color, symbolType = 'x', customRadius = PERIPHERAL_RADIUS) {
             const rad = (angleDeg * Math.PI) / 180;
             const dist = customRadius;
             const tx = Math.cos(rad) * dist, ty = Math.sin(rad) * dist;
             
-            // To make a pair align with the circle's curve (tangential):
-            // If angle is 0 (right side), pair should be vertical (rotated 90deg).
-            // If angle is 90 (bottom), pair should be horizontal (rotated 180deg/0deg relative to base).
             const pairRotation = angleDeg + 90; 
             const symbolHtml = symbolType === 'x' ? getCrossSVG(color) : getCircleSVG(color);
             const offset = 8;
@@ -183,7 +178,7 @@
                 </g>`;
         }
 
-        function getBondHtml(angleDeg, sym1Type, sym2Type, atomColor, atomLabel) {
+        function getBondHtml(angleDeg, sym1Type, sym2Type, molColor, atomLabel) {
             const rad = (angleDeg * Math.PI) / 180;
             const vec = { x: Math.cos(rad), y: Math.sin(rad) };
             const distToPeripheral = MAIN_RADIUS + PERIPHERAL_RADIUS - OVERLAP_DEPTH;
@@ -201,15 +196,15 @@
             let lonePairs = '';
             if (atomLabel === 'Cl' || atomLabel === 'F') {
                 const baseAngle = (angleDeg + 180) % 360;
-                lonePairs = getLonePairHtml(baseAngle + 90, atomColor, 'o') + 
-                            getLonePairHtml(baseAngle + 180, atomColor, 'o') + 
-                            getLonePairHtml(baseAngle + 270, atomColor, 'o');
+                lonePairs = getLonePairHtml(baseAngle + 90, molColor, 'o') + 
+                            getLonePairHtml(baseAngle + 180, molColor, 'o') + 
+                            getLonePairHtml(baseAngle + 270, molColor, 'o');
             }
 
             return `<g class="electron-transition">
                 <g transform="translate(${atomX}, ${atomY})">
-                    <circle cx="0" cy="0" r="${PERIPHERAL_RADIUS}" fill="none" stroke="${atomColor}" stroke-width="1.5" />
-                    <text x="0" y="5" text-anchor="middle" class="atom-label" style="font-size:0.9rem" fill="${atomColor}">${atomLabel}</text>
+                    <circle cx="0" cy="0" r="${PERIPHERAL_RADIUS}" fill="none" stroke="${molColor}" stroke-width="1.5" />
+                    <text x="0" y="5" text-anchor="middle" class="atom-label" style="font-size:0.9rem" fill="${molColor}">${atomLabel}</text>
                     ${lonePairs}
                 </g>
                 <g transform="translate(${sharedX}, ${sharedY}) rotate(${angleDeg + 90})">
@@ -223,10 +218,6 @@
             const dist = isDative ? (MAIN_RADIUS - (OVERLAP_DEPTH / 2)) : MAIN_RADIUS;
             const tx = Math.cos(rad) * dist, ty = Math.sin(rad) * dist;
             const offset = 8;
-            
-            // Tangential rotation: angleDeg + 90
-            // This ensures pairs on left/right (0, 180) are vertical
-            // and pairs on top/bottom (90, 270) are horizontal
             const pairRotation = angleDeg + 90;
 
             return `<g transform="translate(${tx}, ${ty}) rotate(${pairRotation})">
@@ -246,9 +237,15 @@
                     const cy = 225;
                     groups.donor.setAttribute('transform', `translate(${dX}, ${cy})`);
                     groups.acceptor.setAttribute('transform', `translate(${aX}, ${cy})`);
-                    groups.donor.innerHTML = getAtomHtml('#3b82f6', 'N') + getBondHtml(270, 'x', 'o', '#64748b', 'H') + getBondHtml(180, 'x', 'o', '#64748b', 'H') + getBondHtml(90, 'x', 'o', '#64748b', 'H');
-                    const box = (step === 1) ? `<rect x="-105" y="-20" width="40" height="40" fill="none" stroke="#f59e0b" stroke-width="2" stroke-dasharray="4" class="highlight-pulse" />` : '';
-                    groups.acceptor.innerHTML = getAtomHtml('#f59e0b', 'B') + getBondHtml(270, 'dot', 'o', '#10b981', 'F') + getBondHtml(0, 'dot', 'o', '#10b981', 'F') + getBondHtml(90, 'dot', 'o', '#10b981', 'F') + box;
+                    groups.donor.innerHTML = getAtomHtml(DONOR_MOL_COLOR, 'N') + 
+                                           getBondHtml(270, 'x', 'o', DONOR_MOL_COLOR, 'H') + 
+                                           getBondHtml(180, 'x', 'o', DONOR_MOL_COLOR, 'H') + 
+                                           getBondHtml(90, 'x', 'o', DONOR_MOL_COLOR, 'H');
+                    const box = (step === 1) ? `<rect x="-105" y="-20" width="40" height="40" fill="none" stroke="${ACCEPTOR_MOL_COLOR}" stroke-width="2" stroke-dasharray="4" class="highlight-pulse" />` : '';
+                    groups.acceptor.innerHTML = getAtomHtml(ACCEPTOR_MOL_COLOR, 'B') + 
+                                              getBondHtml(270, 'dot', 'o', ACCEPTOR_MOL_COLOR, 'F') + 
+                                              getBondHtml(0, 'dot', 'o', ACCEPTOR_MOL_COLOR, 'F') + 
+                                              getBondHtml(90, 'dot', 'o', ACCEPTOR_MOL_COLOR, 'F') + box;
                     groups.lonePair.setAttribute('transform', `translate(${dX}, ${cy})`);
                     groups.lonePair.innerHTML = getLonePairSymbols(0, '#ef4444', step === 0, isMerged);
                     startBracketTracking(null, null);
@@ -264,12 +261,15 @@
                     const cy = 225;
                     groups.donor.setAttribute('transform', `translate(${dX}, ${cy})`);
                     groups.acceptor.setAttribute('transform', `translate(${aX}, ${cy})`);
-                    groups.donor.innerHTML = getAtomHtml('#10b981', 'Cl') + 
-                        getLonePairHtml(270, '#10b981', 'x', MAIN_RADIUS) + 
-                        getLonePairHtml(180, '#10b981', 'x', MAIN_RADIUS) + 
-                        getLonePairHtml(90, '#10b981', 'x', MAIN_RADIUS);
-                    const box = (step === 1) ? `<rect x="-105" y="-20" width="40" height="40" fill="none" stroke="#f59e0b" stroke-width="2" stroke-dasharray="4" class="highlight-pulse" />` : '';
-                    groups.acceptor.innerHTML = getAtomHtml('#f59e0b', 'Al') + getBondHtml(270, 'dot', 'o', '#10b981', 'Cl') + getBondHtml(0, 'dot', 'o', '#10b981', 'Cl') + getBondHtml(90, 'dot', 'o', '#10b981', 'Cl') + box;
+                    groups.donor.innerHTML = getAtomHtml(DONOR_MOL_COLOR, 'Cl') + 
+                        getLonePairHtml(270, DONOR_MOL_COLOR, 'x', MAIN_RADIUS) + 
+                        getLonePairHtml(180, DONOR_MOL_COLOR, 'x', MAIN_RADIUS) + 
+                        getLonePairHtml(90, DONOR_MOL_COLOR, 'x', MAIN_RADIUS);
+                    const box = (step === 1) ? `<rect x="-105" y="-20" width="40" height="40" fill="none" stroke="${ACCEPTOR_MOL_COLOR}" stroke-width="2" stroke-dasharray="4" class="highlight-pulse" />` : '';
+                    groups.acceptor.innerHTML = getAtomHtml(ACCEPTOR_MOL_COLOR, 'Al') + 
+                                              getBondHtml(270, 'dot', 'o', ACCEPTOR_MOL_COLOR, 'Cl') + 
+                                              getBondHtml(0, 'dot', 'o', ACCEPTOR_MOL_COLOR, 'Cl') + 
+                                              getBondHtml(90, 'dot', 'o', ACCEPTOR_MOL_COLOR, 'Cl') + box;
                     groups.lonePair.setAttribute('transform', `translate(${dX}, ${cy})`);
                     groups.lonePair.innerHTML = getLonePairSymbols(0, '#ef4444', step === 0, isMerged);
                     if (isMerged) startBracketTracking('drawing-area', '-');
@@ -288,9 +288,12 @@
                     const cy = 225;
                     groups.donor.setAttribute('transform', `translate(${dX}, ${cy})`);
                     groups.acceptor.setAttribute('transform', `translate(${aX}, ${cy})`);
-                    groups.donor.innerHTML = getAtomHtml('#ef4444', 'O') + getBondHtml(180, 'x', 'o', '#64748b', 'H') + getBondHtml(90, 'x', 'o', '#64748b', 'H') + getLonePairHtml(270, '#ef4444', 'x', MAIN_RADIUS);
+                    groups.donor.innerHTML = getAtomHtml(DONOR_MOL_COLOR, 'O') + 
+                                           getBondHtml(180, 'x', 'o', DONOR_MOL_COLOR, 'H') + 
+                                           getBondHtml(90, 'x', 'o', DONOR_MOL_COLOR, 'H') + 
+                                           getLonePairHtml(270, DONOR_MOL_COLOR, 'x', MAIN_RADIUS);
                     const box = (step === 1) ? `<circle cx="-25" cy="0" r="28" fill="none" stroke="#ef4444" stroke-width="2" stroke-dasharray="4" class="highlight-pulse" />` : '';
-                    groups.acceptor.innerHTML = `<circle cx="0" cy="0" r="${H_RAD}" fill="none" stroke="#64748b" stroke-width="2" stroke-dasharray="4" /><text x="0" y="8" text-anchor="middle" class="atom-label" fill="#64748b">H</text>${box}`;
+                    groups.acceptor.innerHTML = `<circle cx="0" cy="0" r="${H_RAD}" fill="none" stroke="${ACCEPTOR_MOL_COLOR}" stroke-width="2" stroke-dasharray="4" /><text x="0" y="8" text-anchor="middle" class="atom-label" fill="${ACCEPTOR_MOL_COLOR}">H</text>${box}`;
                     groups.lonePair.setAttribute('transform', `translate(${dX}, ${cy})`);
                     groups.lonePair.innerHTML = getLonePairSymbols(0, '#ef4444', step === 0, isMerged);
                     if (isMerged) startBracketTracking('drawing-area', '+');
@@ -309,9 +312,12 @@
                     const cy = 225;
                     groups.donor.setAttribute('transform', `translate(${dX}, ${cy})`);
                     groups.acceptor.setAttribute('transform', `translate(${aX}, ${cy})`);
-                    groups.donor.innerHTML = getAtomHtml('#3b82f6', 'N') + getBondHtml(270, 'x', 'o', '#64748b', 'H') + getBondHtml(180, 'x', 'o', '#64748b', 'H') + getBondHtml(90, 'x', 'o', '#64748b', 'H');
+                    groups.donor.innerHTML = getAtomHtml(DONOR_MOL_COLOR, 'N') + 
+                                           getBondHtml(270, 'x', 'o', DONOR_MOL_COLOR, 'H') + 
+                                           getBondHtml(180, 'x', 'o', DONOR_MOL_COLOR, 'H') + 
+                                           getBondHtml(90, 'x', 'o', DONOR_MOL_COLOR, 'H');
                     const box = (step === 1) ? `<circle cx="-25" cy="0" r="28" fill="none" stroke="#ef4444" stroke-width="2" stroke-dasharray="4" class="highlight-pulse" />` : '';
-                    groups.acceptor.innerHTML = `<circle cx="0" cy="0" r="${H_RAD}" fill="none" stroke="#64748b" stroke-width="2" stroke-dasharray="4" /><text x="0" y="8" text-anchor="middle" class="atom-label" fill="#64748b">H</text>${box}`;
+                    groups.acceptor.innerHTML = `<circle cx="0" cy="0" r="${H_RAD}" fill="none" stroke="${ACCEPTOR_MOL_COLOR}" stroke-width="2" stroke-dasharray="4" /><text x="0" y="8" text-anchor="middle" class="atom-label" fill="${ACCEPTOR_MOL_COLOR}">H</text>${box}`;
                     groups.lonePair.setAttribute('transform', `translate(${dX}, ${cy})`);
                     groups.lonePair.innerHTML = getLonePairSymbols(0, '#ef4444', step === 0, isMerged);
                     if (isMerged) startBracketTracking('drawing-area', '+');
@@ -365,12 +371,12 @@
                             <text x="100" y="-60" class="ion-charge" style="fill:#000">${charge}</text>
                         </g>` : ''}
                     <g transform="translate(${dX}, 0)">
-                        <text x="0" y="7" text-anchor="middle" class="struct-text">${dSym}</text>
+                        <text x="0" y="7" text-anchor="middle" class="struct-text" style="fill:${DONOR_MOL_COLOR}">${dSym}</text>
                         ${drawBonds(dNeighbors, 'L')}
                         ${(!isMerged && dIsIon) ? atomBracket(charge) : ''}
                     </g>
                     <g transform="translate(${aX}, 0)">
-                        <text x="0" y="7" text-anchor="middle" class="struct-text">${aSym}</text>
+                        <text x="0" y="7" text-anchor="middle" class="struct-text" style="fill:${ACCEPTOR_MOL_COLOR}">${aSym}</text>
                         ${drawBonds(aNeighbors, 'R')}
                         ${(!isMerged && aIsIon) ? atomBracket(charge) : ''}
                     </g>
