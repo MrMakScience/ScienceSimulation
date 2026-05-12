@@ -32,22 +32,22 @@
             75% { transform: translateX(5px); }
         }
 
-        .strike-container { position: relative; display: inline-block; }
+        .strike-container { position: relative; display: flex; align-items: center; justify-content: center; }
         .strike-line {
             position: absolute;
             top: 50%;
-            left: 0;
+            left: 50%;
             width: 0;
             height: 4px;
             background-color: #ef4444;
-            transform: translateY(-50%) rotate(-15deg);
+            transform: translate(-50%, -50%) rotate(-15deg);
             border-radius: 2px;
             pointer-events: none;
-            z-index: 20;
-            animation: strikeGrow 0.5s ease-out forwards;
+            z-index: 70;
+            animation: strikeGrow 0.4s ease-out forwards;
         }
         @keyframes strikeGrow {
-            to { width: 100%; }
+            to { width: 120%; }
         }
 
         input::-webkit-outer-spin-button,
@@ -56,16 +56,11 @@
             margin: 0;
         }
 
-        input:focus {
-            background-color: white !important;
-            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
-        }
-
-        .step2-input-wrapper {
+        .step-input-wrapper {
             position: relative;
-            z-index: 50; /* Ensure it stays above SVG */
+            z-index: 50;
         }
-        .step2-controls {
+        .step-controls {
             position: absolute;
             right: -24px;
             top: 50%;
@@ -75,7 +70,7 @@
             gap: 2px;
             z-index: 60;
         }
-        .step2-arrow {
+        .step-arrow {
             padding: 4px;
             background: #e2e8f0;
             border-radius: 4px;
@@ -85,8 +80,8 @@
             border: none;
             line-height: 0;
         }
-        .step2-arrow:hover { background: #cbd5e1; color: #1e293b; }
-        .step2-arrow:active { transform: scale(0.9); }
+        .step-arrow:hover { background: #cbd5e1; color: #1e293b; }
+        .step-arrow:active { transform: scale(0.9); }
     </style>
 </head>
 <body class="p-4 md:p-8">
@@ -213,14 +208,19 @@
             if (currentStep === 3) {
                 const correctSub1 = el2.needs / commonFactor;
                 const correctSub2 = el1.needs / commonFactor;
+                
+                // Final validation check for "1"s and correctness
                 const val1 = (simplifiedInputs.sub1 === "" || simplifiedInputs.sub1 === "0") ? 1 : parseInt(simplifiedInputs.sub1);
                 const val2 = (simplifiedInputs.sub2 === "" || simplifiedInputs.sub2 === "0") ? 1 : parseInt(simplifiedInputs.sub2);
 
-                if (val1 === correctSub1 && val2 === correctSub2) {
+                const isSub1Valid = validateOneAtEnd('sub1', simplifiedInputs.sub1, correctSub1);
+                const isSub2Valid = validateOneAtEnd('sub2', simplifiedInputs.sub2, correctSub2);
+
+                if (isSub1Valid && isSub2Valid) {
                     currentStep++;
                     renderStep();
                 } else {
-                    shakeGuidance("Check the math. Simplify the ratio and cancel (leave blank) any 1s.");
+                    shakeGuidance("Check the math. Simplify the ratio and cancel any 1s by leaving the box empty.");
                 }
                 return;
             }
@@ -231,6 +231,35 @@
             } else {
                 resetSim();
             }
+        }
+
+        function validateOneAtEnd(key, currentVal, correctVal) {
+            const inputEl = document.getElementById('sim-input-' + key);
+            const container = inputEl.parentElement;
+            
+            if (currentVal === "1") {
+                const strike = document.createElement('div');
+                strike.className = "strike-line";
+                container.appendChild(strike);
+                inputEl.className = "w-14 h-14 text-center text-3xl font-bold border-2 border-red-400 rounded-xl text-red-600 bg-red-50 transition-all select-none pointer-events-none";
+                
+                setTimeout(() => {
+                    strike.remove();
+                    simplifiedInputs[key] = "";
+                    inputEl.value = "";
+                    inputEl.className = "w-14 h-14 text-center text-3xl font-bold border-2 border-blue-200 rounded-xl text-blue-600 bg-blue-50 transition-all select-none pointer-events-none";
+                    updateNextBtnState();
+                }, 800);
+                return false;
+            }
+
+            const numVal = (currentVal === "" || currentVal === "0") ? 1 : parseInt(currentVal);
+            if (numVal !== correctVal) {
+                inputEl.className = "w-14 h-14 text-center text-3xl font-bold border-2 border-red-400 rounded-xl text-red-600 bg-red-50 transition-all select-none pointer-events-none";
+                return false;
+            }
+
+            return true;
         }
 
         function triggerFlyToHeaders() {
@@ -318,48 +347,24 @@
             updateNextBtnState();
         }
 
-        function handleCrossInput(key, val) {
-            let num = parseInt(val);
-            if (isNaN(num) || num < 0) num = 0;
-            if (num > 4) num = 4;
-            crossInputs[key] = num === 0 ? "" : num.toString();
-            
-            const inputEl = document.getElementById('input-' + key);
-            if (inputEl) inputEl.value = crossInputs[key];
-            
-            updateNextBtnState();
-        }
-
-        function stepVal(key, delta) {
-            let current = parseInt(crossInputs[key]) || 0;
-            let next = current + delta;
-            handleCrossInput(key, next.toString());
-        }
-
-        function handleSimplifiedInput(key, val, inputEl) {
-            const [el1, el2] = currentPair;
-            const gcd = (a, b) => b === 0 ? a : gcd(b, a % b);
-            const cf = gcd(el1.needs, el2.needs);
-            const correctTarget = key === 'sub1' ? el2.needs / cf : el1.needs / cf;
-            
-            let numVal = parseInt(val);
-            if (val === "1") {
-                const container = inputEl.parentElement;
-                const strike = document.createElement('div');
-                strike.className = "strike-line";
-                container.appendChild(strike);
-                shakeGuidance("No '1's! In chemistry, we cancel them by leaving the box empty.");
-                setTimeout(() => {
-                    strike.remove(); inputEl.value = ""; simplifiedInputs[key] = "";
-                    inputEl.className = "w-16 h-16 text-center text-3xl border-2 border-green-200 rounded-xl text-green-600 focus:border-green-500 bg-green-50 cursor-text";
-                    updateNextBtnState();
-                }, 800);
-            } else if (val !== "" && numVal !== correctTarget) {
-                inputEl.className = "w-16 h-16 text-center text-3xl border-2 border-red-400 rounded-xl text-red-600 focus:border-red-500 bg-red-50 cursor-text";
-                simplifiedInputs[key] = val;
-            } else {
-                inputEl.className = "w-16 h-16 text-center text-3xl border-2 border-green-200 rounded-xl text-green-600 focus:border-green-500 bg-green-50 cursor-text";
-                simplifiedInputs[key] = val;
+        function stepVal(step, key, delta) {
+            if (step === 2) {
+                let current = parseInt(crossInputs[key]) || 0;
+                let next = Math.max(0, Math.min(4, current + delta));
+                crossInputs[key] = next === 0 ? "" : next.toString();
+                const inputEl = document.getElementById('input-' + key);
+                if (inputEl) inputEl.value = crossInputs[key];
+            } else if (step === 3) {
+                let current = parseInt(simplifiedInputs[key]) || 0;
+                let next = Math.max(0, Math.min(4, current + delta));
+                const valStr = next === 0 ? "" : next.toString();
+                simplifiedInputs[key] = valStr;
+                const inputEl = document.getElementById('sim-input-' + key);
+                if (inputEl) {
+                    inputEl.value = valStr;
+                    // Reset styling while typing so user can cycle freely
+                    inputEl.className = "w-14 h-14 text-center text-3xl font-bold border-2 border-blue-200 rounded-xl text-blue-600 bg-blue-50 transition-all select-none pointer-events-none";
+                }
             }
             updateNextBtnState();
         }
@@ -405,7 +410,7 @@
                 display.innerHTML = `<div class="flex gap-8 items-start fade-in">${[el1, el2].map((el, idx) => `<div class="text-center p-6 bg-slate-50 rounded-2xl border border-slate-100 shadow-sm w-44"><div class="w-12 h-12 bg-slate-800 text-white rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4">${el.sym}</div><div class="mb-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Start: <span class="font-mono text-slate-700">${el.start}</span></div><div class="mb-4 text-[10px] font-bold text-blue-500 uppercase tracking-wider">Target: <span class="font-mono text-blue-600">${el.full}</span></div><div class="pt-4 border-t border-slate-200"><p class="text-xs font-bold text-slate-500 mb-2 uppercase">Missing?</p><div class="grid grid-cols-2 gap-2">${[1, 2, 3, 4].map(num => `<button onclick="checkInput(${idx}, ${num}, this)" class="py-3 border-2 rounded-lg font-bold transition-all ${userInputs[idx === 0 ? 'el1' : 'el2'] === num ? 'bg-green-500 text-white border-green-600' : 'bg-white text-slate-600 border-slate-200 hover:border-blue-400'}" ${userInputs[idx === 0 ? 'el1' : 'el2'] === num ? `data-correct-btn="${idx}"` : ''}>${num}</button>`).join('')}</div></div></div>`).join('')}</div>`;
             } else if (currentStep === 2) {
                 nextBtnText.innerText = "Check & Cross";
-                guidance.innerText = `Cross over the numbers: One atom's need becomes the other's subscript. Click the up/down arrows (Max 4).`;
+                guidance.innerText = `Cross over the numbers: One atom's need becomes the other's subscript. Click the up/down arrows.`;
                 display.innerHTML = `
                 <div class="relative w-full max-w-[500px] h-80 flex flex-col items-center fade-in">
                     <div class="flex justify-between w-full px-12 mb-12">
@@ -428,13 +433,13 @@
                         <div class="flex items-baseline gap-2">
                             <span class="text-7xl font-bold text-slate-800">${el1.sym}</span>
                             <div class="relative w-16 h-16 flex items-center justify-center">
-                                <div id="input-sub1-container" class="step2-input-wrapper ${crossInputs.sub1 && crossInputs.sub2 && !showStep2Values ? 'hidden' : ''}">
+                                <div id="input-sub1-container" class="step-input-wrapper ${crossInputs.sub1 && crossInputs.sub2 && !showStep2Values ? 'hidden' : ''}">
                                     <input type="number" id="input-sub1" placeholder=" " value="${crossInputs.sub1}" 
                                         readonly
                                         class="w-14 h-14 text-center text-3xl font-bold border-2 border-blue-200 rounded-xl text-blue-600 bg-blue-50 transition-all select-none pointer-events-none">
-                                    <div class="step2-controls">
-                                        <button onclick="stepVal('sub1', 1)" class="step2-arrow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m18 15-6-6-6 6"/></svg></button>
-                                        <button onclick="stepVal('sub1', -1)" class="step2-arrow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m6 9 6 6 6-6"/></svg></button>
+                                    <div class="step-controls">
+                                        <button onclick="stepVal(2, 'sub1', 1)" class="step-arrow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m18 15-6-6-6 6"/></svg></button>
+                                        <button onclick="stepVal(2, 'sub1', -1)" class="step-arrow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m6 9 6 6 6-6"/></svg></button>
                                     </div>
                                 </div>
                                 <span id="res-sub1" class="text-5xl font-bold text-blue-600 opacity-0 leading-none">${el2.needs}</span>
@@ -443,13 +448,13 @@
                         <div class="flex items-baseline gap-2">
                             <span class="text-7xl font-bold text-slate-800">${el2.sym}</span>
                             <div class="relative w-16 h-16 flex items-center justify-center">
-                                <div id="input-sub2-container" class="step2-input-wrapper ${crossInputs.sub1 && crossInputs.sub2 && !showStep2Values ? 'hidden' : ''}">
+                                <div id="input-sub2-container" class="step-input-wrapper ${crossInputs.sub1 && crossInputs.sub2 && !showStep2Values ? 'hidden' : ''}">
                                     <input type="number" id="input-sub2" placeholder=" " value="${crossInputs.sub2}" 
                                         readonly
                                         class="w-14 h-14 text-center text-3xl font-bold border-2 border-blue-200 rounded-xl text-blue-600 bg-blue-50 transition-all select-none pointer-events-none">
-                                    <div class="step2-controls">
-                                        <button onclick="stepVal('sub2', 1)" class="step2-arrow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m18 15-6-6-6 6"/></svg></button>
-                                        <button onclick="stepVal('sub2', -1)" class="step2-arrow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m6 9 6 6 6-6"/></svg></button>
+                                    <div class="step-controls">
+                                        <button onclick="stepVal(2, 'sub2', 1)" class="step-arrow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m18 15-6-6-6 6"/></svg></button>
+                                        <button onclick="stepVal(2, 'sub2', -1)" class="step-arrow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m6 9 6 6 6-6"/></svg></button>
                                     </div>
                                 </div>
                                 <span id="res-sub2" class="text-5xl font-bold text-blue-600 opacity-0 leading-none">${el1.needs}</span>
@@ -459,8 +464,44 @@
                 </div>`;
             } else if (currentStep === 3) {
                 nextBtnText.innerText = "Simplify & Check";
-                guidance.innerText = `Simplify the ratio. In chemistry, we cancel the 1 (leave the box empty or 0).`;
-                display.innerHTML = `<div class="flex flex-col items-center gap-10 fade-in py-10"><div class="flex items-center gap-8 text-5xl md:text-6xl font-bold"><div class="text-slate-400">${el1.sym}<sub>${el2.needs}</sub>${el2.sym}<sub>${el1.needs}</sub></div><div class="text-slate-300">→</div><div class="flex items-baseline gap-4"><div class="flex items-baseline gap-1"><span>${el1.sym}</span><div class="strike-container"><input type="number" id="sim-sub1" placeholder=" " value="${simplifiedInputs.sub1}" oninput="handleSimplifiedInput('sub1', this.value, this)" class="w-16 h-16 text-center text-3xl border-2 border-green-200 rounded-xl text-green-600 focus:border-green-500 bg-green-50 cursor-text transition-colors"></div></div><div class="flex items-baseline gap-1"><span>${el2.sym}</span><div class="strike-container"><input type="number" id="sim-sub2" placeholder=" " value="${simplifiedInputs.sub2}" oninput="handleSimplifiedInput('sub2', this.value, this)" class="w-16 h-16 text-center text-3xl border-2 border-green-200 rounded-xl text-green-600 focus:border-green-500 bg-green-50 cursor-text transition-colors"></div></div></div></div><div class="text-center"><p class="text-sm text-slate-500 italic mb-2">Tip: If a subscript is 1, leave the box empty to cancel it.</p><div class="bg-red-50 text-red-700 text-xs font-bold px-3 py-1 rounded-full border border-red-100 inline-block uppercase tracking-wider">Don't enter 1</div></div></div>`;
+                guidance.innerText = `Simplify the ratio. In chemistry, we cancel the 1 (leave the box empty).`;
+                display.innerHTML = `
+                <div class="flex flex-col items-center gap-10 fade-in py-10">
+                    <div class="flex items-center gap-8 text-5xl md:text-6xl font-bold">
+                        <div class="text-slate-400">${el1.sym}<sub>${el2.needs}</sub>${el2.sym}<sub>${el1.needs}</sub></div>
+                        <div class="text-slate-300">→</div>
+                        <div class="flex items-baseline gap-6">
+                            <div class="flex items-baseline gap-2">
+                                <span>${el1.sym}</span>
+                                <div class="step-input-wrapper strike-container">
+                                    <input type="number" id="sim-input-sub1" placeholder=" " value="${simplifiedInputs.sub1}" 
+                                        readonly
+                                        class="w-14 h-14 text-center text-3xl font-bold border-2 border-blue-200 rounded-xl text-blue-600 bg-blue-50 transition-all select-none pointer-events-none">
+                                    <div class="step-controls">
+                                        <button onclick="stepVal(3, 'sub1', 1)" class="step-arrow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m18 15-6-6-6 6"/></svg></button>
+                                        <button onclick="stepVal(3, 'sub1', -1)" class="step-arrow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m6 9 6 6 6-6"/></svg></button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex items-baseline gap-2">
+                                <span>${el2.sym}</span>
+                                <div class="step-input-wrapper strike-container">
+                                    <input type="number" id="sim-input-sub2" placeholder=" " value="${simplifiedInputs.sub2}" 
+                                        readonly
+                                        class="w-14 h-14 text-center text-3xl font-bold border-2 border-blue-200 rounded-xl text-blue-600 bg-blue-50 transition-all select-none pointer-events-none">
+                                    <div class="step-controls">
+                                        <button onclick="stepVal(3, 'sub2', 1)" class="step-arrow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m18 15-6-6-6 6"/></svg></button>
+                                        <button onclick="stepVal(3, 'sub2', -1)" class="step-arrow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m6 9 6 6 6-6"/></svg></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-sm text-slate-500 italic mb-2">Tip: If a subscript is 1, leave it empty to cancel it.</p>
+                        <div class="bg-red-50 text-red-700 text-xs font-bold px-3 py-1 rounded-full border border-red-100 inline-block uppercase tracking-wider">Don't leave a 1</div>
+                    </div>
+                </div>`;
             } else if (currentStep === 4) {
                 nextBtnText.innerText = "Get Chemical Name";
                 const gcd = (a, b) => b === 0 ? a : gcd(b, a % b), cf = gcd(el1.needs, el2.needs);
@@ -495,7 +536,7 @@
                                 <li class="flex gap-2"><span>3.</span> <span>The prefix (mono, di, tri, tetra) is used to indicate the number of the atoms of the element of that compound.</span></li>
                             </ul>
                             <div class="mt-4 pt-4 border-t border-amber-200 italic text-amber-800">
-                                <b>Note:</b> Name of H<sub>2</sub>O is water, H<sub>2</sub>O<sub>2</sub> is hydrogen peroxide, NH<sub>3</sub> is ammonia, CH<sub>4</sub> is methane, which are the special cases to recite.
+                                <b>Note:</b> Name of H<sub>2</sub>O is water, H<sub>2</sub>O<sub>2</sub> is hydrogen peroxide, NH<sub>3</sub> is ammonia, CH<sub>4</sub> is methane, which are special cases.
                             </div>
                         </div>
                     </div>`;
