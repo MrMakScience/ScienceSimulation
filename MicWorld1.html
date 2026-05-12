@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Science Simulations Gallery</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+        .topic-section {
+            scroll-margin-top: 5rem;
+        }
+        .card-img-container {
+            aspect-ratio: 16 / 9;
+            overflow: hidden;
+        }
+        .card-img {
+            transition: transform 0.3s ease;
+        }
+        .sim-card:hover .card-img {
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body class="text-slate-900">
+
+    <!-- Header Section -->
+    <header class="bg-indigo-700 text-white py-12 px-6 shadow-lg">
+        <div class="max-w-6xl mx-auto">
+            <h1 class="text-4xl md:text-5xl font-bold mb-4">Interactive Simulation for Microscopic World I</h1>
+            <p class="text-indigo-100 text-lg max-w-2xl mb-6">Explore concepts in Chemistry through interactive visualizations and games. Select a topic below to get started.</p>
+            <div class="inline-block bg-white/20 backdrop-blur-sm border border-white/30 rounded-lg px-4 py-2">
+                <p class="text-white font-semibold">💡 Suggest using iPad/ Computer for the best experience.</p>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation -->
+    <nav class="sticky top-0 bg-white border-b border-slate-200 z-20 shadow-sm overflow-x-auto">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex space-x-6 whitespace-nowrap">
+            <a href="#Atomic Structure" class="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition">Atomic Structure</a>
+            <a href="#The Periodic Table" class="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition">Periodic Table</a>
+            <a href="#Metallic Bonding and Ionic Bonding" class="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition">Ionic Bonding</a>
+            <a href="#Covalent bonding" class="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition">Covalent Bonding</a>
+            <a href="#Structures and properties of substances" class="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition">Structures & Properties</a>
+        </div>
+    </nav>
+
+    <main class="max-w-6xl mx-auto px-6 py-12">
+        
+        <!-- Topic: Atomic Structure -->
+        <section id="Atomic Structure" class="topic-section mb-16">
+            <h2 class="text-2xl font-bold border-l-4 border-indigo-600 pl-4 mb-8">Atomic Structure</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
+                    <div class="card-img-container bg-slate-200">
+                        <img src="https://imgur.com/gJOKCGH.png" alt="Isotope Stability" class="card-img w-full h-full object-cover">
+                    </div>
+                    <div class="p-6 flex-grow flex flex-col">
+                        <h3 class="font-bold text-lg mb-2">Stability of Isotopes & relative abundance</h3>
+                        <p class="text-slate-600 text-sm mb-4 flex-grow">Study the structure of the atom! You can also change the atom's nucleus to understand why different isotopes have different abundance.</p>
+                        <a href="https://mrmakscience.github.io/ScienceSimulation/IsotopeStability" target="_blank" class="inline-block bg-indigo-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-indigo-700 transition">Launch Simulation</a>
+                    </div>
+                </div>
+                <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
+                    <div class="card-img-container bg-slate-200">
+                        <img src="https://imgur.com/fJKeEAp.png" alt="C-12 scale" class="card-img w-full h-full object-cover">
+                    </div>
+                    <div class="p-6 flex-grow flex flex-col">
+                        <h3 class="font-bold text-lg mb-2">C-12 scale and R.A.M.</h3>
+                        <p class="text-slate-600 text-sm mb-4 flex-grow">Understand the meaning of C-12 scale and visualize nature's element sample.</p>
+                        <a href="https://mrmakscience.github.io/ScienceSimulation/RAM&C12" target="_blank" class="inline-block bg-indigo-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-indigo-700 transition">Launch Simulation</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Topic: The Periodic Table -->
+        <section id="The Periodic Table" class="topic-section mb-16">
+            <h2 class="text-2xl font-bold border-l-4 border-emerald-600 pl-4 mb-8">The Periodic Table</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
+                    <div class="card-img-container bg-slate-200">
+                        <img src="https://imgur.com/9dBaLig.png" alt="Atomic reactivity" class="card-img w-full h-full object-cover">
+                    </div>
+                    <div class="p-6 flex-grow flex flex-col">
+                        <h3 class="font-bold text-lg mb-2">Atomic structure and reactivity</h3>
+                        <p class="text-slate-600 text-sm mb-4 flex-grow">Compare the structure of different atoms and see how does it relates to reactivity.</p>
+                        <a href="https://mrmakscience.github.io/ScienceSimulation/ReactivityOfAtoms" target="_blank" class="inline-block bg-emerald-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-emerald-700 transition">Launch Simulation</a>
+                    </div>
+                </div>
+                <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
+                    <div class="card-img-container bg-slate-200">
+                        <img src="https://imgur.com/FCmQfjK.png" alt="Metal reaction" class="card-img w-full h-full object-cover">
+                    </div>
+                    <div class="p-6 flex-grow flex flex-col">
+                        <h3 class="font-bold text-lg mb-2">Reaction of metals in water</h3>
+                        <p class="text-slate-600 text-sm mb-4 flex-grow">Conduct the explosive experiment in your computer!</p>
+                        <a href="https://mrmakscience.github.io/ScienceSimulation/MetalReaction" target="_blank" class="inline-block bg-emerald-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-emerald-700 transition">Launch Simulation</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Topic: Metallic Bonding and Ionic Bonding -->
+        <section id="Metallic Bonding and Ionic Bonding" class="topic-section mb-16">
+            <h2 class="text-2xl font-bold border-l-4 border-amber-500 pl-4 mb-8">Metallic Bonding and Ionic Bonding</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
+                    <div class="card-img-container bg-slate-200">
+                        <img src="https://imgur.com/vD1ZYFm.png" alt="Formation" class="card-img w-full h-full object-cover">
+                    </div>
+                    <div class="p-6 flex-grow flex flex-col">
+                        <h3 class="font-bold text-lg mb-2">Formation of ionic compound</h3>
+                        <p class="text-slate-600 text-sm mb-4 flex-grow">Visualize how atoms become stable by forming ions</p>
+                        <a href="https://mrmakscience.github.io/ScienceSimulation/IonicCompoundForms" target="_blank" class="inline-block bg-amber-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-amber-700 transition">Launch Simulation</a>
+                    </div>
+                </div>
+                <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
+                    <div class="card-img-container bg-slate-200">
+                        <img src="https://imgur.com/jfG2fQg.png" alt="Diagram" class="card-img w-full h-full object-cover">
+                    </div>
+                    <div class="p-6 flex-grow flex flex-col">
+                        <h3 class="font-bold text-lg mb-2">Electron diagram of ionic compound</h3>
+                        <p class="text-slate-600 text-sm mb-4 flex-grow">Step-by-step guidance on drawing the electron diagram of ionic compound!</p>
+                        <a href="https://mrmakscience.github.io/ScienceSimulation/IonicElectronDiagram" target="_blank" class="inline-block bg-amber-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-amber-700 transition">Launch Simulation</a>
+                    </div>
+                </div>
+                <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
+                    <div class="card-img-container bg-slate-200">
+                        <img src="https://imgur.com/PJiouzU.png" alt="Cross method" class="card-img w-full h-full object-cover">
+                    </div>
+                    <div class="p-6 flex-grow flex flex-col">
+                        <h3 class="font-bold text-lg mb-2">Ionic formula - Cross method</h3>
+                        <p class="text-slate-600 text-sm mb-4 flex-grow">Learn to build the chemical formula of Ionic compound with cross method.</p>
+                        <a href="https://mrmakscience.github.io/ScienceSimulation/CrossMethod" target="_blank" class="inline-block bg-amber-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-amber-700 transition">Launch Simulation</a>
+                    </div>
+                </div>
+                <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
+                    <div class="card-img-container bg-slate-200">
+                        <img src="https://imgur.com/2xVcyrq.png" alt="Ion Blaster" class="card-img w-full h-full object-cover">
+                    </div>
+                    <div class="p-6 flex-grow flex flex-col">
+                        <h3 class="font-bold text-lg mb-2">Ionic comound game - Ion blaster</h3>
+                        <p class="text-slate-600 text-sm mb-4 flex-grow">A mini game to practice identifying ions!</p>
+                        <a href="https://mrmakscience.github.io/ScienceSimulation/IonBlaster" target="_blank" class="inline-block bg-amber-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-amber-700 transition">Launch Simulation</a>
+                    </div>
+                </div>
+                <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
+                    <div class="card-img-container bg-slate-200">
+                        <img src="https://imgur.com/wEM8c5w.png" alt="Flame Test" class="card-img w-full h-full object-cover">
+                    </div>
+                    <div class="p-6 flex-grow flex flex-col">
+                        <h3 class="font-bold text-lg mb-2">Flame test</h3>
+                        <p class="text-slate-600 text-sm mb-4 flex-grow">Conduct flame test for different chemicals to find out the metal ions present.</p>
+                        <a href="https://mrmakscience.github.io/ScienceSimulation/FlameTest" target="_blank" class="inline-block bg-amber-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-amber-700 transition">Launch Simulation</a>
+                    </div>
+                </div>
+                <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
+                    <div class="card-img-container bg-slate-200">
+                        <img src="https://imgur.com/C2B8xGX.png" alt="Migration of Ions" class="card-img w-full h-full object-cover">
+                    </div>
+                    <div class="p-6 flex-grow flex flex-col">
+                        <h3 class="font-bold text-lg mb-2">Migration of ions</h3>
+                        <p class="text-slate-600 text-sm mb-4 flex-grow">Visualize how ions move toward electrodes under an electric field.</p>
+                        <a href="https://mrmakscience.github.io/ScienceSimulation/IonMigration" target="_blank" class="inline-block bg-amber-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-amber-700 transition">Launch Simulation</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Topic: Covalent bonding -->
+        <section id="Covalent bonding" class="topic-section mb-16">
+            <h2 class="text-2xl font-bold border-l-4 border-sky-500 pl-4 mb-8">Direction of Bonds</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
+                    <div class="card-img-container bg-slate-200">
+                        <img src="https://imgur.com/oPCWL49.png" alt="Direction of Bonds" class="card-img w-full h-full object-cover">
+                    </div>
+                    <div class="p-6 flex-grow flex flex-col">
+                        <h3 class="font-bold text-lg mb-2">Direction of Bonds</h3>
+                        <p class="text-slate-600 text-sm mb-4 flex-grow">Understand the direction of different types of bonds.</p>
+                        <a href="https://mrmakscience.github.io/ScienceSimulation/DirectionOfBonds" target="_blank" class="inline-block bg-sky-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-sky-700 transition">Launch Simulation</a>
+                    </div>
+                </div>
+                 <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
+                    <div class="card-img-container bg-slate-200">
+                        <img src="https://imgur.com/fEISJWV.png" alt="Formula of covalent compound" class="card-img w-full h-full object-cover">
+                    </div>
+                    <div class="p-6 flex-grow flex flex-col">
+                        <h3 class="font-bold text-lg mb-2">Formula of covalent compound</h3>
+                        <p class="text-slate-600 text-sm mb-4 flex-grow">Step-by-step guidance on drawing the electron diagram of covalent compound!</p>
+                        <a href="https://mrmakscience.github.io/ScienceSimulation/CovalentFormula" target="_blank" class="inline-block bg-sky-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-sky-700 transition">Launch Simulation</a>
+                    </div>
+                </div>
+                <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
+                    <div class="card-img-container bg-slate-200">
+                        <img src="https://imgur.com/hncUJNl.png" alt="Covalent Diagram" class="card-img w-full h-full object-cover">
+                    </div>
+                    <div class="p-6 flex-grow flex flex-col">
+                        <h3 class="font-bold text-lg mb-2">Electron diagram of covalent compound</h3>
+                        <p class="text-slate-600 text-sm mb-4 flex-grow">Step-by-step guidance on drawing the electron diagram of covalent compound!</p>
+                        <a href="https://mrmakscience.github.io/ScienceSimulation/CovalentElectronDiagram" target="_blank" class="inline-block bg-sky-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-sky-700 transition">Launch Simulation</a>
+                    </div>
+                </div>
+                <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
+                    <div class="card-img-container bg-slate-200">
+                        <img src="https://imgur.com/IG4Lneq.png" alt="Dative Bond" class="card-img w-full h-full object-cover">
+                    </div>
+                    <div class="p-6 flex-grow flex flex-col">
+                        <h3 class="font-bold text-lg mb-2">Dative covalent bond formation</h3>
+                        <p class="text-slate-600 text-sm mb-4 flex-grow">Visualize how dative covalent bonds are formed between different chemicals.</p>
+                        <a href="https://mrmakscience.github.io/ScienceSimulation/DativeCovalent" target="_blank" class="inline-block bg-sky-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-sky-700 transition">Launch Simulation</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Topic: Structures and properties of substances -->
+        <section id="Structures and properties of substances" class="topic-section mb-16">
+            <h2 class="text-2xl font-bold border-l-4 border-rose-500 pl-4 mb-8">Structures and properties of substances</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
+                    <div class="card-img-container bg-slate-200">
+                        <img src="https://imgur.com/Jmeqv2I.png" alt="Quiz" class="card-img w-full h-full object-cover">
+                    </div>
+                    <div class="p-6 flex-grow flex flex-col">
+                        <h3 class="font-bold text-lg mb-2">Quiz of structure of substances</h3>
+                        <p class="text-slate-600 text-sm mb-4 flex-grow">Test your understanding about the structure of different substances.</p>
+                        <a href="https://mrmakscience.github.io/ScienceSimulation/StructureQuiz" target="_blank" class="inline-block bg-rose-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-rose-700 transition">Launch Simulation</a>
+                    </div>
+                </div>
+                <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
+                    <div class="card-img-container bg-slate-200">
+                        <img src="https://imgur.com/6ZBaHhF.png" alt="Metal Properties" class="card-img w-full h-full object-cover">
+                    </div>
+                    <div class="p-6 flex-grow flex flex-col">
+                        <h3 class="font-bold text-lg mb-2">Physical Properties of Metal</h3>
+                        <p class="text-slate-600 text-sm mb-4 flex-grow">Experiment on different properties of the metal.</p>
+                        <a href="https://mrmakscience.github.io/ScienceSimulation/MetalPhysicalProperty" target="_blank" class="inline-block bg-rose-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-rose-700 transition">Launch Simulation</a>
+                    </div>
+                </div>
+                <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
+                    <div class="card-img-container bg-slate-200">
+                        <img src="https://imgur.com/h5v05X2.png" alt="Brittleness" class="card-img w-full h-full object-cover">
+                    </div>
+                    <div class="p-6 flex-grow flex flex-col">
+                        <h3 class="font-bold text-lg mb-2">Brittleness of Ionic Compound</h3>
+                        <p class="text-slate-600 text-sm mb-4 flex-grow">Understand why ionic compound is brittle upon force.</p>
+                        <a href="https://mrmakscience.github.io/ScienceSimulation/IonicCompoundBrittle" target="_blank" class="inline-block bg-rose-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-rose-700 transition">Launch Simulation</a>
+                    </div>
+                </div>
+                <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
+                    <div class="card-img-container bg-slate-200">
+                        <img src="https://imgur.com/F2VeIgf.png" alt="3D Structure" class="card-img w-full h-full object-cover">
+                    </div>
+                    <div class="p-6 flex-grow flex flex-col">
+                        <h3 class="font-bold text-lg mb-2">3D structure of CsCl and NaCl</h3>
+                        <p class="text-slate-600 text-sm mb-4 flex-grow">Examine the detail structure of Ionic compound.</p>
+                        <a href="https://mrmakscience.github.io/ScienceSimulation/IonicCompound3D" target="_blank" class="inline-block bg-rose-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-rose-700 transition">Launch Simulation</a>
+                    </div>
+                </div>
+                <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
+                    <div class="card-img-container bg-slate-200">
+                        <img src="https://imgur.com/bklFofa.png" alt="Giant Covalent" class="card-img w-full h-full object-cover">
+                    </div>
+                    <div class="p-6 flex-grow flex flex-col">
+                        <h3 class="font-bold text-lg mb-2">3D structure of Giant Covalent Structure</h3>
+                        <p class="text-slate-600 text-sm mb-4 flex-grow">Examine the detail structure of Covalent compound.</p>
+                        <a href="https://mrmakscience.github.io/ScienceSimulation/GiantCovalent3D" target="_blank" class="inline-block bg-rose-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-rose-700 transition">Launch Simulation</a>
+                    </div>
+                </div>
+                <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
+                    <div class="card-img-container bg-slate-200">
+                        <img src="https://imgur.com/l1Kt4qA.png" alt="Solubility" class="card-img w-full h-full object-cover">
+                    </div>
+                    <div class="p-6 flex-grow flex flex-col">
+                        <h3 class="font-bold text-lg mb-2">Solubility of substances</h3>
+                        <p class="text-slate-600 text-sm mb-4 flex-grow">Visualize what does solubility means in particle view.</p>
+                        <a href="https://mrmakscience.github.io/ScienceSimulation/SolubilityOfSubstance" target="_blank" class="inline-block bg-rose-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-rose-700 transition">Launch Simulation</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-slate-900 text-slate-400 py-12 px-6 text-center">
+        <p>© 2026 Mr.Daniel Mak. Built for interactive learning.</p>
+    </footer>
+
+</body>
+</html>
