@@ -74,7 +74,6 @@
                 <div class="canvas-container border border-slate-200" id="viz-container">
                     <svg id="main-svg" viewBox="0 0 800 450" class="w-full h-full">
                         <g id="drawing-area">
-                            <!-- Separate groups for movement -->
                             <g id="donor-group" class="move-transition"></g>
                             <g id="acceptor-group" class="move-transition"></g>
                             <g id="lone-pair-group" class="move-transition"></g>
@@ -120,16 +119,10 @@
             if (!activeCharge || !activeTargetId) { container.innerHTML = ''; return; }
             const target = document.getElementById(activeTargetId);
             const b = target.getBBox();
-            
-            // On tablet, getBBox might be relative to local transform, 
-            // but we need the calculated position within the main SVG
             const svg = document.getElementById('main-svg');
             let x = b.x, y = b.y;
             
-            // Adjust coordinates based on the transform of the groups
-            if(activeTargetId === 'drawing-area') {
-               // Full molecule merge
-            } else {
+            if(activeTargetId !== 'drawing-area') {
                const transform = target.getAttribute('transform');
                if(transform) {
                    const match = transform.match(/translate\(([^,]+)[, ]+([^)]+)\)/);
@@ -222,12 +215,12 @@
                     groups.acceptor.innerHTML = getAtomHtml(ACCEPTOR_MOL_COLOR, 'B') + getBondHtml(270, 'dot', 'o', ACCEPTOR_MOL_COLOR, 'F') + getBondHtml(0, 'dot', 'o', ACCEPTOR_MOL_COLOR, 'F') + getBondHtml(90, 'dot', 'o', ACCEPTOR_MOL_COLOR, 'F') + box;
                     groups.lonePair.innerHTML = getLonePairSymbols(0, DATIVE_COLOR, step === 0, isMerged);
 
-                    // Multi-frame delay ensures the tablet handles the transition correctly
+                    // DOUBLE FRAME DELAY: Essential for tablet animation reliability
                     requestAnimationFrame(() => {
                         requestAnimationFrame(() => {
-                            groups.donor.setAttribute('transform', `translate(${dX}, ${cy})`);
-                            groups.acceptor.setAttribute('transform', `translate(${aX}, ${cy})`);
-                            groups.lonePair.setAttribute('transform', `translate(${dX}, ${cy})`);
+                            groups.donor.style.transform = `translate(${dX}px, ${cy}px)`;
+                            groups.acceptor.style.transform = `translate(${aX}px, ${cy}px)`;
+                            groups.lonePair.style.transform = `translate(${dX}px, ${cy}px)`;
                         });
                     });
                     activeTargetId = null; activeCharge = null;
@@ -249,9 +242,9 @@
 
                     requestAnimationFrame(() => {
                         requestAnimationFrame(() => {
-                            groups.donor.setAttribute('transform', `translate(${dX}, ${cy})`);
-                            groups.acceptor.setAttribute('transform', `translate(${aX}, ${cy})`);
-                            groups.lonePair.setAttribute('transform', `translate(${dX}, ${cy})`);
+                            groups.donor.style.transform = `translate(${dX}px, ${cy}px)`;
+                            groups.acceptor.style.transform = `translate(${aX}px, ${cy}px)`;
+                            groups.lonePair.style.transform = `translate(${dX}px, ${cy}px)`;
                         });
                     });
                     
@@ -276,9 +269,9 @@
 
                     requestAnimationFrame(() => {
                         requestAnimationFrame(() => {
-                            groups.donor.setAttribute('transform', `translate(${dX}, ${cy})`);
-                            groups.acceptor.setAttribute('transform', `translate(${aX}, ${cy})`);
-                            groups.lonePair.setAttribute('transform', `translate(${dX}, ${cy})`);
+                            groups.donor.style.transform = `translate(${dX}px, ${cy}px)`;
+                            groups.acceptor.style.transform = `translate(${aX}px, ${cy}px)`;
+                            groups.lonePair.style.transform = `translate(${dX}px, ${cy}px)`;
                         });
                     });
                     
@@ -303,9 +296,9 @@
 
                     requestAnimationFrame(() => {
                         requestAnimationFrame(() => {
-                            groups.donor.setAttribute('transform', `translate(${dX}, ${cy})`);
-                            groups.acceptor.setAttribute('transform', `translate(${aX}, ${cy})`);
-                            groups.lonePair.setAttribute('transform', `translate(${dX}, ${cy})`);
+                            groups.donor.style.transform = `translate(${dX}px, ${cy}px)`;
+                            groups.acceptor.style.transform = `translate(${aX}px, ${cy}px)`;
+                            groups.lonePair.style.transform = `translate(${dX}px, ${cy}px)`;
                         });
                     });
                     
@@ -385,7 +378,6 @@
                 const isActive = b.innerHTML === formatChem(c.name);
                 b.classList.toggle('bg-blue-50', isActive); b.classList.toggle('border-blue-300', isActive);
             });
-            // Update brackets more frequently during transition for tablet
             if(bracketInterval) clearInterval(bracketInterval);
             bracketInterval = setInterval(drawBrackets, 16);
             setTimeout(() => clearInterval(bracketInterval), 1500);
