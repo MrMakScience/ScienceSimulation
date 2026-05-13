@@ -22,6 +22,7 @@
             z-index: 10;
             max-height: 90vh;
             overflow-y: auto;
+            touch-action: auto; /* Allow scrolling within the panel */
         }
         .info-panel {
             position: absolute;
@@ -444,6 +445,7 @@ Each C atom forms 4 covalent bonds.</div>
 
         // Mouse Handlers
         function onMouseDown(e) {
+            if (e.target.closest('.controls') || e.target.closest('.info-panel') || e.target.closest('.legend-panel')) return;
             isDragging = true;
             previousMouse.x = e.clientX;
             previousMouse.y = e.clientY;
@@ -463,6 +465,7 @@ Each C atom forms 4 covalent bonds.</div>
         }
 
         function onWheel(e) {
+            if (e.target.closest('.controls')) return;
             camera.position.z += e.deltaY * 0.015;
             camera.position.z = Math.max(2, Math.min(80, camera.position.z));
             e.preventDefault();
@@ -470,6 +473,9 @@ Each C atom forms 4 covalent bonds.</div>
 
         // Touch Handlers
         function onTouchStart(e) {
+            // If the touch started on UI, don't initiate dragging or prevent default
+            if (e.target.closest('.controls') || e.target.closest('.info-panel') || e.target.closest('.legend-panel')) return;
+            
             if (e.touches.length === 1) {
                 isDragging = true;
                 previousMouse.x = e.touches[0].clientX;
@@ -487,6 +493,8 @@ Each C atom forms 4 covalent bonds.</div>
         }
 
         function onTouchMove(e) {
+            if (e.target.closest('.controls')) return;
+
             if (e.touches.length === 1 && isDragging) {
                 const deltaX = e.touches[0].clientX - previousMouse.x;
                 const deltaY = e.touches[0].clientY - previousMouse.y;
@@ -494,14 +502,15 @@ Each C atom forms 4 covalent bonds.</div>
                 currentGroup.rotation.x += deltaY * 0.01;
                 previousMouse.x = e.touches[0].clientX;
                 previousMouse.y = e.touches[0].clientY;
+                e.preventDefault();
             } else if (e.touches.length === 2 && initialPinchDistance !== null) {
                 const currentDistance = getTouchDistance(e.touches);
                 const diff = initialPinchDistance - currentDistance;
                 camera.position.z += diff * 0.05;
                 camera.position.z = Math.max(2, Math.min(80, camera.position.z));
                 initialPinchDistance = currentDistance;
+                e.preventDefault();
             }
-            e.preventDefault();
         }
 
         function getTouchDistance(touches) {
