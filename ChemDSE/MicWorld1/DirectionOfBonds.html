@@ -5,9 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bond Directionality Simulation</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- MathJax for proper LaTeX rendering -->
-    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
-    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <style>
         body {
             background-color: #f8fafc;
@@ -90,6 +87,10 @@
             font-size: 0.7em;
             vertical-align: super;
         }
+        sub {
+            font-size: 0.7em;
+            vertical-align: sub;
+        }
     </style>
 </head>
 <body class="p-4 md:p-8">
@@ -104,7 +105,7 @@
             <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                 <h2 class="text-xl font-semibold mb-4 text-blue-700">Covalent Bond (Directional)</h2>
                 <div class="text-sm text-slate-600 mb-4">
-                    In \( H_2 \), the bond is formed by sharing a <b>pair of electrons</b> 
+                    In H<sub>2</sub>, the bond is formed by sharing a <b>pair of electrons</b> 
                     (shown as <div class="electron-pair-stack"><div class="electron-circle">e<sup>-</sup></div><div class="electron-circle">e<sup>-</sup></div></div>) 
                     specifically between the two nuclei. The positive nuclei are being <b>pulled in a specific direction</b> toward the shared electrons.
                 </div>
@@ -128,17 +129,17 @@
             <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                 <h2 class="text-xl font-semibold mb-4 text-emerald-700">Ionic Bond (Non-Directional)</h2>
                 <div class="text-sm text-slate-600 mb-4">
-                    The \( Na^+ \) ion is attracted by \( Cl^- \) ions and repelled by \( Na^+ \) ions in <b>all directions</b> equally. There is no specific "axis" for the force.
+                    The Na<sup>+</sup> ion is attracted by Cl<sup>-</sup> ions and repelled by Na<sup>+</sup> ions in <b>all directions</b> equally. There is no specific "axis" for the force.
                 </div>
                 <canvas id="ionicCanvas" class="w-full h-64 border border-slate-100"></canvas>
                 <div class="mt-4 space-y-4">
                     <div class="legend-item">
                         <div class="key-na">Na<sup>+</sup></div> 
-                        <span>Sodium Ion (\( Na^+ \))</span>
+                        <span>Sodium Ion (Na<sup>+</sup>)</span>
                     </div>
                     <div class="legend-item">
                         <div class="key-cl">Cl<sup>-</sup></div> 
-                        <span>Chloride Ion (\( Cl^- \))</span>
+                        <span>Chloride Ion (Cl<sup>-</sup>)</span>
                     </div>
                     <div class="flex gap-4 pt-2">
                         <div class="legend-item"><span class="text-red-500 font-bold">→</span> Attraction</div>
@@ -164,6 +165,7 @@
         const ctxI = ionCanvas.getContext('2d');
 
         let time = 0;
+        let ionsData = []; 
 
         function resize() {
             [covCanvas, ionCanvas].forEach(canvas => {
@@ -171,6 +173,27 @@
                 canvas.width = rect.width;
                 canvas.height = rect.height;
             });
+            initIonicLattice();
+        }
+
+        function initIonicLattice() {
+            const rows = 3;
+            const cols = 3;
+            const spacing = 75;
+            const offsetX = (ionCanvas.width - (cols - 1) * spacing) / 2;
+            const offsetY = (ionCanvas.height - (rows - 1) * spacing) / 2;
+
+            ionsData = [];
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    const isNa = (r + c) % 2 === 0;
+                    ionsData.push({
+                        x: offsetX + c * spacing,
+                        y: offsetY + r * spacing,
+                        type: isNa ? 'Na' : 'Cl'
+                    });
+                }
+            }
         }
 
         function drawArrow(ctx, fromx, fromy, tox, toy, color, width = 2) {
@@ -195,7 +218,7 @@
             ctx.fill();
         }
 
-        function drawTextWithSuperscript(ctx, text, base, superText, x, y, fontSize) {
+        function drawTextWithSuperscript(ctx, base, superText, x, y, fontSize) {
             ctx.font = `bold ${fontSize}px Arial`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
@@ -219,7 +242,7 @@
             ctx.stroke();
             
             ctx.fillStyle = '#92400e';
-            drawTextWithSuperscript(ctx, 'e-', 'e', '-', x, y, 11);
+            drawTextWithSuperscript(ctx, 'e', '-', x, y, 11);
         }
 
         function drawCovalent() {
@@ -231,99 +254,74 @@
             drawElectron(ctxC, midX, midY - 12);
             drawElectron(ctxC, midX, midY + 12);
 
-            const n1 = { x: midX - spacing, y: midY };
-            const n2 = { x: midX + spacing, y: midY };
+            const n1x = midX - spacing;
+            const n2x = midX + spacing;
 
-            [n1, n2].forEach(n => {
+            [n1x, n2x].forEach(nx => {
                 ctxC.beginPath();
-                ctxC.arc(n.x, n.y, 22, 0, Math.PI * 2);
+                ctxC.arc(nx, midY, 22, 0, Math.PI * 2);
                 ctxC.fillStyle = '#60a5fa';
                 ctxC.fill();
                 ctxC.fillStyle = 'white';
                 ctxC.textAlign = 'center';
                 ctxC.textBaseline = 'middle';
                 ctxC.font = 'bold 18px Arial';
-                ctxC.fillText('+', n.x, n.y);
+                ctxC.fillText('+', nx, midY);
                 ctxC.fillStyle = '#475569';
                 ctxC.font = 'bold 16px Arial';
-                ctxC.fillText('H', n.x, n.y + 35);
+                ctxC.fillText('H', nx, midY + 35);
             });
 
             const anim = Math.abs(Math.sin(time * 0.05)) * 10;
-            drawArrow(ctxC, n1.x + 25, n1.y, n1.x + 45 + anim, n1.y, '#ef4444', 3);
-            drawArrow(ctxC, n2.x - 25, n2.y, n2.x - 45 - anim, n2.y, '#ef4444', 3);
+            drawArrow(ctxC, n1x + 25, midY, n1x + 45 + anim, midY, '#ef4444', 3);
+            drawArrow(ctxC, n2x - 25, midY, n2x - 45 - anim, midY, '#ef4444', 3);
 
             ctxC.fillStyle = '#475569';
             ctxC.font = 'italic 12px Arial';
-            ctxC.textAlign = 'center';
             ctxC.fillText('Force is concentrated along the bond axis', midX, midY + 95);
         }
 
         function drawIonic() {
             ctxI.clearRect(0, 0, ionCanvas.width, ionCanvas.height);
-            const rows = 3;
-            const cols = 3;
-            const spacing = 75;
-            const offsetX = (ionCanvas.width - (cols - 1) * spacing) / 2;
-            const offsetY = (ionCanvas.height - (rows - 1) * spacing) / 2;
+            if (ionsData.length === 0) return;
 
-            const ions = [];
-            for (let r = 0; r < rows; r++) {
-                for (let c = 0; c < cols; c++) {
-                    const isNa = (r + c) % 2 === 0;
-                    ions.push({
-                        x: offsetX + c * spacing,
-                        y: offsetY + r * spacing,
-                        type: isNa ? 'Na' : 'Cl'
-                    });
-                }
-            }
-
-            const centerIon = ions[4];
+            const centerIon = ionsData[4];
             const pulse = Math.abs(Math.sin(time * 0.05)) * 5;
 
-            ions.forEach((ion, index) => {
-                if (index === 4) return;
+            for (let i = 0; i < ionsData.length; i++) {
+                if (i === 4) continue;
+                const ion = ionsData[i];
                 const dx = ion.x - centerIon.x;
                 const dy = ion.y - centerIon.y;
                 const angle = Math.atan2(dy, dx);
                 
                 if (ion.type === 'Cl') {
-                    const startX = centerIon.x + Math.cos(angle) * 18;
-                    const startY = centerIon.y + Math.sin(angle) * 18;
-                    const endX = centerIon.x + Math.cos(angle) * (45 + pulse);
-                    const endY = centerIon.y + Math.sin(angle) * (45 + pulse);
-                    drawArrow(ctxI, startX, startY, endX, endY, '#ef4444', 2.5);
+                    const dist = 45 + pulse;
+                    drawArrow(ctxI, centerIon.x + Math.cos(angle) * 18, centerIon.y + Math.sin(angle) * 18, centerIon.x + Math.cos(angle) * dist, centerIon.y + Math.sin(angle) * dist, '#ef4444', 2.5);
                 } else {
-                    const startX = centerIon.x + Math.cos(angle) * 50;
-                    const startY = centerIon.y + Math.sin(angle) * 50;
-                    const endX = centerIon.x + Math.cos(angle) * (20 - pulse);
-                    const endY = centerIon.y + Math.sin(angle) * (20 - pulse);
-                    drawArrow(ctxI, startX, startY, endX + Math.cos(angle)*10, endY + Math.sin(angle)*10, '#3b82f6', 2.5);
+                    const dist = 20 - pulse;
+                    drawArrow(ctxI, centerIon.x + Math.cos(angle) * 50, centerIon.y + Math.sin(angle) * 50, centerIon.x + Math.cos(angle) * (dist + 10), centerIon.y + Math.sin(angle) * (dist + 10), '#3b82f6', 2.5);
                 }
-            });
+            }
 
-            ions.forEach(ion => {
+            for (let i = 0; i < ionsData.length; i++) {
+                const ion = ionsData[i];
                 const radius = ion.type === 'Na' ? 18 : 24;
                 ctxI.beginPath();
                 ctxI.arc(ion.x, ion.y, radius, 0, Math.PI * 2);
                 ctxI.fillStyle = ion.type === 'Na' ? '#10b981' : '#f97316';
                 ctxI.fill();
-                ctxI.strokeStyle = 'rgba(0,0,0,0.1)';
-                ctxI.lineWidth = 1;
-                ctxI.stroke();
                 
                 ctxI.fillStyle = 'white';
                 if (ion.type === 'Na') {
-                    drawTextWithSuperscript(ctxI, 'Na+', 'Na', '+', ion.x, ion.y, 13);
+                    drawTextWithSuperscript(ctxI, 'Na', '+', ion.x, ion.y, 13);
                 } else {
-                    drawTextWithSuperscript(ctxI, 'Cl-', 'Cl', '-', ion.x, ion.y, 13);
+                    drawTextWithSuperscript(ctxI, 'Cl', '-', ion.x, ion.y, 13);
                 }
-            });
+            }
 
             ctxI.fillStyle = '#475569';
             ctxI.font = 'italic 12px Arial';
-            ctxI.textAlign = 'center';
             ctxI.fillText('Non-directional: Field acts in all directions', ionCanvas.width/2, ionCanvas.height - 15);
         }
 
