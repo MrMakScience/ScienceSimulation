@@ -117,26 +117,43 @@
         function drawBrackets() {
             const container = document.getElementById('bracket-layer');
             if (!activeCharge || !activeTargetId) { container.innerHTML = ''; return; }
-            const target = document.getElementById(activeTargetId);
-            const b = target.getBBox();
-            const svg = document.getElementById('main-svg');
-            let x = b.x, y = b.y;
             
-            if(activeTargetId !== 'drawing-area') {
-               const transform = target.getAttribute('transform');
-               if(transform) {
-                   const match = transform.match(/translate\(([^,]+)[, ]+([^)]+)\)/);
-                   if(match) { x += parseFloat(match[1]); y += parseFloat(match[2]); }
-               }
+            const target = document.getElementById(activeTargetId);
+            const style = window.getComputedStyle(target);
+            const matrix = new DOMMatrix(style.transform);
+            
+            // Fixed sizing logic for ions to prevent H+ bracket offset
+            let width, height, centerX, centerY;
+            
+            if (activeTargetId === 'drawing-area') {
+                // For the whole molecule
+                const b = target.getBBox();
+                width = b.width;
+                height = b.height;
+                centerX = b.x + width / 2 + matrix.e;
+                centerY = b.y + height / 2 + matrix.f;
+            } else {
+                // For individual ions (Cl- or H+)
+                // We use fixed radius values based on the constants to ensure stability
+                const radius = (activeTargetId === 'acceptor-group' && currentKey !== 'nh3bf3') ? HYDROGEN_RADIUS : ION_RADIUS;
+                width = radius * 2;
+                height = radius * 2;
+                centerX = matrix.e;
+                centerY = matrix.f;
             }
 
             const pad = 25, hook = 20;
-            const left = x - pad, right = x + b.width + pad, top = y - pad, bottom = y + b.height + pad;
+            const left = centerX - (width / 2) - pad;
+            const right = centerX + (width / 2) + pad;
+            const top = centerY - (height / 2) - pad;
+            const bottom = centerY + (height / 2) + pad;
 
             container.innerHTML = `
-                <g><path d="M ${left + hook},${top} L ${left},${top} L ${left},${bottom} L ${left + hook},${bottom}" class="ion-bracket" />
-                <path d="M ${right - hook},${top} L ${right},${top} L ${right},${bottom} L ${right - hook},${bottom}" class="ion-bracket" />
-                <text x="${right + 8}" y="${top + 18}" class="ion-charge">${activeCharge}</text></g>`;
+                <g>
+                    <path d="M ${left + hook},${top} L ${left},${top} L ${left},${bottom} L ${left + hook},${bottom}" class="ion-bracket" />
+                    <path d="M ${right - hook},${top} L ${right},${top} L ${right},${bottom} L ${right - hook},${bottom}" class="ion-bracket" />
+                    <text x="${right + 8}" y="${top + 18}" class="ion-charge">${activeCharge}</text>
+                </g>`;
         }
 
         function getAtomHtml(color, label, radius = MAIN_RADIUS) {
@@ -215,7 +232,6 @@
                     groups.acceptor.innerHTML = getAtomHtml(ACCEPTOR_MOL_COLOR, 'B') + getBondHtml(270, 'dot', 'o', ACCEPTOR_MOL_COLOR, 'F') + getBondHtml(0, 'dot', 'o', ACCEPTOR_MOL_COLOR, 'F') + getBondHtml(90, 'dot', 'o', ACCEPTOR_MOL_COLOR, 'F') + box;
                     groups.lonePair.innerHTML = getLonePairSymbols(0, DATIVE_COLOR, step === 0, isMerged);
 
-                    // DOUBLE FRAME DELAY: Essential for tablet animation reliability
                     requestAnimationFrame(() => {
                         requestAnimationFrame(() => {
                             groups.donor.style.transform = `translate(${dX}px, ${cy}px)`;
@@ -378,9 +394,13 @@
                 const isActive = b.innerHTML === formatChem(c.name);
                 b.classList.toggle('bg-blue-50', isActive); b.classList.toggle('border-blue-300', isActive);
             });
+            
+            // Continuous tracking during animation and beyond
             if(bracketInterval) clearInterval(bracketInterval);
-            bracketInterval = setInterval(drawBrackets, 16);
-            setTimeout(() => clearInterval(bracketInterval), 1500);
+            bracketInterval = setInterval(drawBrackets, 16); 
+            
+            // Keep tracking for longer to ensure it stays in place after animation finishes
+            setTimeout(() => clearInterval(bracketInterval), 3000); 
         }
 
         document.getElementById('prev-btn').onclick = () => { if(currentStep > 0) { currentStep--; update(); }};
