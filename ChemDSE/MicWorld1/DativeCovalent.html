@@ -9,10 +9,9 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
         
-        /* High-performance transitions for transform and opacity */
+        /* Persistent transition for smooth movement on all devices */
         .electron-transition { transition: transform 1s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s ease; }
         
-        /* Standardized font size for all atom labels */
         .atom-label { font-weight: bold; font-size: 1.1rem; pointer-events: none; transition: all 1s ease; }
         
         .highlight-pulse { animation: pulse-ring 1.5s infinite; }
@@ -31,7 +30,6 @@
             position: relative;
         }
 
-        /* Structural formula lines follow molecule color */
         .struct-line { stroke-width: 2.5; stroke-linecap: round; }
         .struct-text { font-family: 'Inter', sans-serif; font-weight: 700; font-size: 18px; }
         
@@ -215,90 +213,84 @@
         const cases = {
             nh3bf3: {
                 name: "NH₃BF₃", donor: "Nitrogen", dMol: "NH₃", acceptor: "Boron", aMol: "BF₃", final: "NH₃BF₃", octet: "octet", charge: null,
-                setup: (groups, step) => {
-                    const isMerged = step === 2;
-                    const dX = step < 2 ? 220 : 400 - (MAIN_RADIUS - OVERLAP_DEPTH/2);
-                    const aX = step < 2 ? 580 : 400 + (MAIN_RADIUS - OVERLAP_DEPTH/2);
-                    const cy = 225;
+                init: (groups) => {
                     groups.donor.innerHTML = getAtomHtml(DONOR_MOL_COLOR, 'N') + getBondHtml(270, 'x', 'o', DONOR_MOL_COLOR, 'H') + getBondHtml(180, 'x', 'o', DONOR_MOL_COLOR, 'H') + getBondHtml(90, 'x', 'o', DONOR_MOL_COLOR, 'H');
-                    const box = (step === 1) ? `<rect x="-105" y="-20" width="40" height="40" fill="none" stroke="${ACCEPTOR_MOL_COLOR}" stroke-width="2" stroke-dasharray="4" class="highlight-pulse" />` : '';
-                    groups.acceptor.innerHTML = getAtomHtml(ACCEPTOR_MOL_COLOR, 'B') + getBondHtml(270, 'dot', 'o', ACCEPTOR_MOL_COLOR, 'F') + getBondHtml(0, 'dot', 'o', ACCEPTOR_MOL_COLOR, 'F') + getBondHtml(90, 'dot', 'o', ACCEPTOR_MOL_COLOR, 'F') + box;
-                    groups.lonePair.innerHTML = getLonePairSymbols(0, DATIVE_COLOR, step === 0, isMerged);
-                    // Force a layout reflow for Safari/Mobile Chrome to ensure transitions trigger
-                    requestAnimationFrame(() => {
-                        groups.donor.setAttribute('transform', `translate(${dX}, ${cy})`);
-                        groups.acceptor.setAttribute('transform', `translate(${aX}, ${cy})`);
-                        groups.lonePair.setAttribute('transform', `translate(${dX}, ${cy})`);
-                    });
-                    startBracketTracking(null, null);
+                    groups.acceptor.innerHTML = getAtomHtml(ACCEPTOR_MOL_COLOR, 'B') + getBondHtml(270, 'dot', 'o', ACCEPTOR_MOL_COLOR, 'F') + getBondHtml(0, 'dot', 'o', ACCEPTOR_MOL_COLOR, 'F') + getBondHtml(90, 'dot', 'o', ACCEPTOR_MOL_COLOR, 'F') + `<rect id="vbox" x="-105" y="-20" width="40" height="40" fill="none" stroke="${ACCEPTOR_MOL_COLOR}" stroke-width="2" stroke-dasharray="4" class="highlight-pulse" />`;
                 },
-                struct: (step) => renderRefinedStruct(step, 'N', 'B', ['H','H','H'], ['F','F','F'], DATIVE_COLOR)
+                update: (groups, step) => {
+                    const isMerged = step === 2;
+                    const dX = isMerged ? 400 - (MAIN_RADIUS - OVERLAP_DEPTH/2) : 220;
+                    const aX = isMerged ? 400 + (MAIN_RADIUS - OVERLAP_DEPTH/2) : 580;
+                    groups.donor.setAttribute('transform', `translate(${dX}, 225)`);
+                    groups.acceptor.setAttribute('transform', `translate(${aX}, 225)`);
+                    groups.lonePair.innerHTML = getLonePairSymbols(0, DATIVE_COLOR, step === 0, isMerged);
+                    groups.lonePair.setAttribute('transform', `translate(${dX}, 225)`);
+                    const vbox = document.getElementById('vbox');
+                    if (vbox) vbox.setAttribute('display', step === 1 ? 'block' : 'none');
+                }
             },
             alcl4: {
                 name: "AlCl₄⁻", donor: "Chlorine", dMol: "Cl⁻", acceptor: "Aluminium", aMol: "AlCl₃", final: "AlCl₄⁻", octet: "octet", charge: '-',
-                setup: (groups, step) => {
-                    const isMerged = step === 2;
-                    const dX = step < 2 ? 220 : 400 - (PERIPHERAL_RADIUS - OVERLAP_DEPTH/2);
-                    const aX = step < 2 ? 580 : 400 + (MAIN_RADIUS - OVERLAP_DEPTH/2);
-                    const cy = 225;
+                init: (groups) => {
                     groups.donor.innerHTML = getAtomHtml(DONOR_MOL_COLOR, 'Cl', PERIPHERAL_RADIUS) + getLonePairHtml(270, DONOR_MOL_COLOR, 'x', PERIPHERAL_RADIUS) + getLonePairHtml(180, DONOR_MOL_COLOR, 'x', PERIPHERAL_RADIUS) + getLonePairHtml(90, DONOR_MOL_COLOR, 'x', PERIPHERAL_RADIUS);
-                    const box = (step === 1) ? `<rect x="-105" y="-20" width="40" height="40" fill="none" stroke="${ACCEPTOR_MOL_COLOR}" stroke-width="2" stroke-dasharray="4" class="highlight-pulse" />` : '';
-                    groups.acceptor.innerHTML = getAtomHtml(ACCEPTOR_MOL_COLOR, 'Al') + getBondHtml(270, 'dot', 'o', ACCEPTOR_MOL_COLOR, 'Cl') + getBondHtml(0, 'dot', 'o', ACCEPTOR_MOL_COLOR, 'Cl') + getBondHtml(90, 'dot', 'o', ACCEPTOR_MOL_COLOR, 'Cl') + box;
+                    groups.acceptor.innerHTML = getAtomHtml(ACCEPTOR_MOL_COLOR, 'Al') + getBondHtml(270, 'dot', 'o', ACCEPTOR_MOL_COLOR, 'Cl') + getBondHtml(0, 'dot', 'o', ACCEPTOR_MOL_COLOR, 'Cl') + getBondHtml(90, 'dot', 'o', ACCEPTOR_MOL_COLOR, 'Cl') + `<rect id="vbox" x="-105" y="-20" width="40" height="40" fill="none" stroke="${ACCEPTOR_MOL_COLOR}" stroke-width="2" stroke-dasharray="4" class="highlight-pulse" />`;
+                },
+                update: (groups, step) => {
+                    const isMerged = step === 2;
+                    const dX = isMerged ? 400 - (PERIPHERAL_RADIUS - OVERLAP_DEPTH/2) : 220;
+                    const aX = isMerged ? 400 + (MAIN_RADIUS - OVERLAP_DEPTH/2) : 580;
+                    groups.donor.setAttribute('transform', `translate(${dX}, 225)`);
+                    groups.acceptor.setAttribute('transform', `translate(${aX}, 225)`);
                     groups.lonePair.innerHTML = getLonePairSymbols(0, DATIVE_COLOR, step === 0, isMerged, PERIPHERAL_RADIUS);
-                    requestAnimationFrame(() => {
-                        groups.donor.setAttribute('transform', `translate(${dX}, ${cy})`);
-                        groups.acceptor.setAttribute('transform', `translate(${aX}, ${cy})`);
-                        groups.lonePair.setAttribute('transform', `translate(${dX}, ${cy})`);
-                    });
+                    groups.lonePair.setAttribute('transform', `translate(${dX}, 225)`);
+                    const vbox = document.getElementById('vbox');
+                    if (vbox) vbox.setAttribute('display', step === 1 ? 'block' : 'none');
                     if (isMerged) startBracketTracking('drawing-area', '-');
                     else if (step < 2) startBracketTracking('donor-group', '-');
                     else startBracketTracking(null, null);
-                },
-                struct: (step) => renderRefinedStruct(step, 'Cl', 'Al', [], ['Cl','Cl','Cl'], DATIVE_COLOR, true, '-', true, false)
+                }
             },
             h3o: {
                 name: "H₃O⁺", donor: "Oxygen", dMol: "H₂O", acceptor: "Hydrogen", aMol: "H⁺", final: "H₃O⁺", octet: "duplet", charge: '+',
-                setup: (groups, step) => {
-                    const isMerged = step === 2;
-                    const dX = step < 2 ? 220 : 400 - (MAIN_RADIUS - OVERLAP_DEPTH/2);
-                    const aX = step < 2 ? 580 : 400 + (HYDROGEN_RADIUS - OVERLAP_DEPTH/2);
-                    const cy = 225;
+                init: (groups) => {
                     groups.donor.innerHTML = getAtomHtml(DONOR_MOL_COLOR, 'O') + getBondHtml(180, 'x', 'o', DONOR_MOL_COLOR, 'H') + getBondHtml(90, 'x', 'o', DONOR_MOL_COLOR, 'H') + getLonePairHtml(270, DONOR_MOL_COLOR, 'x', MAIN_RADIUS);
-                    const box = (step === 1) ? `<circle cx="-25" cy="0" r="28" fill="none" stroke="${DATIVE_COLOR}" stroke-width="2" stroke-dasharray="4" class="highlight-pulse" />` : '';
-                    groups.acceptor.innerHTML = `<circle cx="0" cy="0" r="${HYDROGEN_RADIUS}" fill="none" stroke="${ACCEPTOR_MOL_COLOR}" stroke-width="2" stroke-dasharray="4" /><text x="0" y="6" text-anchor="middle" class="atom-label" fill="${ACCEPTOR_MOL_COLOR}">H</text>${box}`;
+                    groups.acceptor.innerHTML = `<circle cx="0" cy="0" r="${HYDROGEN_RADIUS}" fill="none" stroke="${ACCEPTOR_MOL_COLOR}" stroke-width="2" stroke-dasharray="4" /><text x="0" y="6" text-anchor="middle" class="atom-label" fill="${ACCEPTOR_MOL_COLOR}">H</text><circle id="vbox" cx="-25" cy="0" r="28" fill="none" stroke="${DATIVE_COLOR}" stroke-width="2" stroke-dasharray="4" class="highlight-pulse" />`;
+                },
+                update: (groups, step) => {
+                    const isMerged = step === 2;
+                    const dX = isMerged ? 400 - (MAIN_RADIUS - OVERLAP_DEPTH/2) : 220;
+                    const aX = isMerged ? 400 + (HYDROGEN_RADIUS - OVERLAP_DEPTH/2) : 580;
+                    groups.donor.setAttribute('transform', `translate(${dX}, 225)`);
+                    groups.acceptor.setAttribute('transform', `translate(${aX}, 225)`);
                     groups.lonePair.innerHTML = getLonePairSymbols(0, DATIVE_COLOR, step === 0, isMerged);
-                    requestAnimationFrame(() => {
-                        groups.donor.setAttribute('transform', `translate(${dX}, ${cy})`);
-                        groups.acceptor.setAttribute('transform', `translate(${aX}, ${cy})`);
-                        groups.lonePair.setAttribute('transform', `translate(${dX}, ${cy})`);
-                    });
+                    groups.lonePair.setAttribute('transform', `translate(${dX}, 225)`);
+                    const vbox = document.getElementById('vbox');
+                    if (vbox) vbox.setAttribute('display', step === 1 ? 'block' : 'none');
                     if (isMerged) startBracketTracking('drawing-area', '+');
                     else if (step < 2) startBracketTracking('acceptor-group', '+');
                     else startBracketTracking(null, null);
-                },
-                struct: (step) => renderRefinedStruct(step, 'O', 'H', ['H','H'], [], DATIVE_COLOR, true, '+', false, true)
+                }
             },
             nh4: {
                 name: "NH₄⁺", donor: "Nitrogen", dMol: "NH₃", acceptor: "Hydrogen", aMol: "H⁺", final: "NH₄⁺", octet: "duplet", charge: '+',
-                setup: (groups, step) => {
-                    const isMerged = step === 2;
-                    const dX = step < 2 ? 220 : 400 - (MAIN_RADIUS - OVERLAP_DEPTH/2);
-                    const aX = step < 2 ? 580 : 400 + (HYDROGEN_RADIUS - OVERLAP_DEPTH/2);
-                    const cy = 225;
+                init: (groups) => {
                     groups.donor.innerHTML = getAtomHtml(DONOR_MOL_COLOR, 'N') + getBondHtml(270, 'x', 'o', DONOR_MOL_COLOR, 'H') + getBondHtml(180, 'x', 'o', DONOR_MOL_COLOR, 'H') + getBondHtml(90, 'x', 'o', DONOR_MOL_COLOR, 'H');
-                    const box = (step === 1) ? `<circle cx="-25" cy="0" r="28" fill="none" stroke="${DATIVE_COLOR}" stroke-width="2" stroke-dasharray="4" class="highlight-pulse" />` : '';
-                    groups.acceptor.innerHTML = `<circle cx="0" cy="0" r="${HYDROGEN_RADIUS}" fill="none" stroke="${ACCEPTOR_MOL_COLOR}" stroke-width="2" stroke-dasharray="4" /><text x="0" y="6" text-anchor="middle" class="atom-label" fill="${ACCEPTOR_MOL_COLOR}">H</text>${box}`;
+                    groups.acceptor.innerHTML = `<circle cx="0" cy="0" r="${HYDROGEN_RADIUS}" fill="none" stroke="${ACCEPTOR_MOL_COLOR}" stroke-width="2" stroke-dasharray="4" /><text x="0" y="6" text-anchor="middle" class="atom-label" fill="${ACCEPTOR_MOL_COLOR}">H</text><circle id="vbox" cx="-25" cy="0" r="28" fill="none" stroke="${DATIVE_COLOR}" stroke-width="2" stroke-dasharray="4" class="highlight-pulse" />`;
+                },
+                update: (groups, step) => {
+                    const isMerged = step === 2;
+                    const dX = isMerged ? 400 - (MAIN_RADIUS - OVERLAP_DEPTH/2) : 220;
+                    const aX = isMerged ? 400 + (HYDROGEN_RADIUS - OVERLAP_DEPTH/2) : 580;
+                    groups.donor.setAttribute('transform', `translate(${dX}, 225)`);
+                    groups.acceptor.setAttribute('transform', `translate(${aX}, 225)`);
                     groups.lonePair.innerHTML = getLonePairSymbols(0, DATIVE_COLOR, step === 0, isMerged);
-                    requestAnimationFrame(() => {
-                        groups.donor.setAttribute('transform', `translate(${dX}, ${cy})`);
-                        groups.acceptor.setAttribute('transform', `translate(${aX}, ${cy})`);
-                        groups.lonePair.setAttribute('transform', `translate(${dX}, ${cy})`);
-                    });
+                    groups.lonePair.setAttribute('transform', `translate(${dX}, 225)`);
+                    const vbox = document.getElementById('vbox');
+                    if (vbox) vbox.setAttribute('display', step === 1 ? 'block' : 'none');
                     if (isMerged) startBracketTracking('drawing-area', '+');
                     else if (step < 2) startBracketTracking('acceptor-group', '+');
                     else startBracketTracking(null, null);
-                },
-                struct: (step) => renderRefinedStruct(step, 'N', 'H', ['H','H','H'], [], DATIVE_COLOR, true, '+', false, true)
+                }
             }
         };
 
@@ -336,16 +328,13 @@
 
             const lonePairX = (x, y, color) => {
                 const offset = 5;
-                return `<g transform="translate(${x},${y})">
-                    <g transform="translate(0,-${offset})">${getCrossSVG(color, 3, 2)}</g>
-                    <g transform="translate(0,${offset})">${getCrossSVG(color, 3, 2)}</g>
-                </g>`;
+                return `<g transform="translate(${x},${y})"><g transform="translate(0,-${offset})">${getCrossSVG(color, 3, 2)}</g><g transform="translate(0,${offset})">${getCrossSVG(color, 3, 2)}</g></g>`;
             };
 
             return `<svg width="260" height="220" viewBox="0 0 260 220"><defs><marker id="arr" markerWidth="6" markerHeight="6" refX="4" refY="3" orient="auto"><polygon points="0 0, 4 3, 0 6" fill="${arrowColor}"/></marker></defs><g transform="translate(${cx}, ${cy})">${(isMerged && isIon) ? `<g><path d="M -85,-75 L -95,-75 L -95,80 L -85,80" class="struct-bracket" /><path d="M 85,-75 L 95,-75 L 95,80 L 85,80" class="struct-bracket" /><text x="100" y="-60" class="ion-charge" style="fill:#000">${charge}</text></g>` : ''}<g transform="translate(${dX}, 0)"><text x="0" y="7" text-anchor="middle" class="struct-text" style="fill:${DONOR_MOL_COLOR}">${dSym}</text>${drawBonds(dNeighbors, 'L', DONOR_MOL_COLOR)}${(!isMerged) ? lonePairX(15, 0, arrowColor) : ''}${(!isMerged && dIsIon) ? atomBracket(charge) : ''}</g><g transform="translate(${aX}, 0)"><text x="0" y="7" text-anchor="middle" class="struct-text" style="fill:${ACCEPTOR_MOL_COLOR}">${aSym}</text>${drawBonds(aNeighbors, 'R', ACCEPTOR_MOL_COLOR)}${(!isMerged && aIsIon) ? atomBracket(charge) : ''}</g>${isMerged ? `<line x1="${dX+10}" y1="0" x2="${aX-8}" y2="0" stroke="${arrowColor}" stroke-width="2.5" marker-end="url(#arr)"/>` : ''}</g></svg>`;
         }
 
-        let currentKey = 'nh3bf3', currentStep = 0;
+        let currentKey = 'nh3bf3', currentStep = 0, initializedKey = null;
         const caseSelector = document.getElementById('case-selector');
         const structContainer = document.getElementById('struct-svg-container');
         const guidanceText = document.getElementById('guidance-text');
@@ -363,8 +352,18 @@
 
         function update() {
             const c = cases[currentKey];
-            c.setup(svgGroups, currentStep);
-            structContainer.innerHTML = c.struct(currentStep);
+            if (initializedKey !== currentKey) {
+                // Persistent initialization: clear and build inner HTML once per case
+                c.init(svgGroups);
+                initializedKey = currentKey;
+            }
+            c.update(svgGroups, currentStep);
+            
+            structContainer.innerHTML = c.name === "NH₃BF₃" ? renderRefinedStruct(currentStep, 'N', 'B', ['H','H','H'], ['F','F','F'], DATIVE_COLOR) :
+                                        c.name === "AlCl₄⁻" ? renderRefinedStruct(currentStep, 'Cl', 'Al', [], ['Cl','Cl','Cl'], DATIVE_COLOR, true, '-', true, false) :
+                                        c.name === "H₃O⁺" ? renderRefinedStruct(currentStep, 'O', 'H', ['H','H'], [], DATIVE_COLOR, true, '+', false, true) :
+                                        renderRefinedStruct(currentStep, 'N', 'H', ['H','H','H'], [], DATIVE_COLOR, true, '+', false, true);
+
             let msg = currentStep === 0 ? `${c.donor} atom in ${c.dMol} contains lone pair electron.` : currentStep === 1 ? `While ${c.acceptor} atom in ${c.aMol} outermost electron shell is not fully filled, which has a vacant site to accept the electron.` : `${c.acceptor} atom in ${c.aMol} accepts the lone pair electron from ${c.donor} atom in ${c.dMol} to form dative covalent bond, so that ${c.acceptor.toLowerCase()} atom in ${c.final} attains a stable ${c.octet} structure.`;
             guidanceText.innerText = msg;
             document.getElementById('step-indicator').innerText = `Step ${currentStep + 1} / 3`;
