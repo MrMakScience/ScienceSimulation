@@ -9,7 +9,6 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; overflow-x: hidden; }
         
-        /* Smooth hardware-accelerated movement for tablets */
         .move-transition { 
             transition: transform 1.2s cubic-bezier(0.4, 0, 0.2, 1);
             will-change: transform;
@@ -43,7 +42,6 @@
         .symbol-draw { stroke-width: 2.5; fill: none; }
         .symbol-fill { transition: opacity 0.5s ease; }
 
-        #bracket-layer { pointer-events: none; }
         .ion-bracket { stroke: #334155; stroke-width: 3; fill: none; stroke-linecap: round; }
         .ion-charge { font-weight: bold; font-size: 1.6rem; fill: #1e293b; }
         
@@ -78,7 +76,6 @@
                             <g id="acceptor-group" class="move-transition"></g>
                             <g id="lone-pair-group" class="move-transition"></g>
                         </g>
-                        <g id="bracket-layer"></g>
                     </svg>
                 </div>
 
@@ -106,53 +103,25 @@
         const ACCEPTOR_MOL_COLOR = '#f59e0b'; 
         const DATIVE_COLOR = '#ef4444';
 
-        let activeCharge = null;
-        let activeTargetId = null;
-        let bracketInterval = null;
-
         const getCrossSVG = (color, size = 4.5, weight = 2.5) => `<path d="M-${size},-${size} L${size},${size} M-${size},${size} L${size},-${size}" stroke="${color}" stroke-width="${weight}" fill="none" class="symbol-draw" />`;
         const getDotSVG = (color) => `<circle cx="0" cy="0" r="4.5" fill="${color}" class="symbol-fill" />`;
         const getCircleSVG = (color) => `<circle cx="0" cy="0" r="5" fill="white" stroke="${color}" stroke-width="2.2" class="symbol-draw" />`;
 
-        function drawBrackets() {
-            const container = document.getElementById('bracket-layer');
-            if (!activeCharge || !activeTargetId) { container.innerHTML = ''; return; }
-            
-            const target = document.getElementById(activeTargetId);
-            const style = window.getComputedStyle(target);
-            const matrix = new DOMMatrix(style.transform);
-            
-            // Fixed sizing logic for ions to prevent H+ bracket offset
-            let width, height, centerX, centerY;
-            
-            if (activeTargetId === 'drawing-area') {
-                // For the whole molecule
-                const b = target.getBBox();
-                width = b.width;
-                height = b.height;
-                centerX = b.x + width / 2 + matrix.e;
-                centerY = b.y + height / 2 + matrix.f;
-            } else {
-                // For individual ions (Cl- or H+)
-                // We use fixed radius values based on the constants to ensure stability
-                const radius = (activeTargetId === 'acceptor-group' && currentKey !== 'nh3bf3') ? HYDROGEN_RADIUS : ION_RADIUS;
-                width = radius * 2;
-                height = radius * 2;
-                centerX = matrix.e;
-                centerY = matrix.f;
-            }
+        function getInternalBrackets(radius, charge, isLarge = false) {
+            if (!charge) return '';
+            const pad = isLarge ? 110 : 25;
+            const hPad = isLarge ? 160 : 25;
+            const hook = 20;
+            const left = -radius - hPad;
+            const right = radius + hPad;
+            const top = -radius - pad;
+            const bottom = radius + pad;
 
-            const pad = 25, hook = 20;
-            const left = centerX - (width / 2) - pad;
-            const right = centerX + (width / 2) + pad;
-            const top = centerY - (height / 2) - pad;
-            const bottom = centerY + (height / 2) + pad;
-
-            container.innerHTML = `
-                <g>
+            return `
+                <g class="bracket-internal">
                     <path d="M ${left + hook},${top} L ${left},${top} L ${left},${bottom} L ${left + hook},${bottom}" class="ion-bracket" />
                     <path d="M ${right - hook},${top} L ${right},${top} L ${right},${bottom} L ${right - hook},${bottom}" class="ion-bracket" />
-                    <text x="${right + 8}" y="${top + 18}" class="ion-charge">${activeCharge}</text>
+                    <text x="${right + 8}" y="${top + 18}" class="ion-charge">${charge}</text>
                 </g>`;
         }
 
@@ -232,14 +201,9 @@
                     groups.acceptor.innerHTML = getAtomHtml(ACCEPTOR_MOL_COLOR, 'B') + getBondHtml(270, 'dot', 'o', ACCEPTOR_MOL_COLOR, 'F') + getBondHtml(0, 'dot', 'o', ACCEPTOR_MOL_COLOR, 'F') + getBondHtml(90, 'dot', 'o', ACCEPTOR_MOL_COLOR, 'F') + box;
                     groups.lonePair.innerHTML = getLonePairSymbols(0, DATIVE_COLOR, step === 0, isMerged);
 
-                    requestAnimationFrame(() => {
-                        requestAnimationFrame(() => {
-                            groups.donor.style.transform = `translate(${dX}px, ${cy}px)`;
-                            groups.acceptor.style.transform = `translate(${aX}px, ${cy}px)`;
-                            groups.lonePair.style.transform = `translate(${dX}px, ${cy}px)`;
-                        });
-                    });
-                    activeTargetId = null; activeCharge = null;
+                    groups.donor.style.transform = `translate(${dX}px, ${cy}px)`;
+                    groups.acceptor.style.transform = `translate(${aX}px, ${cy}px)`;
+                    groups.lonePair.style.transform = `translate(${dX}px, ${cy}px)`;
                 },
                 struct: (step) => renderRefinedStruct(step, 'N', 'B', ['H','H','H'], ['F','F','F'], DATIVE_COLOR)
             },
@@ -251,22 +215,17 @@
                     const aX = isMerged ? 400 + (MAIN_RADIUS - OVERLAP_DEPTH/2) : 580;
                     const cy = 225;
 
-                    groups.donor.innerHTML = getAtomHtml(DONOR_MOL_COLOR, 'Cl', ION_RADIUS) + getLonePairHtml(270, DONOR_MOL_COLOR, 'x', ION_RADIUS) + getLonePairHtml(180, DONOR_MOL_COLOR, 'x', ION_RADIUS) + getLonePairHtml(90, DONOR_MOL_COLOR, 'x', ION_RADIUS);
+                    let dBrackets = (step < 2) ? getInternalBrackets(ION_RADIUS, '-') : '';
+                    let combinedBrackets = isMerged ? getInternalBrackets(MAIN_RADIUS, '-', true) : '';
+
+                    groups.donor.innerHTML = dBrackets + getAtomHtml(DONOR_MOL_COLOR, 'Cl', ION_RADIUS) + getLonePairHtml(270, DONOR_MOL_COLOR, 'x', ION_RADIUS) + getLonePairHtml(180, DONOR_MOL_COLOR, 'x', ION_RADIUS) + getLonePairHtml(90, DONOR_MOL_COLOR, 'x', ION_RADIUS);
                     const box = (step === 1) ? `<rect x="-105" y="-20" width="40" height="40" fill="none" stroke="${ACCEPTOR_MOL_COLOR}" stroke-width="2" stroke-dasharray="4" class="highlight-pulse" />` : '';
-                    groups.acceptor.innerHTML = getAtomHtml(ACCEPTOR_MOL_COLOR, 'Al') + getBondHtml(270, 'dot', 'o', ACCEPTOR_MOL_COLOR, 'Cl') + getBondHtml(0, 'dot', 'o', ACCEPTOR_MOL_COLOR, 'Cl') + getBondHtml(90, 'dot', 'o', ACCEPTOR_MOL_COLOR, 'Cl') + box;
+                    groups.acceptor.innerHTML = combinedBrackets + getAtomHtml(ACCEPTOR_MOL_COLOR, 'Al') + getBondHtml(270, 'dot', 'o', ACCEPTOR_MOL_COLOR, 'Cl') + getBondHtml(0, 'dot', 'o', ACCEPTOR_MOL_COLOR, 'Cl') + getBondHtml(90, 'dot', 'o', ACCEPTOR_MOL_COLOR, 'Cl') + box;
                     groups.lonePair.innerHTML = getLonePairSymbols(0, DATIVE_COLOR, step === 0, isMerged);
 
-                    requestAnimationFrame(() => {
-                        requestAnimationFrame(() => {
-                            groups.donor.style.transform = `translate(${dX}px, ${cy}px)`;
-                            groups.acceptor.style.transform = `translate(${aX}px, ${cy}px)`;
-                            groups.lonePair.style.transform = `translate(${dX}px, ${cy}px)`;
-                        });
-                    });
-                    
-                    if (isMerged) { activeTargetId = 'drawing-area'; activeCharge = '-'; }
-                    else if (step < 2) { activeTargetId = 'donor-group'; activeCharge = '-'; }
-                    else { activeTargetId = null; activeCharge = null; }
+                    groups.donor.style.transform = `translate(${dX}px, ${cy}px)`;
+                    groups.acceptor.style.transform = `translate(${aX}px, ${cy}px)`;
+                    groups.lonePair.style.transform = `translate(${dX}px, ${cy}px)`;
                 },
                 struct: (step) => renderRefinedStruct(step, 'Cl', 'Al', [], ['Cl','Cl','Cl'], DATIVE_COLOR, true, '-', true, false)
             },
@@ -278,22 +237,17 @@
                     const aX = isMerged ? 400 + (HYDROGEN_RADIUS - OVERLAP_DEPTH/2) : 580;
                     const cy = 225;
 
-                    groups.donor.innerHTML = getAtomHtml(DONOR_MOL_COLOR, 'O') + getBondHtml(180, 'x', 'o', DONOR_MOL_COLOR, 'H') + getBondHtml(90, 'x', 'o', DONOR_MOL_COLOR, 'H') + getLonePairHtml(270, DONOR_MOL_COLOR, 'x', MAIN_RADIUS);
+                    let aBrackets = (step < 2) ? getInternalBrackets(HYDROGEN_RADIUS, '+') : '';
+                    let combinedBrackets = isMerged ? getInternalBrackets(MAIN_RADIUS, '+', true) : '';
+
+                    groups.donor.innerHTML = combinedBrackets + getAtomHtml(DONOR_MOL_COLOR, 'O') + getBondHtml(180, 'x', 'o', DONOR_MOL_COLOR, 'H') + getBondHtml(90, 'x', 'o', DONOR_MOL_COLOR, 'H') + getLonePairHtml(270, DONOR_MOL_COLOR, 'x', MAIN_RADIUS);
                     const box = (step === 1) ? `<circle cx="-25" cy="0" r="32" fill="none" stroke="${DATIVE_COLOR}" stroke-width="2" stroke-dasharray="4" class="highlight-pulse" />` : '';
-                    groups.acceptor.innerHTML = `<circle cx="0" cy="0" r="${HYDROGEN_RADIUS}" fill="none" stroke="${ACCEPTOR_MOL_COLOR}" stroke-width="2" stroke-dasharray="4" /><text x="0" y="8" text-anchor="middle" class="atom-label" fill="${ACCEPTOR_MOL_COLOR}">H</text>${box}`;
+                    groups.acceptor.innerHTML = aBrackets + `<circle cx="0" cy="0" r="${HYDROGEN_RADIUS}" fill="none" stroke="${ACCEPTOR_MOL_COLOR}" stroke-width="2" stroke-dasharray="4" /><text x="0" y="8" text-anchor="middle" class="atom-label" fill="${ACCEPTOR_MOL_COLOR}">H</text>${box}`;
                     groups.lonePair.innerHTML = getLonePairSymbols(0, DATIVE_COLOR, step === 0, isMerged);
 
-                    requestAnimationFrame(() => {
-                        requestAnimationFrame(() => {
-                            groups.donor.style.transform = `translate(${dX}px, ${cy}px)`;
-                            groups.acceptor.style.transform = `translate(${aX}px, ${cy}px)`;
-                            groups.lonePair.style.transform = `translate(${dX}px, ${cy}px)`;
-                        });
-                    });
-                    
-                    if (isMerged) { activeTargetId = 'drawing-area'; activeCharge = '+'; }
-                    else if (step < 2) { activeTargetId = 'acceptor-group'; activeCharge = '+'; }
-                    else { activeTargetId = null; activeCharge = null; }
+                    groups.donor.style.transform = `translate(${dX}px, ${cy}px)`;
+                    groups.acceptor.style.transform = `translate(${aX}px, ${cy}px)`;
+                    groups.lonePair.style.transform = `translate(${dX}px, ${cy}px)`;
                 },
                 struct: (step) => renderRefinedStruct(step, 'O', 'H', ['H','H'], [], DATIVE_COLOR, true, '+', false, true)
             },
@@ -305,22 +259,17 @@
                     const aX = isMerged ? 400 + (HYDROGEN_RADIUS - OVERLAP_DEPTH/2) : 580;
                     const cy = 225;
 
-                    groups.donor.innerHTML = getAtomHtml(DONOR_MOL_COLOR, 'N') + getBondHtml(270, 'x', 'o', DONOR_MOL_COLOR, 'H') + getBondHtml(180, 'x', 'o', DONOR_MOL_COLOR, 'H') + getBondHtml(90, 'x', 'o', DONOR_MOL_COLOR, 'H');
+                    let aBrackets = (step < 2) ? getInternalBrackets(HYDROGEN_RADIUS, '+') : '';
+                    let combinedBrackets = isMerged ? getInternalBrackets(MAIN_RADIUS, '+', true) : '';
+
+                    groups.donor.innerHTML = combinedBrackets + getAtomHtml(DONOR_MOL_COLOR, 'N') + getBondHtml(270, 'x', 'o', DONOR_MOL_COLOR, 'H') + getBondHtml(180, 'x', 'o', DONOR_MOL_COLOR, 'H') + getBondHtml(90, 'x', 'o', DONOR_MOL_COLOR, 'H');
                     const box = (step === 1) ? `<circle cx="-25" cy="0" r="32" fill="none" stroke="${DATIVE_COLOR}" stroke-width="2" stroke-dasharray="4" class="highlight-pulse" />` : '';
-                    groups.acceptor.innerHTML = `<circle cx="0" cy="0" r="${HYDROGEN_RADIUS}" fill="none" stroke="${ACCEPTOR_MOL_COLOR}" stroke-width="2" stroke-dasharray="4" /><text x="0" y="8" text-anchor="middle" class="atom-label" fill="${ACCEPTOR_MOL_COLOR}">H</text>${box}`;
+                    groups.acceptor.innerHTML = aBrackets + `<circle cx="0" cy="0" r="${HYDROGEN_RADIUS}" fill="none" stroke="${ACCEPTOR_MOL_COLOR}" stroke-width="2" stroke-dasharray="4" /><text x="0" y="8" text-anchor="middle" class="atom-label" fill="${ACCEPTOR_MOL_COLOR}">H</text>${box}`;
                     groups.lonePair.innerHTML = getLonePairSymbols(0, DATIVE_COLOR, step === 0, isMerged);
 
-                    requestAnimationFrame(() => {
-                        requestAnimationFrame(() => {
-                            groups.donor.style.transform = `translate(${dX}px, ${cy}px)`;
-                            groups.acceptor.style.transform = `translate(${aX}px, ${cy}px)`;
-                            groups.lonePair.style.transform = `translate(${dX}px, ${cy}px)`;
-                        });
-                    });
-                    
-                    if (isMerged) { activeTargetId = 'drawing-area'; activeCharge = '+'; }
-                    else if (step < 2) { activeTargetId = 'acceptor-group'; activeCharge = '+'; }
-                    else { activeTargetId = null; activeCharge = null; }
+                    groups.donor.style.transform = `translate(${dX}px, ${cy}px)`;
+                    groups.acceptor.style.transform = `translate(${aX}px, ${cy}px)`;
+                    groups.lonePair.style.transform = `translate(${dX}px, ${cy}px)`;
                 },
                 struct: (step) => renderRefinedStruct(step, 'N', 'H', ['H','H','H'], [], DATIVE_COLOR, true, '+', false, true)
             }
@@ -394,13 +343,6 @@
                 const isActive = b.innerHTML === formatChem(c.name);
                 b.classList.toggle('bg-blue-50', isActive); b.classList.toggle('border-blue-300', isActive);
             });
-            
-            // Continuous tracking during animation and beyond
-            if(bracketInterval) clearInterval(bracketInterval);
-            bracketInterval = setInterval(drawBrackets, 16); 
-            
-            // Keep tracking for longer to ensure it stays in place after animation finishes
-            setTimeout(() => clearInterval(bracketInterval), 3000); 
         }
 
         document.getElementById('prev-btn').onclick = () => { if(currentStep > 0) { currentStep--; update(); }};
