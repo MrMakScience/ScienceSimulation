@@ -7,11 +7,11 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; overflow-x: hidden; }
         
-        /* Force hardware acceleration for smooth tablet animations */
-        .electron-transition { 
-            transition: transform 1s cubic-bezier(0.4, 0, 0.2, 1); 
+        /* Smooth hardware-accelerated movement for tablets */
+        .move-transition { 
+            transition: transform 1.2s cubic-bezier(0.4, 0, 0.2, 1);
             will-change: transform;
         }
         
@@ -44,7 +44,7 @@
         .symbol-fill { transition: opacity 0.5s ease; }
 
         #bracket-layer { pointer-events: none; }
-        .ion-bracket { stroke: #334155; stroke-width: 3; fill: none; stroke-linecap: round; transition: opacity 0.5s ease; }
+        .ion-bracket { stroke: #334155; stroke-width: 3; fill: none; stroke-linecap: round; }
         .ion-charge { font-weight: bold; font-size: 1.6rem; fill: #1e293b; }
         
         .struct-bracket { stroke: #000000; stroke-width: 2; fill: none; }
@@ -55,7 +55,7 @@
     <div class="max-w-7xl mx-auto">
         <header class="mb-8 text-center">
             <h1 class="text-3xl font-bold text-slate-800">Formation of Dative Covalent Bonds</h1>
-            <p class="text-slate-600 mt-2">Interactive dot-and-cross diagrams with hardware-accelerated animations</p>
+            <p class="text-slate-600 mt-2">Interactive dot-and-cross diagrams with tablet-optimized animations</p>
         </header>
 
         <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -74,9 +74,10 @@
                 <div class="canvas-container border border-slate-200" id="viz-container">
                     <svg id="main-svg" viewBox="0 0 800 450" class="w-full h-full">
                         <g id="drawing-area">
-                            <g id="donor-group" class="electron-transition"></g>
-                            <g id="acceptor-group" class="electron-transition"></g>
-                            <g id="lone-pair-group" class="electron-transition"></g>
+                            <!-- Separate groups for movement -->
+                            <g id="donor-group" class="move-transition"></g>
+                            <g id="acceptor-group" class="move-transition"></g>
+                            <g id="lone-pair-group" class="move-transition"></g>
                         </g>
                         <g id="bracket-layer"></g>
                     </svg>
@@ -106,59 +107,43 @@
         const ACCEPTOR_MOL_COLOR = '#f59e0b'; 
         const DATIVE_COLOR = '#ef4444';
 
-        let bracketAnimationId = null;
         let activeCharge = null;
         let activeTargetId = null;
+        let bracketInterval = null;
 
         const getCrossSVG = (color, size = 4.5, weight = 2.5) => `<path d="M-${size},-${size} L${size},${size} M-${size},${size} L${size},-${size}" stroke="${color}" stroke-width="${weight}" fill="none" class="symbol-draw" />`;
         const getDotSVG = (color) => `<circle cx="0" cy="0" r="4.5" fill="${color}" class="symbol-fill" />`;
         const getCircleSVG = (color) => `<circle cx="0" cy="0" r="5" fill="white" stroke="${color}" stroke-width="2.2" class="symbol-draw" />`;
 
-        function calculateAndDrawBrackets() {
-            if (!activeCharge || !activeTargetId) {
-                document.getElementById('bracket-layer').innerHTML = '';
-                return;
-            }
+        function drawBrackets() {
             const container = document.getElementById('bracket-layer');
-            const svg = document.getElementById('main-svg');
+            if (!activeCharge || !activeTargetId) { container.innerHTML = ''; return; }
             const target = document.getElementById(activeTargetId);
-            const allElements = target.querySelectorAll('circle, text, path, rect');
-            let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+            const b = target.getBBox();
+            
+            // On tablet, getBBox might be relative to local transform, 
+            // but we need the calculated position within the main SVG
+            const svg = document.getElementById('main-svg');
+            let x = b.x, y = b.y;
+            
+            // Adjust coordinates based on the transform of the groups
+            if(activeTargetId === 'drawing-area') {
+               // Full molecule merge
+            } else {
+               const transform = target.getAttribute('transform');
+               if(transform) {
+                   const match = transform.match(/translate\(([^,]+)[, ]+([^)]+)\)/);
+                   if(match) { x += parseFloat(match[1]); y += parseFloat(match[2]); }
+               }
+            }
 
-            allElements.forEach(el => {
-                if (el.getAttribute('display') === 'none' || el.classList.contains('highlight-pulse')) return;
-                const b = el.getBBox();
-                const ctm = el.getScreenCTM();
-                if (!ctm) return;
-                const svgCtmInv = svg.getScreenCTM().inverse();
-                const matrix = svgCtmInv.multiply(ctm);
-                const pts = [{x:b.x, y:b.y},{x:b.x+b.width, y:b.y},{x:b.x, y:b.y+b.height},{x:b.x+b.width, y:b.y+b.height}];
-                pts.forEach(pCoord => {
-                    const pt = svg.createSVGPoint();
-                    pt.x = pCoord.x; pt.y = pCoord.y;
-                    const trans = pt.matrixTransform(matrix);
-                    minX = Math.min(minX, trans.x); maxX = Math.max(maxX, trans.x);
-                    minY = Math.min(minY, trans.y); maxY = Math.max(maxY, trans.y);
-                });
-            });
-
-            if (minX === Infinity) return;
-            const pad = 22, hook = 20;
-            const left = minX - pad, right = maxX + pad, top = minY - pad, bottom = maxY + pad;
+            const pad = 25, hook = 20;
+            const left = x - pad, right = x + b.width + pad, top = y - pad, bottom = y + b.height + pad;
 
             container.innerHTML = `
                 <g><path d="M ${left + hook},${top} L ${left},${top} L ${left},${bottom} L ${left + hook},${bottom}" class="ion-bracket" />
                 <path d="M ${right - hook},${top} L ${right},${top} L ${right},${bottom} L ${right - hook},${bottom}" class="ion-bracket" />
                 <text x="${right + 8}" y="${top + 18}" class="ion-charge">${activeCharge}</text></g>`;
-            bracketAnimationId = requestAnimationFrame(calculateAndDrawBrackets);
-        }
-
-        function startBracketTracking(targetId, charge) {
-            cancelAnimationFrame(bracketAnimationId);
-            activeTargetId = targetId; activeCharge = charge;
-            if (!charge) { document.getElementById('bracket-layer').innerHTML = ''; return; }
-            calculateAndDrawBrackets();
-            setTimeout(() => { cancelAnimationFrame(bracketAnimationId); calculateAndDrawBrackets(); cancelAnimationFrame(bracketAnimationId); }, 1200);
         }
 
         function getAtomHtml(color, label, radius = MAIN_RADIUS) {
@@ -228,17 +213,16 @@
                 name: "NH₃BF₃", donor: "Nitrogen", dMol: "NH₃", acceptor: "Boron", aMol: "BF₃", final: "NH₃BF₃", octet: "octet", charge: null,
                 setup: (groups, step) => {
                     const isMerged = step === 2;
-                    const dX = step < 2 ? 220 : 400 - (MAIN_RADIUS - OVERLAP_DEPTH/2);
-                    const aX = step < 2 ? 580 : 400 + (MAIN_RADIUS - OVERLAP_DEPTH/2);
+                    const dX = isMerged ? 400 - (MAIN_RADIUS - OVERLAP_DEPTH/2) : 220;
+                    const aX = isMerged ? 400 + (MAIN_RADIUS - OVERLAP_DEPTH/2) : 580;
                     const cy = 225;
 
-                    // Step 1: Render contents (static)
                     groups.donor.innerHTML = getAtomHtml(DONOR_MOL_COLOR, 'N') + getBondHtml(270, 'x', 'o', DONOR_MOL_COLOR, 'H') + getBondHtml(180, 'x', 'o', DONOR_MOL_COLOR, 'H') + getBondHtml(90, 'x', 'o', DONOR_MOL_COLOR, 'H');
                     const box = (step === 1) ? `<rect x="-105" y="-20" width="40" height="40" fill="none" stroke="${ACCEPTOR_MOL_COLOR}" stroke-width="2" stroke-dasharray="4" class="highlight-pulse" />` : '';
                     groups.acceptor.innerHTML = getAtomHtml(ACCEPTOR_MOL_COLOR, 'B') + getBondHtml(270, 'dot', 'o', ACCEPTOR_MOL_COLOR, 'F') + getBondHtml(0, 'dot', 'o', ACCEPTOR_MOL_COLOR, 'F') + getBondHtml(90, 'dot', 'o', ACCEPTOR_MOL_COLOR, 'F') + box;
                     groups.lonePair.innerHTML = getLonePairSymbols(0, DATIVE_COLOR, step === 0, isMerged);
 
-                    // Step 2: Trigger hardware-accelerated move with double-RAF for tablet stability
+                    // Multi-frame delay ensures the tablet handles the transition correctly
                     requestAnimationFrame(() => {
                         requestAnimationFrame(() => {
                             groups.donor.setAttribute('transform', `translate(${dX}, ${cy})`);
@@ -246,7 +230,7 @@
                             groups.lonePair.setAttribute('transform', `translate(${dX}, ${cy})`);
                         });
                     });
-                    startBracketTracking(null, null);
+                    activeTargetId = null; activeCharge = null;
                 },
                 struct: (step) => renderRefinedStruct(step, 'N', 'B', ['H','H','H'], ['F','F','F'], DATIVE_COLOR)
             },
@@ -254,8 +238,8 @@
                 name: "AlCl₄⁻", donor: "Chlorine", dMol: "Cl⁻", acceptor: "Aluminium", aMol: "AlCl₃", final: "AlCl₄⁻", octet: "octet", charge: '-',
                 setup: (groups, step) => {
                     const isMerged = step === 2;
-                    const dX = step < 2 ? 220 : 400 - (MAIN_RADIUS - OVERLAP_DEPTH/2);
-                    const aX = step < 2 ? 580 : 400 + (MAIN_RADIUS - OVERLAP_DEPTH/2);
+                    const dX = isMerged ? 400 - (MAIN_RADIUS - OVERLAP_DEPTH/2) : 220;
+                    const aX = isMerged ? 400 + (MAIN_RADIUS - OVERLAP_DEPTH/2) : 580;
                     const cy = 225;
 
                     groups.donor.innerHTML = getAtomHtml(DONOR_MOL_COLOR, 'Cl', ION_RADIUS) + getLonePairHtml(270, DONOR_MOL_COLOR, 'x', ION_RADIUS) + getLonePairHtml(180, DONOR_MOL_COLOR, 'x', ION_RADIUS) + getLonePairHtml(90, DONOR_MOL_COLOR, 'x', ION_RADIUS);
@@ -271,9 +255,9 @@
                         });
                     });
                     
-                    if (isMerged) startBracketTracking('drawing-area', '-');
-                    else if (step < 2) startBracketTracking('donor-group', '-');
-                    else startBracketTracking(null, null);
+                    if (isMerged) { activeTargetId = 'drawing-area'; activeCharge = '-'; }
+                    else if (step < 2) { activeTargetId = 'donor-group'; activeCharge = '-'; }
+                    else { activeTargetId = null; activeCharge = null; }
                 },
                 struct: (step) => renderRefinedStruct(step, 'Cl', 'Al', [], ['Cl','Cl','Cl'], DATIVE_COLOR, true, '-', true, false)
             },
@@ -281,8 +265,8 @@
                 name: "H₃O⁺", donor: "Oxygen", dMol: "H₂O", acceptor: "Hydrogen", aMol: "H⁺", final: "H₃O⁺", octet: "duplet", charge: '+',
                 setup: (groups, step) => {
                     const isMerged = step === 2;
-                    const dX = step < 2 ? 220 : 400 - (MAIN_RADIUS - OVERLAP_DEPTH/2);
-                    const aX = step < 2 ? 580 : 400 + (HYDROGEN_RADIUS - OVERLAP_DEPTH/2);
+                    const dX = isMerged ? 400 - (MAIN_RADIUS - OVERLAP_DEPTH/2) : 220;
+                    const aX = isMerged ? 400 + (HYDROGEN_RADIUS - OVERLAP_DEPTH/2) : 580;
                     const cy = 225;
 
                     groups.donor.innerHTML = getAtomHtml(DONOR_MOL_COLOR, 'O') + getBondHtml(180, 'x', 'o', DONOR_MOL_COLOR, 'H') + getBondHtml(90, 'x', 'o', DONOR_MOL_COLOR, 'H') + getLonePairHtml(270, DONOR_MOL_COLOR, 'x', MAIN_RADIUS);
@@ -298,9 +282,9 @@
                         });
                     });
                     
-                    if (isMerged) startBracketTracking('drawing-area', '+');
-                    else if (step < 2) startBracketTracking('acceptor-group', '+');
-                    else startBracketTracking(null, null);
+                    if (isMerged) { activeTargetId = 'drawing-area'; activeCharge = '+'; }
+                    else if (step < 2) { activeTargetId = 'acceptor-group'; activeCharge = '+'; }
+                    else { activeTargetId = null; activeCharge = null; }
                 },
                 struct: (step) => renderRefinedStruct(step, 'O', 'H', ['H','H'], [], DATIVE_COLOR, true, '+', false, true)
             },
@@ -308,8 +292,8 @@
                 name: "NH₄⁺", donor: "Nitrogen", dMol: "NH₃", acceptor: "Hydrogen", aMol: "H⁺", final: "NH₄⁺", octet: "duplet", charge: '+',
                 setup: (groups, step) => {
                     const isMerged = step === 2;
-                    const dX = step < 2 ? 220 : 400 - (MAIN_RADIUS - OVERLAP_DEPTH/2);
-                    const aX = step < 2 ? 580 : 400 + (HYDROGEN_RADIUS - OVERLAP_DEPTH/2);
+                    const dX = isMerged ? 400 - (MAIN_RADIUS - OVERLAP_DEPTH/2) : 220;
+                    const aX = isMerged ? 400 + (HYDROGEN_RADIUS - OVERLAP_DEPTH/2) : 580;
                     const cy = 225;
 
                     groups.donor.innerHTML = getAtomHtml(DONOR_MOL_COLOR, 'N') + getBondHtml(270, 'x', 'o', DONOR_MOL_COLOR, 'H') + getBondHtml(180, 'x', 'o', DONOR_MOL_COLOR, 'H') + getBondHtml(90, 'x', 'o', DONOR_MOL_COLOR, 'H');
@@ -325,9 +309,9 @@
                         });
                     });
                     
-                    if (isMerged) startBracketTracking('drawing-area', '+');
-                    else if (step < 2) startBracketTracking('acceptor-group', '+');
-                    else startBracketTracking(null, null);
+                    if (isMerged) { activeTargetId = 'drawing-area'; activeCharge = '+'; }
+                    else if (step < 2) { activeTargetId = 'acceptor-group'; activeCharge = '+'; }
+                    else { activeTargetId = null; activeCharge = null; }
                 },
                 struct: (step) => renderRefinedStruct(step, 'N', 'H', ['H','H','H'], [], DATIVE_COLOR, true, '+', false, true)
             }
@@ -336,20 +320,13 @@
         function renderRefinedStruct(step, dSym, aSym, dNeighbors, aNeighbors, arrowColor, isIon=false, charge='', dIsIon=false, aIsIon=false) {
             const isMerged = step === 2;
             const cx = 130, cy = 110, unit = 32;
-            const dX = isMerged ? -20 : -38;
-            const aX = isMerged ? 20 : 38;
+            const dX = isMerged ? -20 : -38, aX = isMerged ? 20 : 38;
 
             const drawBonds = (neighbors, side, molColor) => {
                 let html = '';
-                const positions = neighbors.length === 3 ? [
-                    {x:0, y:-12, dx:0, dy:-unit+14},
-                    {x:side==='L'?-12:12, y:0, dx:side==='L'?-unit+14:unit-14, dy:0},
-                    {x:0, y:12, dx:0, dy:unit-14}
-                ] : neighbors.length === 2 ? [
-                    {x:side==='L'?-12:12, y:0, dx:side==='L'?-unit+14:unit-14, dy:0},
-                    {x:0, y:12, dx:0, dy:unit-14}
-                ] : neighbors.length === 1 ? [{x:side==='L'?-12:12, y:0, dx:side==='L'?-unit+14:unit-14, dy:0}] : [];
-
+                const positions = neighbors.length === 3 ? [{x:0, y:-12, dx:0, dy:-unit+14},{x:side==='L'?-12:12, y:0, dx:side==='L'?-unit+14:unit-14, dy:0},{x:0, y:12, dx:0, dy:unit-14}] 
+                    : neighbors.length === 2 ? [{x:side==='L'?-12:12, y:0, dx:side==='L'?-unit+14:unit-14, dy:0},{x:0, y:12, dx:0, dy:unit-14}] 
+                    : neighbors.length === 1 ? [{x:side==='L'?-12:12, y:0, dx:side==='L'?-unit+14:unit-14, dy:0}] : [];
                 neighbors.forEach((sym, i) => {
                     const p = positions[i];
                     html += `<line x1="${p.x}" y1="${p.y}" x2="${p.x+p.dx}" y2="${p.y+p.dy}" class="struct-line" /><text x="${p.x+p.dx+(p.dx>0?8:(p.dx<0?-8:0))}" y="${p.y+p.dy+(p.dy>0?14:(p.dy<0?-6:7))}" text-anchor="middle" class="struct-text" style="fill:${molColor}">${sym}</text>`;
@@ -406,14 +383,18 @@
             document.getElementById('next-btn').disabled = currentStep === 2;
             Array.from(caseSelector.children).forEach(b => {
                 const isActive = b.innerHTML === formatChem(c.name);
-                b.classList.toggle('bg-blue-50', isActive);
-                b.classList.toggle('border-blue-300', isActive);
+                b.classList.toggle('bg-blue-50', isActive); b.classList.toggle('border-blue-300', isActive);
             });
+            // Update brackets more frequently during transition for tablet
+            if(bracketInterval) clearInterval(bracketInterval);
+            bracketInterval = setInterval(drawBrackets, 16);
+            setTimeout(() => clearInterval(bracketInterval), 1500);
         }
 
         document.getElementById('prev-btn').onclick = () => { if(currentStep > 0) { currentStep--; update(); }};
         document.getElementById('next-btn').onclick = () => { if(currentStep < 2) { currentStep++; update(); }};
-        update();
+        
+        window.onload = update;
     </script>
 </body>
 </html>
