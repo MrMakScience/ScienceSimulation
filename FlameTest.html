@@ -201,6 +201,43 @@
             z-index: 10;
         }
 
+        /* Placeholder Shadow animation when holding wire */
+        .wire-placeholder {
+            position: absolute;
+            bottom: 45px;
+            left: 40px;
+            display: flex;
+            align-items: center;
+            z-index: 1;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+
+        .wire-placeholder.active {
+            opacity: 0.4;
+            animation: pulse-placeholder 2s infinite ease-in-out;
+        }
+
+        @keyframes pulse-placeholder {
+            0%, 100% { opacity: 0.2; }
+            50% { opacity: 0.5; }
+        }
+
+        .wire-handle-ghost {
+            width: 100px;
+            height: 14px;
+            background: transparent;
+            border: 2px dashed #8e44ad;
+            border-radius: 7px;
+        }
+
+        .wire-stem-ghost {
+            width: 100px;
+            height: 2px;
+            border-top: 2px dashed #7f8c8d;
+        }
+
         .hcl-station {
             position: absolute;
             bottom: 45px;
@@ -334,6 +371,36 @@
             letter-spacing: 0.05em;
             text-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
         }
+
+        .click-highlight {
+            display: inline-block;
+            background: #000000;
+            color: #00ffff;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-weight: 900;
+            text-transform: uppercase;
+            box-shadow: 0 0 8px rgba(0, 255, 255, 0.4);
+            margin: 0 4px;
+            border: 1px solid #00ffff;
+            vertical-align: middle;
+        }
+
+        #instruction-pill {
+            background: #fbbf24;
+            border: 3px solid #b45309;
+            padding: 12px 24px;
+            border-radius: 14px;
+            color: #1e293b;
+            font-weight: 800;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 100;
+            width: max-content;
+            max-width: 95%;
+        }
     </style>
 </head>
 <body class="bg-slate-200 p-4 font-sans select-none">
@@ -343,14 +410,21 @@
             <div>
                 <h1 class="text-xl font-bold italic tracking-tight">Flame Test Lab</h1>
             </div>
-            <div id="instruction-pill" class="bg-blue-600 px-4 py-1 rounded-full text-xs font-bold animate-pulse shadow-lg">
-                Click the PURPLE HANDLE to pick up/drop wire
+            <div id="instruction-pill">
+                <span class="text-xl animate-bounce">⚠️</span>
+                <span id="instruction-text" class="text-base">To pick up wire, <span class="click-highlight">CLICK</span> the PURPLE HANDLE</span>
             </div>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-4 gap-0">
             <div class="md:col-span-3 lab-bench" id="bench">
                 <div class="heatproof-mat"></div>
+
+                <!-- Ghost Placeholder for dropping wire -->
+                <div id="wire-placeholder" class="wire-placeholder">
+                    <div class="wire-handle-ghost"></div>
+                    <div class="wire-stem-ghost"></div>
+                </div>
 
                 <div id="static-wire-container" class="pickup-wire-container">
                     <div class="flex flex-col gap-1">
@@ -392,25 +466,25 @@
                         <div class="watch-glass">
                             <div class="powder-pile bg-emerald-500/90"></div>
                         </div>
-                        <span class="text-[9px] font-black text-white">Sample with Cu<sup>2+</sup></span>
+                        <span class="text-[12px] font-black text-white">Sample with Cu<sup>2+</sup></span>
                     </div>
                     <div class="text-center sample-target" data-type="K">
                         <div class="watch-glass">
                             <div class="powder-pile bg-white"></div>
                         </div>
-                        <span class="text-[9px] font-black text-white">Sample with K<sup>+</sup></span>
+                        <span class="text-[12px] font-black text-white">Sample with K<sup>+</sup></span>
                     </div>
                     <div class="text-center sample-target" data-type="Na">
                         <div class="watch-glass">
                             <div class="powder-pile bg-white"></div>
                         </div>
-                        <span class="text-[9px] font-black text-white">Sample with Na<sup>+</sup></span>
+                        <span class="text-[12px] font-black text-white">Sample with Na<sup>+</sup></span>
                     </div>
                     <div class="text-center sample-target" data-type="Ca">
                         <div class="watch-glass">
                             <div class="powder-pile bg-white"></div>
                         </div>
-                        <span class="text-[9px] font-black text-white">Sample with Ca<sup>2+</sup></span>
+                        <span class="text-[12px] font-black text-white">Sample with Ca<sup>2+</sup></span>
                     </div>
                 </div>
                 
@@ -464,15 +538,20 @@
 
         const bench = document.getElementById('bench');
         const tool = document.getElementById('nichrome-tool');
+        const placeholder = document.getElementById('wire-placeholder');
         const staticContainer = document.getElementById('static-wire-container');
         const shutterPlate = document.getElementById('shutter-plate');
         const droplets = document.getElementById('hcl-droplets');
         const powder = document.getElementById('sample-powder');
         const staticDroplets = document.getElementById('static-droplets');
         const staticPowder = document.getElementById('static-powder');
-        const instruction = document.getElementById('instruction-pill');
+        const instructionText = document.getElementById('instruction-text');
         const logText = document.getElementById('log-text');
         const activeTip = document.getElementById('wire-active-tip');
+
+        function setInstruction(html) {
+            instructionText.innerHTML = html;
+        }
 
         function updateToolPosition(e) {
             const benchRect = bench.getBoundingClientRect();
@@ -500,6 +579,7 @@
             if (!state.isHoldingWire) {
                 state.isHoldingWire = true;
                 staticContainer.style.visibility = 'hidden'; 
+                placeholder.classList.add('active'); // Show placement hint
                 tool.style.display = 'flex';
                 
                 droplets.style.display = state.isWet ? 'block' : 'none';
@@ -507,25 +587,36 @@
                 if(state.activeSample) powder.style.backgroundColor = samples[state.activeSample].powder;
                 
                 updateToolPosition(e);
-                
-                if (state.activeSample) {
-                    instruction.textContent = 'Place wire in flame to observe color';
-                } else {
-                    instruction.textContent = 'Dip tip in HCl beaker to clean';
-                }
-                
+                updateGeneralInstruction();
                 logEvent("Picked up nichrome wire");
             } else {
                 state.isHoldingWire = false;
                 tool.style.display = 'none';
+                placeholder.classList.remove('active'); // Hide placement hint
                 staticContainer.style.visibility = 'visible';
                 
                 staticDroplets.style.display = state.isWet ? 'block' : 'none';
                 staticPowder.style.display = state.activeSample ? 'block' : 'none';
                 if(state.activeSample) staticPowder.style.backgroundColor = samples[state.activeSample].powder;
                 
-                instruction.textContent = 'Click the PURPLE HANDLE to start';
+                setInstruction('To pick up wire, <span class="click-highlight">CLICK</span> the PURPLE HANDLE');
                 logEvent("Put down wire on mat");
+            }
+        }
+
+        function updateGeneralInstruction() {
+            if (state.isOverFlame) {
+                if (state.collarState === 0) {
+                    setInstruction('Turn the burner collar to <span class="click-highlight">OPEN</span> air hole');
+                } else {
+                    setInstruction('Observe the characteristic flame color');
+                }
+            } else if (state.activeSample) {
+                setInstruction('Move wire to the flame <span class="click-highlight">CENTER</span>');
+            } else if (state.isWet) {
+                setInstruction('Now pick up a chemical sample <span class="click-highlight">CLICK ONE</span>');
+            } else {
+                setInstruction('Dip the tip in HCl beaker to clean <span class="click-highlight">CLICK IT</span>');
             }
         }
 
@@ -535,45 +626,58 @@
             const clickX = e.clientX;
             const clickY = e.clientY;
 
+            // Check if clicking original position (the handle area) to drop wire
             if (clickX >= staticHandle.left && clickX <= staticHandle.right && 
                 clickY >= staticHandle.top && clickY <= staticHandle.bottom) {
                 handleWireToggle(e);
                 return;
             }
 
+            // Check if wire tip hits the collar
+            const collarRect = document.getElementById('collar').getBoundingClientRect();
+            if (isColliding(tipRect, collarRect)) {
+                cycleAirHole();
+                return;
+            }
+
+            // Check if wire tip hits the HCl station
             const hclArea = document.getElementById('hcl-target-area').getBoundingClientRect();
             if (isColliding(tipRect, hclArea)) {
                 state.isWet = true;
                 state.activeSample = null;
                 droplets.style.display = 'block';
                 powder.style.display = 'none';
-                instruction.textContent = 'Now pick up a chemical sample';
                 logEvent("Dipping wire in conc. HCl");
+                updateGeneralInstruction();
                 updateFlame();
                 return;
             }
 
+            // Check if wire tip hits sample watch glasses
             const sampleElements = document.querySelectorAll('.sample-target');
             for (let el of sampleElements) {
                 if (isColliding(tipRect, el.getBoundingClientRect())) {
                     const type = el.dataset.type;
                     
                     if (state.activeSample && state.activeSample !== type) {
+                        setInstruction('Clean the wire by <span class="click-highlight">CLICKING</span> into HCl');
                         logEvent("WIRE MUST BE CLEAN WITH HCl FIRST BEFORE CONDUCTING ANOTHER TEST");
                         return;
                     }
 
                     if (!state.isWet) {
-                        logEvent("Wire must be wet with HCl first");
+                        setInstruction('Clean the wire by <span class="click-highlight">CLICKING</span> into HCl');
+                        logEvent("WIRE MUST BE CLEAN WITH HCl FIRST BEFORE CONDUCTING ANOTHER TEST");
                         return;
                     }
+
                     state.activeSample = type;
                     state.isWet = false;
                     droplets.style.display = 'none';
                     powder.style.display = 'block';
                     powder.style.backgroundColor = samples[type].powder;
-                    instruction.textContent = 'Place wire in flame to observe color';
                     logEvent(`Picked up ${samples[type].name} sample`);
+                    updateGeneralInstruction();
                     return;
                 }
             }
@@ -595,9 +699,10 @@
                 logEvent("Air hole closed");
             } else {
                 shutterPlate.style.transform = 'translateX(-6px) translateY(0) scale(1.0)';
-                logEvent("Air hole half-open (crescent)");
+                logEvent("Air hole half-open");
             }
             updateFlame();
+            if (state.isHoldingWire) updateGeneralInstruction();
         }
 
         function updateFlame() {
@@ -633,6 +738,7 @@
                     updateFlame();
                     activeTip.style.borderColor = '#95a5a6';
                 }
+                updateGeneralInstruction();
             }
         }
 
