@@ -28,7 +28,8 @@
 
         @media (max-width: 768px) {
             .lab-bench {
-                height: 720px; /* Increased bench area for mobile */
+                height: 750px; /* Tall bench area for mobile */
+                padding-bottom: 120px; /* Safe area for browser action bars */
             }
         }
 
@@ -75,7 +76,7 @@
         @media (max-width: 768px) {
             .burner-container {
                 left: 80%;
-                bottom: 140px; /* Moved burner up on mobile to clear control bar */
+                bottom: 200px; /* Shifted significantly up to avoid browser bar */
             }
         }
 
@@ -207,8 +208,8 @@
 
         @media (max-width: 768px) {
             .heatproof-mat {
-                height: 140px; /* Taller mat for mobile to fit equipment on table */
-                bottom: 80px;  /* Raised from the very bottom edge */
+                height: 160px; /* Taller mat */
+                bottom: 140px; /* Lifted up from bottom browser zone */
             }
         }
 
@@ -223,7 +224,7 @@
 
         @media (max-width: 768px) {
             .pickup-wire-container {
-                bottom: 120px; 
+                bottom: 180px; /* Lifted up */
                 left: 10px;
             }
         }
@@ -242,7 +243,7 @@
         
         @media (max-width: 768px) {
             .wire-placeholder {
-                bottom: 120px; 
+                bottom: 180px; 
                 left: 10px;
             }
         }
@@ -277,8 +278,8 @@
 
         @media (max-width: 768px) {
             .hcl-station {
-                bottom: 120px; /* Kept at its position on mobile */
-                left: 40%; 
+                bottom: 180px; /* Lifted to be on level with wire */
+                left: 45%; 
                 flex-direction: column-reverse; 
                 gap: 4px;
             }
@@ -408,7 +409,7 @@
             border: 2px solid #334155;
             border-radius: 12px;
             padding: 16px;
-            height: 160px;
+            height: 140px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -666,7 +667,7 @@
             const tipRect = activeTip.getBoundingClientRect();
 
             const hclArea = document.getElementById('hcl-target-area').getBoundingClientRect();
-            const hclBuffer = isMobile ? 30 : 20; 
+            const hclBuffer = isMobile ? 40 : 20; 
             if (isColliding(tipRect, hclArea, hclBuffer)) {
                 state.isWet = true;
                 state.activeSample = null;
@@ -681,7 +682,7 @@
             const sampleElements = document.querySelectorAll('.sample-target');
             for (let el of sampleElements) {
                 const rect = el.getBoundingClientRect();
-                const sampleBuffer = isMobile ? 15 : 10;
+                const sampleBuffer = isMobile ? 25 : 10;
 
                 if (isColliding(tipRect, rect, sampleBuffer)) {
                     const type = el.dataset.type;
