@@ -49,80 +49,86 @@
             25% { transform: translateX(-5px); }
             75% { transform: translateX(5px); }
         }
+        
+        /* Responsive tweaks */
+        @media (max-width: 768px) {
+            #canvas { max-height: 50vh; }
+            .electron-key-mobile { position: static !important; margin-bottom: 1rem; }
+        }
     </style>
 </head>
-<body class="p-4 md:p-8 flex items-center justify-center min-h-screen">
-    <div id="app" class="w-full max-w-6xl bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row h-[90vh]">
+<body class="p-2 md:p-8 flex items-start justify-center min-h-screen">
+    <div id="app" class="w-full max-w-6xl bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row min-h-[90vh]">
         
         <!-- Left Sidebar -->
-        <div class="w-full md:w-80 bg-slate-50 p-6 border-r border-slate-200 flex flex-col">
-            <h1 class="text-2xl font-bold mb-6 text-slate-900">Covalent Simulation</h1>
+        <div class="w-full md:w-80 bg-slate-50 p-4 md:p-6 border-b md:border-b-0 md:border-r border-slate-200 flex flex-col shrink-0">
+            <h1 class="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-slate-900">Covalent Simulation</h1>
             
-            <div class="mb-6">
-                <label class="block text-sm font-semibold text-slate-500 mb-2 uppercase tracking-wider">Active Molecule</label>
-                <div id="activeMoleculeDisplay" class="p-3 bg-white border rounded-lg font-bold text-lg shadow-sm border-slate-300">
+            <div class="mb-4 md:mb-6">
+                <label class="block text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wider">Active Molecule</label>
+                <div id="activeMoleculeDisplay" class="p-2 md:p-3 bg-white border rounded-lg font-bold text-base md:text-lg shadow-sm border-slate-300">
                     Select a molecule
                 </div>
             </div>
 
-            <div class="space-y-3 flex-1 overflow-y-auto" id="stepsList">
-                <div id="step-nav-1" class="p-3 rounded-lg border bg-white shadow-sm transition-all duration-300">
-                    <span class="text-xs uppercase text-slate-400 font-bold">Step 1</span>
-                    <p class="font-medium text-sm">Calculate e<sup>-</sup> need for each atom</p>
+            <div class="space-y-2 md:space-y-3 flex-1 md:overflow-y-auto" id="stepsList">
+                <div id="step-nav-1" class="p-2 md:p-3 rounded-lg border bg-white shadow-sm transition-all duration-300">
+                    <span class="text-[10px] md:text-xs uppercase text-slate-400 font-bold">Step 1</span>
+                    <p class="font-medium text-xs md:text-sm leading-tight">Calculate e<sup>-</sup> need for each atom</p>
                 </div>
-                <div id="step-nav-2" class="p-3 rounded-lg border bg-white shadow-sm transition-all duration-300">
-                    <span class="text-xs uppercase text-slate-400 font-bold">Step 2</span>
-                    <p class="font-medium text-sm">Decide central atom</p>
+                <div id="step-nav-2" class="p-2 md:p-3 rounded-lg border bg-white shadow-sm transition-all duration-300">
+                    <span class="text-[10px] md:text-xs uppercase text-slate-400 font-bold">Step 2</span>
+                    <p class="font-medium text-xs md:text-sm leading-tight">Decide central atom</p>
                 </div>
-                <div id="step-nav-3" class="p-3 rounded-lg border bg-white shadow-sm transition-all duration-300">
-                    <span class="text-xs uppercase text-slate-400 font-bold">Step 3</span>
-                    <p class="font-medium text-sm">Connect central atom with other atoms</p>
+                <div id="step-nav-3" class="p-2 md:p-3 rounded-lg border bg-white shadow-sm transition-all duration-300">
+                    <span class="text-[10px] md:text-xs uppercase text-slate-400 font-bold">Step 3</span>
+                    <p class="font-medium text-xs md:text-sm leading-tight">Connect central atom with other atoms</p>
                 </div>
-                <div id="step-nav-4" class="p-3 rounded-lg border bg-white shadow-sm transition-all duration-300">
-                    <span class="text-xs uppercase text-slate-400 font-bold">Step 4</span>
-                    <p class="font-medium text-sm">Fill the shared electrons</p>
+                <div id="step-nav-4" class="p-2 md:p-3 rounded-lg border bg-white shadow-sm transition-all duration-300">
+                    <span class="text-[10px] md:text-xs uppercase text-slate-400 font-bold">Step 4</span>
+                    <p class="font-medium text-xs md:text-sm leading-tight">Fill the shared electrons</p>
                 </div>
-                <div id="step-nav-5" class="p-3 rounded-lg border bg-white shadow-sm transition-all duration-300">
-                    <span class="text-xs uppercase text-slate-400 font-bold">Step 5</span>
-                    <p class="font-medium text-sm">Fill adjacent shells</p>
+                <div id="step-nav-5" class="p-2 md:p-3 rounded-lg border bg-white shadow-sm transition-all duration-300">
+                    <span class="text-[10px] md:text-xs uppercase text-slate-400 font-bold">Step 5</span>
+                    <p class="font-medium text-xs md:text-sm leading-tight">Fill adjacent shells</p>
                 </div>
-                <div id="step-nav-6" class="p-3 rounded-lg border bg-white shadow-sm transition-all duration-300">
-                    <span class="text-xs uppercase text-slate-400 font-bold">Step 6</span>
-                    <p class="font-medium text-sm">Fill central shell</p>
+                <div id="step-nav-6" class="p-2 md:p-3 rounded-lg border bg-white shadow-sm transition-all duration-300">
+                    <span class="text-[10px] md:text-xs uppercase text-slate-400 font-bold">Step 6</span>
+                    <p class="font-medium text-xs md:text-sm leading-tight">Fill central shell</p>
                 </div>
             </div>
 
-            <div class="mt-6 pt-6 border-t flex justify-between gap-2">
-                <button id="prevBtn" class="flex-1 px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg font-semibold transition-colors disabled:opacity-30">Back</button>
-                <button id="nextBtnSidebar" class="flex-1 px-4 py-2 bg-slate-900 hover:bg-black text-white rounded-lg font-semibold transition-colors disabled:opacity-30">Next</button>
+            <div class="mt-4 md:mt-6 pt-4 md:pt-6 border-t flex justify-between gap-2">
+                <button id="prevBtn" class="flex-1 px-2 md:px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg font-semibold transition-colors disabled:opacity-30 text-sm md:text-base">Back</button>
+                <button id="nextBtnSidebar" class="flex-1 px-2 md:px-4 py-2 bg-slate-900 hover:bg-black text-white rounded-lg font-semibold transition-colors disabled:opacity-30 text-sm md:text-base">Next</button>
             </div>
         </div>
 
         <!-- Main Viewport -->
-        <div class="flex-1 p-6 md:p-8 flex flex-col relative bg-white overflow-hidden">
-            <div id="instructionBox" class="mb-4 p-4 bg-slate-100 border-l-4 border-slate-900 rounded-r-lg text-slate-900 font-medium min-h-[80px] flex items-center shadow-sm">
+        <div class="flex-1 p-4 md:p-8 flex flex-col relative bg-white overflow-hidden min-h-[500px]">
+            <div id="instructionBox" class="mb-4 p-3 md:p-4 bg-slate-100 border-l-4 border-slate-900 rounded-r-lg text-slate-900 font-medium text-sm md:text-base min-h-[60px] md:min-h-[80px] flex items-center shadow-sm">
                 Please select a molecule from the menu to start.
             </div>
 
-            <div id="interactiveArea" class="flex-1 border-2 border-dashed border-slate-100 rounded-xl relative flex items-center justify-center bg-slate-50/30 overflow-hidden">
+            <div id="interactiveArea" class="flex-1 border-2 border-dashed border-slate-100 rounded-xl relative flex flex-col items-center justify-center bg-slate-50/30 overflow-hidden min-h-[400px]">
                 
-                <div id="feedbackBar" class="absolute top-0 left-0 right-0 p-4 bg-red-600 text-white text-center font-bold transform -translate-y-full transition-transform duration-300 z-50">
+                <div id="feedbackBar" class="absolute top-0 left-0 right-0 p-3 md:p-4 bg-red-600 text-white text-center font-bold text-sm transform -translate-y-full transition-transform duration-300 z-50">
                     Incorrect! This atom is not the most electron-deficient. Check the stats!
                 </div>
 
                 <!-- Missing Electron Stats -->
-                <div id="atomStats" class="absolute top-4 left-4 p-4 bg-white/90 border border-slate-300 rounded-xl shadow-lg z-20 hidden">
-                    <h4 class="text-xs font-bold text-slate-500 uppercase mb-2">Electrons Missing:</h4>
-                    <div id="statsList" class="space-y-1"></div>
+                <div id="atomStats" class="absolute top-2 md:top-4 left-2 md:left-4 p-2 md:p-4 bg-white/95 border border-slate-300 rounded-xl shadow-lg z-20 hidden max-w-[150px] md:max-w-none">
+                    <h4 class="text-[10px] md:text-xs font-bold text-slate-500 uppercase mb-1 md:mb-2">Electrons Missing:</h4>
+                    <div id="statsList" class="space-y-0.5 md:space-y-1"></div>
                 </div>
 
                 <!-- Electron Key -->
-                <div id="electronKey" class="absolute top-4 right-4 p-4 bg-white/90 border border-slate-300 rounded-xl shadow-lg z-20 hidden">
-                    <h4 class="text-xs font-bold text-slate-500 uppercase mb-2">Electron Key:</h4>
-                    <div id="keyListContent" class="space-y-2"></div>
+                <div id="electronKey" class="absolute top-2 md:top-4 right-2 md:right-4 p-2 md:p-4 bg-white/95 border border-slate-300 rounded-xl shadow-lg z-20 hidden max-w-[180px] md:max-w-none">
+                    <h4 class="text-[10px] md:text-xs font-bold text-slate-500 uppercase mb-1 md:mb-2">Electron Key:</h4>
+                    <div id="keyListContent" class="space-y-1 md:space-y-2"></div>
                 </div>
 
-                <svg id="canvas" viewBox="0 0 600 450" class="w-full h-full">
+                <svg id="canvas" viewBox="0 0 600 450" class="w-full h-full max-h-[60vh] md:max-h-none">
                     <defs>
                         <g id="cross">
                             <line x1="-5.5" y1="-5.5" x2="5.5" y2="5.5" stroke-width="2.5" />
@@ -134,38 +140,38 @@
                     <g id="drawingLayer"></g>
                 </svg>
 
-                <div id="floatingActionContainer" class="absolute bottom-8 right-8 z-30 hidden">
-                    <button id="mainNextBtn" class="btn-action px-8 py-4 bg-slate-900 text-white rounded-full font-bold text-lg flex items-center gap-2">
-                        Next Step <span class="text-xl">→</span>
+                <div id="floatingActionContainer" class="absolute bottom-4 md:bottom-8 right-4 md:right-8 z-30 hidden">
+                    <button id="mainNextBtn" class="btn-action px-6 md:px-8 py-3 md:py-4 bg-slate-900 text-white rounded-full font-bold text-base md:text-lg flex items-center gap-2">
+                        Next <span class="text-xl">→</span>
                     </button>
-                    <button id="finishBtn" class="hidden px-8 py-4 bg-green-600 text-white rounded-full font-bold text-lg flex items-center gap-2 hover:bg-green-700 transition-colors shadow-lg">
-                        Finish & New Molecule <span class="text-xl">✓</span>
+                    <button id="finishBtn" class="hidden px-6 md:px-8 py-3 md:py-4 bg-green-600 text-white rounded-full font-bold text-base md:text-lg flex items-center gap-2 hover:bg-green-700 transition-colors shadow-lg">
+                        Finish <span class="text-xl">✓</span>
                     </button>
                 </div>
 
-                <div id="calcOverlay" class="absolute inset-0 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center z-40 hidden p-6">
-                    <div class="w-full max-w-2xl bg-white shadow-2xl rounded-2xl border border-slate-200 overflow-hidden">
-                        <div class="bg-slate-900 p-4 text-white">
-                            <h3 class="text-lg font-bold">Step 1: Identify the number of electron needed for each atom.</h3>
-                            <p class="text-slate-300 text-xs">Determine electronic arrangements (Current vs Target)</p>
+                <div id="calcOverlay" class="absolute inset-0 bg-white/90 backdrop-blur-sm flex flex-col items-center justify-center z-40 hidden p-2 md:p-6 overflow-y-auto">
+                    <div class="w-full max-w-2xl bg-white shadow-2xl rounded-2xl border border-slate-200 overflow-hidden my-auto">
+                        <div class="bg-slate-900 p-3 md:p-4 text-white">
+                            <h3 class="text-base md:text-lg font-bold">Step 1: Calculate electrons needed</h3>
+                            <p class="text-slate-300 text-[10px] md:text-xs">Determine electronic arrangements</p>
                         </div>
-                        <div id="calcList" class="p-6 space-y-4"></div>
-                        <div class="p-6 bg-slate-50 border-t flex flex-col items-center gap-2">
-                            <button id="confirmStep1" class="hidden btn-action px-10 py-4 bg-slate-900 text-white rounded-full font-bold shadow-lg transition-all">
+                        <div id="calcList" class="p-3 md:p-6 space-y-3 md:space-y-4"></div>
+                        <div class="p-3 md:p-6 bg-slate-50 border-t flex flex-col items-center gap-2">
+                            <button id="confirmStep1" class="hidden btn-action px-6 md:px-10 py-3 md:py-4 bg-slate-900 text-white rounded-full font-bold shadow-lg transition-all text-sm md:text-base">
                                 Success! Move to Step 2
                             </button>
-                            <p id="hintStep1" class="text-slate-400 text-sm italic">Complete the calculations above to proceed...</p>
+                            <p id="hintStep1" class="text-slate-400 text-xs md:text-sm italic">Complete calculations to proceed...</p>
                         </div>
                     </div>
                 </div>
 
                 <!-- Molecule Selection Start Screen -->
-                <div id="startScreen" class="absolute inset-0 bg-white flex flex-col items-center justify-center z-50 p-6">
-                    <div class="text-center mb-8">
-                        <h2 class="text-3xl font-black mb-2 text-slate-900">Welcome to Covalent Molecule Lab</h2>
-                        <p class="text-slate-500">Select a molecule to begin the simulation</p>
+                <div id="startScreen" class="absolute inset-0 bg-white flex flex-col items-center justify-center z-50 p-4 md:p-6 overflow-y-auto">
+                    <div class="text-center mb-6 md:mb-8">
+                        <h2 class="text-2xl md:text-3xl font-black mb-2 text-slate-900">Molecule Lab</h2>
+                        <p class="text-slate-500 text-sm">Select a molecule to begin</p>
                     </div>
-                    <div id="moleculeGrid" class="grid grid-cols-2 md:grid-cols-4 gap-4 w-full max-w-2xl"></div>
+                    <div id="moleculeGrid" class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 w-full max-w-2xl"></div>
                 </div>
             </div>
         </div>
@@ -215,7 +221,7 @@
             moleculeGrid.innerHTML = '';
             Object.keys(MOLECULES).forEach(key => {
                 const btn = document.createElement('button');
-                btn.className = "p-4 border-2 border-slate-200 rounded-xl hover:border-slate-900 hover:bg-slate-50 font-bold transition-all text-xl";
+                btn.className = "p-3 md:p-4 border-2 border-slate-200 rounded-xl hover:border-slate-900 hover:bg-slate-50 font-bold transition-all text-base md:text-xl";
                 btn.innerHTML = MOLECULES[key].display;
                 btn.onclick = () => {
                     currentMolId = key;
@@ -278,8 +284,8 @@
             unique.forEach(atom => {
                 const sym = mol.symbols[atom];
                 const div = document.createElement('div');
-                div.className = "flex items-center gap-3 text-sm font-medium";
-                div.innerHTML = `<svg width="24" height="24" viewBox="-12 -12 24 24"><use href="#${sym}" x="0" y="0" class="symbol-${sym} symbol-blue" /></svg><span>: electron of ${atom} <span class="text-blue-600 font-bold ml-1">(Newly added)</span></span>`;
+                div.className = "flex items-center gap-2 text-[10px] md:text-sm font-medium";
+                div.innerHTML = `<svg width="16" height="16" viewBox="-12 -12 24 24" class="md:w-6 md:h-6"><use href="#${sym}" x="0" y="0" class="symbol-${sym} symbol-blue" /></svg><span class="truncate">e<sup>-</sup> of ${atom} <span class="text-blue-600 font-bold">(New)</span></span>`;
                 list.appendChild(div);
             });
         }
@@ -316,7 +322,7 @@
                     drawFullLayout(false, 'connect');
                     break;
                 case 4:
-                    instruction.innerHTML = "<strong>Step 4:</strong> Fill the shared electrons<br><span class='text-sm text-blue-600 font-semibold mt-1 block italic'>Remark: Number of shared e<sup>-</sup> can be decided by how many e<sup>-</sup> each atom missing.</span>";
+                    instruction.innerHTML = "<strong>Step 4:</strong> Fill the shared electrons<br><span class='text-xs md:text-sm text-blue-600 font-semibold mt-1 block italic'>Remark: Number of shared e<sup>-</sup> can be decided by how many e<sup>-</sup> each atom missing.</span>";
                     showStats();
                     drawFullLayout(true, 'share');
                     break;
@@ -328,7 +334,7 @@
                     });
                     
                     if (!anyOuterNeedsFilling) {
-                        instruction.innerHTML = "<strong>Step 5:</strong> Fill adjacent shells<br><span class='text-sm text-blue-600 font-semibold mt-1 block italic'>As adjacent atoms reach a stable electronic arrangement already, there is nothing need to do in this step.</span>";
+                        instruction.innerHTML = "<strong>Step 5:</strong> Fill adjacent shells<br><span class='text-xs md:text-sm text-blue-600 font-semibold mt-1 block italic'>As adjacent atoms reach a stable electronic arrangement already, there is nothing need to do in this step.</span>";
                     } else {
                         instruction.innerHTML = "<strong>Step 5:</strong> Fill adjacent shells";
                     }
@@ -341,7 +347,7 @@
                     const rem = ATOM_DATA[actualCenter].valence - spent;
                     
                     if (rem <= 0) {
-                        instruction.innerHTML = `<strong>Step 6:</strong> Fill central shell<br><span class='text-sm text-blue-600 font-semibold mt-1 block italic'>As ${actualCenter} atom reach a stable electronic arrangement already, there is nothing need to do in this step.</span>`;
+                        instruction.innerHTML = `<strong>Step 6:</strong> Fill central shell<br><span class='text-xs md:text-sm text-blue-600 font-semibold mt-1 block italic'>As ${actualCenter} atom reach a stable electronic arrangement already, there is nothing need to do in this step.</span>`;
                     } else {
                         instruction.innerHTML = "<strong>Step 6:</strong> Fill central shell";
                     }
@@ -360,8 +366,8 @@
             unique.forEach(atom => {
                 const needed = ATOM_DATA[atom].limit - ATOM_DATA[atom].valence;
                 const div = document.createElement('div');
-                div.className = "flex items-center justify-between gap-4 text-sm py-1";
-                div.innerHTML = `<span class="font-bold text-slate-900">${atom}:</span><span class="bg-slate-100 text-slate-900 px-2 py-0.5 rounded-md font-mono font-bold border border-slate-300">missing ${needed}e<sup>-</sup></span>`;
+                div.className = "flex items-center justify-between gap-2 text-[10px] md:text-sm py-0.5 md:py-1";
+                div.innerHTML = `<span class="font-bold text-slate-900">${atom}:</span><span class="bg-slate-100 text-slate-900 px-1 md:px-2 py-0.5 rounded md:rounded-md font-mono font-bold border border-slate-300">need ${needed}</span>`;
                 list.appendChild(div);
             });
         }
@@ -375,8 +381,18 @@
             unique.forEach(atom => {
                 const data = ATOM_DATA[atom];
                 const row = document.createElement('div');
-                row.className = "grid grid-cols-4 gap-4 items-center p-3 border-b border-slate-100 last:border-0";
-                row.innerHTML = `<div class="font-bold text-black text-2xl">${atom}</div><div class="text-xs text-slate-500 leading-relaxed">Arrangement: <b>${data.config}</b><br>Needs to reach: <b>${data.target}</b></div><div class="flex items-center border rounded-lg bg-white overflow-hidden shadow-sm"><button onclick="changeCalc('${atom}', -1)" class="px-3 py-2 bg-slate-50 hover:bg-slate-200 transition-colors">-</button><span id="val-${atom}" class="px-4 font-mono font-bold text-lg text-black min-w-[40px] text-center">${userCalc[atom]}</span><button onclick="changeCalc('${atom}', 1)" class="px-3 py-2 bg-slate-50 hover:bg-slate-200 transition-colors">+</button></div><div id="check-${atom}" class="text-right text-2xl"></div>`;
+                // Adjusted grid and padding for better visibility of the "+" button on small screens
+                row.className = "grid grid-cols-[30px_1fr_auto_40px] md:grid-cols-4 gap-1 md:gap-4 items-center p-2 md:p-3 border-b border-slate-100 last:border-0";
+                row.innerHTML = `
+                    <div class="font-bold text-black text-lg md:text-2xl">${atom}</div>
+                    <div class="text-[9px] md:text-xs text-slate-500 leading-tight pr-1">Current: <b>${data.config}</b><br>Target: <b>${data.target}</b></div>
+                    <div class="flex items-center border rounded-lg bg-white overflow-hidden shadow-sm h-8 md:h-10">
+                        <button onclick="changeCalc('${atom}', -1)" class="px-2 md:px-3 bg-slate-50 hover:bg-slate-200 transition-colors h-full">-</button>
+                        <span id="val-${atom}" class="px-2 md:px-4 font-mono font-bold text-sm md:text-lg text-black min-w-[30px] md:min-w-[40px] text-center">${userCalc[atom]}</span>
+                        <button onclick="changeCalc('${atom}', 1)" class="px-2 md:px-3 bg-slate-50 hover:bg-slate-200 transition-colors h-full">+</button>
+                    </div>
+                    <div id="check-${atom}" class="text-right text-lg md:text-2xl"></div>
+                `;
                 list.appendChild(row);
                 verifyCalc(atom);
             });
