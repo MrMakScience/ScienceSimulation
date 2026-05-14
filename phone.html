@@ -2,445 +2,308 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>3D Giant Covalent Structures</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Ionic Compound Simulator</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
-        body { margin: 0; overflow: hidden; font-family: sans-serif; background-color: #1a1a1a; color: white; touch-action: none; }
+        body { margin: 0; font-family: sans-serif; background-color: #0f172a; color: white; }
         
-        /* Main Layout Container */
+        /* Layout Structure */
         .app-container {
             display: flex;
-            flex-direction: row;
+            flex-direction: column;
             height: 100vh;
             width: 100vw;
+            overflow: hidden;
         }
 
-        #canvas-container {
-            flex-grow: 1;
-            position: relative;
-            z-index: 1;
+        /* Desktop specific layout override */
+        @media (min-width: 768px) {
+            .app-container { flex-direction: row; }
+            #canvas-container { flex: 1; order: 2; height: 100vh !important; }
+            .ui-sidebar { width: 340px; order: 1; height: 100vh; overflow-y: auto; position: relative; z-index: 50; }
+            #mobile-key { display: none; }
         }
 
-        /* Sidebar for Desktop */
-        .ui-container {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 360px;
-            height: 100vh;
-            padding: 20px;
-            z-index: 10;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            pointer-events: none; /* Allow clicks through to canvas if not on a panel */
+        /* Mobile specific layout: Key at Top, Crystal in Middle, Panel at Bottom */
+        @media (max-width: 767px) {
+            .app-container { overflow-y: auto; height: auto; min-height: 100vh; }
+            #mobile-key { order: 1; width: 100%; padding: 12px; background: #0f172a; border-bottom: 1px solid rgba(255,255,255,0.1); z-index: 60; }
+            #canvas-container { width: 100%; height: 50vh !important; order: 2; flex-shrink: 0; }
+            .ui-sidebar { width: 100%; order: 3; padding: 16px; flex-shrink: 0; border-top: 1px solid rgba(255,255,255,0.1); }
+            #desktop-info-panel { display: none; }
         }
 
-        .panel {
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(10px);
-            border: 1px solid #444;
-            border-radius: 12px;
-            padding: 20px;
-            pointer-events: auto; /* Enable interaction for panels */
-        }
-
-        .legend-panel {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: rgba(0, 0, 0, 0.8);
-            padding: 15px;
-            border-radius: 12px;
-            border: 1px solid #444;
-            z-index: 10;
-            min-width: 180px;
-        }
-
-        /* Mobile Adjustments */
-        @media (max-width: 768px) {
-            body { overflow-y: auto; touch-action: auto; }
-            .app-container { flex-direction: column; height: auto; min-height: 100vh; }
-            
-            #canvas-container {
-                height: 50vh; /* Structure at the top */
-                width: 100%;
-                position: sticky;
-                top: 0;
-            }
-
-            .ui-container {
-                position: relative;
-                width: 100%;
-                height: auto;
-                padding: 15px;
-                pointer-events: auto;
-                background: #1a1a1a;
-            }
-
-            .legend-panel {
-                position: relative;
-                top: auto;
-                right: auto;
-                margin-top: 10px;
-                width: 100%;
-            }
-
-            /* Merge legend into control panel on mobile */
-            .mobile-hide { display: none; }
-            .mobile-legend-integration { display: block !important; }
-        }
-
-        .mobile-legend-integration { display: none; }
-
-        .legend-item { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 13px; }
-        .swatch { width: 16px; height: 16px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.2); }
-        .swatch-bond { width: 20px; height: 4px; border-radius: 2px; }
-        .swatch-vdw { width: 20px; height: 2px; border: 1px dashed white; background: repeating-linear-gradient(90deg, #fff, #fff 4px, transparent 4px, transparent 8px); }
+        #canvas-container { cursor: move; background: #0f172a; touch-action: none; position: relative; }
         
-        button { transition: all 0.2s; }
-        button:active { transform: scale(0.95); }
-        .active-btn { background-color: #3b82f6 !important; }
+        .ui-card { background: rgba(30, 41, 59, 0.9); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
+        .legend-dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+        .disabled-ui { opacity: 0.4; pointer-events: none; filter: grayscale(1); }
         
-        @keyframes glow-pulse {
-            0% { box-shadow: 0 0 5px rgba(59, 130, 246, 0.2); border-color: rgba(59, 130, 246, 0.3); }
-            50% { box-shadow: 0 0 15px rgba(59, 130, 246, 0.6); border-color: rgba(59, 130, 246, 0.8); }
-            100% { box-shadow: 0 0 5px rgba(59, 130, 246, 0.2); border-color: rgba(59, 130, 246, 0.3); }
+        @keyframes pulse-border {
+            0% { border-color: rgba(96, 165, 250, 0.4); box-shadow: 0 0 0 0 rgba(96, 165, 250, 0.2); }
+            50% { border-color: rgba(96, 165, 250, 1); box-shadow: 0 0 8px 2px rgba(96, 165, 250, 0.4); }
+            100% { border-color: rgba(96, 165, 250, 0.4); box-shadow: 0 0 0 0 rgba(96, 165, 250, 0.2); }
         }
-        .guide-glow { animation: glow-pulse 3s infinite ease-in-out; }
+        .instruction-highlight {
+            animation: pulse-border 2s infinite;
+        }
     </style>
 </head>
 <body>
 
     <div class="app-container">
-        <div id="canvas-container"></div>
+        <!-- Mobile Key (Top on phone only) -->
+        <header id="mobile-key">
+            <div class="flex justify-around items-center bg-slate-800/50 rounded-lg py-2 px-4 border border-slate-700">
+                <div class="flex items-center">
+                    <span id="m-ion-color-1" class="legend-dot bg-green-400"></span>
+                    <span id="m-ion-label-1" class="text-xs font-medium">Cl⁻</span>
+                </div>
+                <div class="flex items-center">
+                    <span id="m-ion-color-2" class="legend-dot bg-slate-300"></span>
+                    <span id="m-ion-label-2" class="text-xs font-medium">Na⁺</span>
+                </div>
+            </div>
+        </header>
 
-        <div class="ui-container">
-            <!-- Main Controls -->
-            <div class="panel">
-                <h1 class="text-xl font-bold mb-4">Structure Inspector</h1>
+        <!-- 3D Canvas Container -->
+        <main id="canvas-container"></main>
+
+        <!-- Control Panel -->
+        <aside class="ui-sidebar p-4 md:p-6">
+            <div class="ui-card p-5 md:p-6 rounded-xl shadow-2xl h-full">
+                <div class="mb-4">
+                    <h1 class="text-xl font-bold">3D Ionic Compound Simulator</h1>
+                    <p class="text-xs text-slate-400 mt-1">Explore the arrangement of ions in ionic solids.</p>
+                </div>
                 
-                <div class="flex flex-col gap-2 mb-4">
-                    <button onclick="switchStructure('diamond')" id="btn-diamond" class="active-btn bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded text-left">Diamond (C)</button>
-                    <button onclick="switchStructure('graphite')" id="btn-graphite" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded text-left">Graphite (C)</button>
-                    <button onclick="switchStructure('quartz')" id="btn-quartz" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded text-left">Quartz (SiO₂)</button>
+                <!-- Interaction Instructions -->
+                <div class="flex flex-col gap-2 mb-6">
+                    <div class="flex items-center gap-2 px-3 py-2 bg-blue-500/10 rounded-lg border border-blue-400/50 w-full instruction-highlight">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-blue-400"><path d="m15 15 6 6m-6-6 6-6m-6 6-6 6m6-6-6-6"/></svg>
+                        <span class="text-[11px] font-black uppercase tracking-widest text-blue-100">Drag Crystal to Rotate</span>
+                    </div>
+                    <div class="flex items-center gap-2 px-3 py-1.5 bg-slate-800/50 rounded-lg border border-slate-700 w-full">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Pinch or Scroll on Crystal to Zoom</span>
+                    </div>
                 </div>
 
-                <div class="mobile-legend-integration mb-4 pt-4 border-t border-gray-700">
-                    <h3 class="text-xs font-bold uppercase text-gray-400 mb-2">Key</h3>
-                    <div id="mobile-legend-content"></div>
+                <div class="flex flex-col gap-4">
+                    <div>
+                        <label class="text-xs font-semibold uppercase text-slate-400 block mb-2">Structure</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button id="btn-nacl" class="bg-blue-600 hover:bg-blue-500 py-2 px-3 rounded text-sm font-medium transition-colors border border-blue-400">NaCl</button>
+                            <button id="btn-cscl" class="bg-slate-700 hover:bg-slate-600 py-2 px-3 rounded text-sm font-medium transition-colors border border-transparent">CsCl</button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="text-xs font-semibold uppercase text-slate-400 block mb-2">Display Mode</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button id="btn-unit" class="bg-blue-600 hover:bg-blue-500 py-2 px-3 rounded text-sm font-medium transition-colors border border-blue-400">Unit Cell</button>
+                            <button id="btn-lattice" class="bg-slate-700 hover:bg-slate-600 py-2 px-3 rounded text-sm font-medium transition-colors border border-transparent">Lattice (3x3)</button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="text-xs font-semibold uppercase text-slate-400 block mb-2">Analysis Tools</label>
+                        <div class="space-y-3">
+                            <div class="flex items-center gap-2">
+                                <input type="checkbox" id="check-sticks" checked class="w-5 h-5 rounded bg-slate-700 border-slate-600 text-blue-600">
+                                <label for="check-sticks" class="text-sm text-slate-300">Show Sticks</label>
+                            </div>
+                            <div id="ratio-mode-container" class="flex items-center gap-2 transition-all duration-300">
+                                <input type="checkbox" id="check-ratio" class="w-5 h-5 rounded bg-slate-700 border-slate-600 text-blue-600">
+                                <label for="check-ratio" class="text-sm text-orange-300 font-bold">Unit Cell Ratio Mode</label>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <button onclick="toggleFocus()" id="btn-focus" class="w-full bg-amber-600 hover:bg-amber-500 px-4 py-2 rounded font-bold uppercase tracking-wide">
-                    Focus Mode: OFF
-                </button>
-                
-                <button onclick="resetToOriginal()" class="mt-4 w-full bg-white text-black hover:bg-gray-200 font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2">
-                    RESET VIEW
-                </button>
-            </div>
+                <div id="ratio-panel" class="hidden mt-6 pt-4 border-t border-orange-500/30">
+                    <h3 class="text-sm font-bold text-orange-400 mb-2">Atom Count Calculation</h3>
+                    <div id="ratio-details" class="text-[11px] leading-relaxed font-mono text-slate-200"></div>
+                </div>
 
-            <!-- Description Panel -->
-            <div class="panel">
-                <h2 class="text-lg font-bold text-blue-400" id="info-title">Diamond</h2>
-                <div class="text-sm mt-1 whitespace-pre-line text-gray-300" id="info-desc"></div>
-            </div>
+                <div id="desktop-info-panel" class="mt-6 pt-4 border-t border-slate-700">
+                    <h3 class="text-sm font-semibold mb-2" id="struct-title">Sodium Chloride (NaCl)</h3>
+                    <div class="space-y-2 text-xs text-slate-300 mb-4">
+                        <div class="flex items-center">
+                            <span id="ion-color-1" class="legend-dot bg-green-400"></span>
+                            <span id="ion-label-1">Cl⁻ (Chloride)</span>
+                        </div>
+                        <div class="flex items-center">
+                            <span id="ion-color-2" class="legend-dot bg-slate-300"></span>
+                            <span id="ion-label-2">Na⁺ (Sodium)</span>
+                        </div>
+                    </div>
+                    <p class="text-[11px] italic text-slate-400 leading-relaxed" id="struct-desc"></p>
+                </div>
 
-            <!-- Guide (Hidden on mobile to save space) -->
-            <div class="panel guide-glow mobile-hide">
-                <p class="text-[11px] leading-tight text-blue-50"><span class="font-black text-white uppercase">Interaction:</span> Drag to rotate, Scroll to zoom.</p>
+                <div id="mobile-desc-only" class="md:hidden mt-6 pt-4 border-t border-slate-700">
+                    <h3 class="text-sm font-semibold mb-2" id="m-struct-title">Sodium Chloride (NaCl)</h3>
+                    <p class="text-[11px] italic text-slate-400 leading-relaxed" id="m-struct-desc"></p>
+                </div>
             </div>
-        </div>
-
-        <!-- Desktop Legend -->
-        <div class="legend-panel mobile-hide" id="legend">
-            <h3 class="text-xs font-bold uppercase text-gray-400 mb-3 tracking-widest">Key</h3>
-            <div id="legend-content"></div>
-        </div>
+        </aside>
     </div>
 
     <script>
-        let scene, camera, renderer, currentGroup;
-        let isFocusMode = false;
-        let isDragging = false;
-        let previousMouse = { x: 0, y: 0 };
-        let initialPinchDistance = null;
-        let currentType = 'diamond';
+        let scene, camera, renderer, crystalGroup;
+        let currentStructure = 'NaCl';
+        let viewMode = 'unit'; 
+        let showSticks = true;
+        let ratioMode = false;
+        
+        let baseClippingPlanes = [];
+        let activeClippingPlanes = [];
 
-        const ORIENTATIONS = {
-            diamond: { x: -1.86, y: -3.81 },
-            graphite: { x: -1.00, y: -3.18 },
-            quartz: { x: -1.92, y: -3.68 }
+        const COLORS = {
+            Na: 0xe5e7eb,   
+            Cl: 0x4ade80,   
+            Cs: 0x60a5fa,   
+            stick: 0x94a3b8 
         };
 
-        const ATOM_SCALE = 0.35; 
-        const QUARTZ_ATOM_SCALE = 0.22; 
-        const BOND_RADIUS = 0.035; 
-
-        const structures = {
-            diamond: {
-                title: "Diamond (C)",
-                desc: "Strong covalent bond between C atoms within the whole network.\nEach C atom forms 4 covalent bonds.",
-                color: 0x666666,
-                bondColor: 0x999999,
-                legend: [
-                    { type: 'atom', label: 'Carbon Atom', color: '#666666' },
-                    { type: 'bond', label: 'C-C Covalent Bond', color: '#999999' }
-                ]
+        const DATA = {
+            NaCl: {
+                title: "Sodium Chloride (NaCl)",
+                desc: "FCC arrangement. Ions at corners (1/8), faces (1/2), edges (1/4), and center (1).",
+                ion1: "Cl⁻ (Chloride)", color1: "bg-green-400",
+                ion2: "Na⁺ (Sodium)", color2: "bg-slate-300",
+                ratioHtml: `
+                    <b class="text-green-400">Cl⁻ (Green):</b><br>
+                    - 4 corners × 1/8 = 1/2<br>
+                    Total Cl⁻ = 1/2<br><br>
+                    <b class="text-slate-300">Na⁺ (White):</b><br>
+                    - 4 corners × 1/8 = 1/2<br>
+                    Total Na⁺ = 1/2<br><br>
+                    <span class="text-orange-400">Ratio = 1:1</span>
+                `
             },
-            graphite: {
-                title: "Graphite (C)",
-                desc: "Strong covalent bond between C atoms within the Graphene layer.\nWeak van der Waals' force between the graphene layer.\nEach C atom forms 3 covalent bond.",
-                color: 0x333333,
-                bondColor: 0x888888,
-                vdwColor: 0xffffff,
-                legend: [
-                    { type: 'atom', label: 'Carbon Atom', color: '#333333' },
-                    { type: 'bond', label: 'C-C Covalent Bond', color: '#888888' },
-                    { type: 'vdw', label: 'Van der Waals Force', color: '#ffffff' }
-                ]
-            },
-            quartz: {
-                title: "Quartz (SiO₂)",
-                desc: "Each Si atom forms covalent bond with with 4 O atoms, while each O atom forms covalent bond with 2 Si atoms, which have the ratio Si:O = 1:2.",
-                siColor: 0x94a3b8,
-                oColor: 0xef4444,
-                bondColor: 0xcccccc,
-                legend: [
-                    { type: 'atom', label: 'Silicon (Si) Atom', color: '#94a3b8' },
-                    { type: 'atom', label: 'Oxygen (O) Atom', color: '#ef4444' },
-                    { type: 'bond', label: 'Si-O Covalent Bond', color: '#cccccc' }
-                ]
+            CsCl: {
+                title: "Caesium Chloride (CsCl)",
+                desc: "Simple cubic with Cs⁺ at center (1) and Cl⁻ at corners (1/8).",
+                ion1: "Cl⁻ (Chloride)", color1: "bg-green-400",
+                ion2: "Cs⁺ (Caesium)", color2: "bg-blue-400",
+                ratioHtml: `
+                    <b class="text-green-400">Cl⁻ (Green):</b><br>
+                    - 8 corners × 1/8 = 1<br>
+                    Total Cl⁻ = 1<br><br>
+                    <b class="text-blue-400">Cs⁺ (Blue):</b><br>
+                    - 1 center × 1 = 1<br>
+                    Total Cs⁺ = 1<br><br>
+                    <span class="text-orange-400">Ratio = 1:1</span>
+                `
             }
         };
 
         function init() {
             const container = document.getElementById('canvas-container');
             scene = new THREE.Scene();
-            camera = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 1000);
-            camera.position.set(0, 0, 25);
+            scene.background = new THREE.Color(0x0f172a);
+
+            camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera.position.set(10, 10, 15);
+            camera.lookAt(0, 0, 0);
 
             renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(container.clientWidth, container.clientHeight);
             renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.localClippingEnabled = true; 
             container.appendChild(renderer.domElement);
 
             const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
             scene.add(ambientLight);
 
-            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6);
-            directionalLight.position.set(10, 20, 15);
-            scene.add(directionalLight);
+            const d1 = new THREE.DirectionalLight(0xffffff, 0.6);
+            d1.position.set(10, 15, 10);
+            scene.add(d1);
 
-            currentGroup = new THREE.Group();
-            scene.add(currentGroup);
+            crystalGroup = new THREE.Group();
+            scene.add(crystalGroup);
 
-            switchStructure('diamond');
-            resetToOriginal(); 
+            // Interaction state
+            let isDragging = false;
+            let prevCoords = { x: 0, y: 0 };
+            let initialPinchDistance = null;
+
+            const handleStart = (x, y) => {
+                isDragging = true;
+                prevCoords = { x, y };
+            };
+
+            const handleMove = (x, y) => {
+                if (!isDragging) return;
+                const dx = x - prevCoords.x;
+                const dy = y - prevCoords.y;
+                
+                const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(dy * 0.005, dx * 0.005, 0, 'XYZ'));
+                crystalGroup.quaternion.multiplyQuaternions(q, crystalGroup.quaternion);
+                
+                prevCoords = { x, y };
+            };
+
+            const handleEnd = () => {
+                isDragging = false;
+                initialPinchDistance = null;
+            };
+
+            const applyZoom = (delta) => {
+                camera.position.multiplyScalar(1 + delta);
+                const dist = camera.position.length();
+                if (dist < 3) camera.position.setLength(3);
+                if (dist > 50) camera.position.setLength(50);
+                camera.lookAt(0, 0, 0);
+            };
+
+            // Canvas Interaction Handlers
+            container.addEventListener('mousedown', (e) => handleStart(e.clientX, e.clientY));
+            window.addEventListener('mousemove', (e) => handleMove(e.clientX, e.clientY));
+            window.addEventListener('mouseup', handleEnd);
+
+            container.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 1) {
+                    handleStart(e.touches[0].clientX, e.touches[0].clientY);
+                } else if (e.touches.length === 2) {
+                    isDragging = false;
+                    const dx = e.touches[0].clientX - e.touches[1].clientX;
+                    const dy = e.touches[0].clientY - e.touches[1].clientY;
+                    initialPinchDistance = Math.sqrt(dx * dx + dy * dy);
+                }
+            }, { passive: false });
+
+            window.addEventListener('touchmove', (e) => {
+                if (!isDragging && !initialPinchDistance) return;
+                
+                if (e.touches.length === 1 && isDragging) {
+                    e.preventDefault(); 
+                    handleMove(e.touches[0].clientX, e.touches[0].clientY);
+                } else if (e.touches.length === 2 && initialPinchDistance) {
+                    e.preventDefault();
+                    const dx = e.touches[0].clientX - e.touches[1].clientX;
+                    const dy = e.touches[0].clientY - e.touches[1].clientY;
+                    const currentDistance = Math.sqrt(dx * dx + dy * dy);
+                    const delta = (initialPinchDistance - currentDistance) * 0.005;
+                    applyZoom(delta);
+                    initialPinchDistance = currentDistance;
+                }
+            }, { passive: false });
+
+            window.addEventListener('touchend', handleEnd);
+
+            container.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                applyZoom(e.deltaY * 0.001);
+            }, { passive: false });
 
             window.addEventListener('resize', onWindowResize);
-            
-            // Mouse Events restricted to canvas
-            container.addEventListener('mousedown', onMouseDown);
-            window.addEventListener('mouseup', onMouseUp);
-            window.addEventListener('mousemove', onMouseMove);
-            container.addEventListener('wheel', onWheel, { passive: false });
-
-            // Touch Events restricted to canvas for 3D navigation
-            container.addEventListener('touchstart', onTouchStart, { passive: false });
-            window.addEventListener('touchend', onTouchEnd);
-            container.addEventListener('touchmove', onTouchMove, { passive: false });
-            
+            createStructure();
+            updateUI();
             animate();
-        }
-
-        function updateLegend(type) {
-            const content = structures[type].legend.map(item => {
-                let swatchHtml = '';
-                if (item.type === 'atom') swatchHtml = `<div class="swatch" style="background-color: ${item.color}"></div>`;
-                else if (item.type === 'bond') swatchHtml = `<div class="swatch-bond" style="background-color: ${item.color}"></div>`;
-                else if (item.type === 'vdw') swatchHtml = `<div class="swatch-vdw"></div>`;
-                return `<div class="legend-item">${swatchHtml}<span>${item.label}</span></div>`;
-            }).join('');
-
-            document.getElementById('legend-content').innerHTML = content;
-            document.getElementById('mobile-legend-content').innerHTML = content;
-        }
-
-        function createAtom(pos, color, size = ATOM_SCALE) {
-            const geo = new THREE.SphereGeometry(size, 20, 20);
-            const mat = new THREE.MeshPhongMaterial({ color: color, shininess: 80 });
-            const mesh = new THREE.Mesh(geo, mat);
-            mesh.position.copy(pos);
-            return mesh;
-        }
-
-        function createBond(p1, p2, color, isVDW = false) {
-            if (isVDW) {
-                const geometry = new THREE.BufferGeometry().setFromPoints([p1, p2]);
-                const material = new THREE.LineDashedMaterial({ color: color, dashSize: 0.3, gapSize: 0.2, scale: 1, transparent: true, opacity: 0.8 });
-                const line = new THREE.Line(geometry, material);
-                line.computeLineDistances();
-                return line;
-            } else {
-                const direction = new THREE.Vector3().subVectors(p2, p1);
-                const length = direction.length();
-                const geo = new THREE.CylinderGeometry(BOND_RADIUS, BOND_RADIUS, length, 6);
-                const mat = new THREE.MeshPhongMaterial({ color: color, transparent: true, opacity: 0.6 });
-                const mesh = new THREE.Mesh(geo, mat);
-                const center = new THREE.Vector3().addVectors(p1, p2).multiplyScalar(0.5);
-                mesh.position.copy(center);
-                mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.clone().normalize());
-                return mesh;
-            }
-        }
-
-        function switchStructure(type) {
-            currentType = type;
-            const config = structures[type];
-            document.getElementById('info-title').innerText = config.title;
-            document.getElementById('info-desc').innerText = config.desc;
-            ['diamond', 'graphite', 'quartz'].forEach(t => document.getElementById('btn-' + t).classList.remove('active-btn'));
-            document.getElementById('btn-' + type).classList.add('active-btn');
-            
-            updateLegend(type);
-            clearScene();
-
-            if (type === 'diamond') buildDiamond();
-            else if (type === 'graphite') buildGraphite();
-            else if (type === 'quartz') buildQuartz();
-            resetToOriginal();
-        }
-
-        function clearScene() {
-            while(currentGroup.children.length > 0){ currentGroup.remove(currentGroup.children[0]); }
-        }
-
-        function resetToOriginal() {
-            const def = ORIENTATIONS[currentType] || { x: 0, y: 0 };
-            currentGroup.rotation.x = def.x;
-            currentGroup.rotation.y = def.y;
-        }
-
-        function buildDiamond() {
-            const config = structures.diamond;
-            const atoms = getDiamondAtoms(isFocusMode);
-            atoms.forEach(pos => currentGroup.add(createAtom(pos, config.color)));
-            for (let i = 0; i < atoms.length; i++) {
-                for (let j = i + 1; j < atoms.length; j++) {
-                    if (atoms[i].distanceTo(atoms[j]) < 1.8) currentGroup.add(createBond(atoms[i], atoms[j], config.bondColor));
-                }
-            }
-            camera.position.z = isFocusMode ? 12 : 20;
-        }
-
-        function buildGraphite() {
-            const config = structures.graphite;
-            let atoms = [];
-            if (isFocusMode) {
-                const coords = [[-0.8,-3.1,-3.4],[-0.1,-1.8,-3.4],[-0.8,-0.6,-3.4],[-3.0,-1.8,-3.4],[-2.2,-3.1,-3.4],[-2.2,-0.6,-3.4],[-3.0,0.6,-3.4],[-4.4,0.6,-3.4],[-5.1,-0.6,-3.4],[-4.4,-1.8,-3.4],[-0.1,-1.8,3.4],[-0.8,-0.6,3.4],[-2.2,-0.6,3.4],[-3.0,0.6,3.4],[-4.4,0.6,3.4],[-5.1,-0.6,3.4],[-4.4,-1.8,3.4],[-3.0,-1.8,3.4],[-2.2,-3.1,3.4],[-0.8,-3.1,3.4],[-0.1,0.6,-3.4],[-0.8,1.8,-3.4],[-2.2,1.8,-3.4],[-0.1,0.6,3.4],[-0.8,1.8,3.4],[-2.2,1.8,3.4]];
-                atoms = coords.map(c => new THREE.Vector3(c[0], c[1], c[2]));
-            } else {
-                const a = 1.42;
-                for (let layer = 0; layer < 3; layer++) {
-                    const z = (layer - 1) * 3.35;
-                    const shiftX = (layer % 2 !== 0) ? a : 0;
-                    for (let i = -1; i <= 1; i++) {
-                        for (let j = -1; j <= 1; j++) {
-                            const xBase = i * 3 * a;
-                            const yBase = j * Math.sqrt(3) * a;
-                            [[xBase + shiftX, yBase], [xBase + a + shiftX, yBase], [xBase + 1.5 * a + shiftX, yBase + 0.5 * Math.sqrt(3) * a], [xBase + 2.5 * a + shiftX, yBase + 0.5 * Math.sqrt(3) * a]].forEach(p => atoms.push(new THREE.Vector3(p[0], p[1], z)));
-                        }
-                    }
-                }
-            }
-            const centroid = new THREE.Vector3();
-            atoms.forEach(at => centroid.add(at));
-            centroid.divideScalar(atoms.length || 1);
-            const centered = atoms.map(at => at.sub(centroid));
-            centered.forEach(pos => currentGroup.add(createAtom(pos, config.color, ATOM_SCALE * 0.9)));
-            for (let i = 0; i < centered.length; i++) {
-                for (let j = i + 1; j < centered.length; j++) {
-                    const dz = Math.abs(centered[i].z - centered[j].z);
-                    const d = centered[i].distanceTo(centered[j]);
-                    if (dz < 0.2 && d < 1.6) currentGroup.add(createBond(centered[i], centered[j], config.bondColor));
-                    else if (dz > 3.0 && d < 3.6) currentGroup.add(createBond(centered[i], centered[j], config.vdwColor, true));
-                }
-            }
-            camera.position.z = isFocusMode ? 15 : 22;
-        }
-
-        function buildQuartz() {
-            const config = structures.quartz;
-            const siAtoms = getDiamondAtoms(isFocusMode);
-            siAtoms.forEach(pos => currentGroup.add(createAtom(pos, config.siColor, QUARTZ_ATOM_SCALE * 1.3)));
-            for (let i = 0; i < siAtoms.length; i++) {
-                for (let j = i + 1; j < siAtoms.length; j++) {
-                    if (siAtoms[i].distanceTo(siAtoms[j]) < 1.8) {
-                        const pO = new THREE.Vector3().addVectors(siAtoms[i], siAtoms[j]).multiplyScalar(0.5);
-                        currentGroup.add(createAtom(pO, config.oColor, QUARTZ_ATOM_SCALE * 0.8));
-                        currentGroup.add(createBond(siAtoms[i], pO, config.bondColor));
-                        currentGroup.add(createBond(siAtoms[j], pO, config.bondColor));
-                    }
-                }
-            }
-            camera.position.z = isFocusMode ? 12 : 20;
-        }
-
-        function getDiamondAtoms(focus) {
-            let atoms = [];
-            if (focus) {
-                atoms = [[-4,-4,-4],[-3,-3,-3],[-4,-2,-2],[-2,-2,-4],[-1,-3,-1],[0,-2,-2],[0,-4,0],[-2,-2,0],[0,0,-4],[-1,-1,-3],[-2,0,-2],[-3,-1,-1],[-4,0,0],[-2,-4,-2]].map(c => new THREE.Vector3(c[0], c[1], c[2]));
-            } else {
-                const unit = [[0,0,0],[2,2,0],[2,0,2],[0,2,2],[1,1,1],[3,3,1],[3,1,3],[1,3,3]];
-                for (let i = -1; i <= 0; i++) for (let j = -1; j <= 0; j++) for (let k = -1; k <= 0; k++) unit.forEach(p => atoms.push(new THREE.Vector3(i*4+p[0], j*4+p[1], k*4+p[2])));
-            }
-            const centroid = new THREE.Vector3();
-            atoms.forEach(a => centroid.add(a));
-            centroid.divideScalar(atoms.length || 1);
-            return atoms.map(a => a.sub(centroid));
-        }
-
-        // Event Handlers (restricted to canvas for rotation/zoom)
-        function onMouseDown(e) { isDragging = true; previousMouse = { x: e.clientX, y: e.clientY }; }
-        function onMouseUp() { isDragging = false; }
-        function onMouseMove(e) {
-            if (isDragging) {
-                currentGroup.rotation.y += (e.clientX - previousMouse.x) * 0.01;
-                currentGroup.rotation.x += (e.clientY - previousMouse.y) * 0.01;
-                previousMouse = { x: e.clientX, y: e.clientY };
-            }
-        }
-        function onWheel(e) {
-            e.preventDefault();
-            camera.position.z = Math.max(5, Math.min(60, camera.position.z + e.deltaY * 0.02));
-        }
-
-        function onTouchStart(e) {
-            if (e.touches.length === 1) {
-                isDragging = true;
-                previousMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-            } else if (e.touches.length === 2) {
-                isDragging = false;
-                initialPinchDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-            }
-            e.preventDefault();
-        }
-        function onTouchEnd() { isDragging = false; initialPinchDistance = null; }
-        function onTouchMove(e) {
-            if (e.touches.length === 1 && isDragging) {
-                currentGroup.rotation.y += (e.touches[0].clientX - previousMouse.x) * 0.01;
-                currentGroup.rotation.x += (e.touches[0].clientY - previousMouse.y) * 0.01;
-                previousMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-                e.preventDefault();
-            } else if (e.touches.length === 2 && initialPinchDistance !== null) {
-                const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-                camera.position.z = Math.max(5, Math.min(60, camera.position.z - (dist - initialPinchDistance) * 0.05));
-                initialPinchDistance = dist;
-                e.preventDefault();
-            }
         }
 
         function onWindowResize() {
@@ -450,15 +313,229 @@
             renderer.setSize(container.clientWidth, container.clientHeight);
         }
 
-        function toggleFocus() {
-            isFocusMode = !isFocusMode;
-            document.getElementById('btn-focus').innerText = `Focus Mode: ${isFocusMode ? 'ON' : 'OFF'}`;
-            document.getElementById('btn-focus').classList.toggle('bg-green-600', isFocusMode);
-            document.getElementById('btn-focus').classList.toggle('bg-amber-600', !isFocusMode);
-            switchStructure(currentType);
+        function createSolidClippedSphere(color, radius, x, y, z) {
+            const atomGroup = new THREE.Group();
+            atomGroup.position.set(x, y, z);
+            
+            const shellGeom = new THREE.SphereGeometry(radius, 64, 32);
+            const shellMat = new THREE.MeshPhongMaterial({ 
+                color: color, 
+                clippingPlanes: activeClippingPlanes,
+                clipShadows: true
+            });
+            const shell = new THREE.Mesh(shellGeom, shellMat);
+            atomGroup.add(shell);
+
+            if (ratioMode) {
+                const spacing = 4.0;
+                const b = spacing / 2;
+                const planeConfigs = [
+                    { n: new THREE.Vector3(-1, 0, 0), c: b },
+                    { n: new THREE.Vector3(1, 0, 0),  c: b },
+                    { n: new THREE.Vector3(0, -1, 0), c: b },
+                    { n: new THREE.Vector3(0, 1, 0),  c: b },
+                    { n: new THREE.Vector3(0, 0, -1), c: b },
+                    { n: new THREE.Vector3(0, 0, 1),  c: b }
+                ];
+
+                planeConfigs.forEach((config) => {
+                    const dist = config.n.x * x + config.n.y * y + config.n.z * z + config.c;
+                    if (Math.abs(dist) < radius) {
+                        const capRadius = Math.sqrt(radius * radius - dist * dist);
+                        const capGeom = new THREE.CircleGeometry(capRadius, 64);
+                        const capMat = new THREE.MeshPhongMaterial({ 
+                            color: color, 
+                            side: THREE.DoubleSide,
+                            clippingPlanes: activeClippingPlanes 
+                        });
+                        const cap = new THREE.Mesh(capGeom, capMat);
+                        cap.position.copy(config.n).multiplyScalar(-dist);
+                        cap.lookAt(cap.position.clone().add(config.n));
+                        atomGroup.add(cap);
+                    }
+                });
+            }
+            return atomGroup;
         }
 
-        function animate() { requestAnimationFrame(animate); renderer.render(scene, camera); }
+        function createStick(p1, p2) {
+            const distance = p1.distanceTo(p2);
+            const position = p2.clone().add(p1).divideScalar(2);
+            const material = new THREE.MeshPhongMaterial({ 
+                color: COLORS.stick, 
+                transparent: true, 
+                opacity: ratioMode ? 0.2 : 1.0 
+            });
+            const geometry = new THREE.CylinderGeometry(0.08, 0.08, distance, 8);
+            const stick = new THREE.Mesh(geometry, material);
+            stick.position.copy(position);
+            stick.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), p2.clone().sub(p1).normalize());
+            return stick;
+        }
+
+        function setupPlanes(spacing) {
+            baseClippingPlanes = [];
+            activeClippingPlanes = [];
+            if (!ratioMode) return;
+
+            const b = spacing / 2;
+            const normals = [
+                new THREE.Vector3(-1, 0, 0), new THREE.Vector3(1, 0, 0),
+                new THREE.Vector3(0, -1, 0), new THREE.Vector3(0, 1, 0),
+                new THREE.Vector3(0, 0, -1), new THREE.Vector3(0, 0, 1)
+            ];
+
+            normals.forEach(n => {
+                const plane = new THREE.Plane(n, b);
+                baseClippingPlanes.push(plane);
+                activeClippingPlanes.push(plane.clone());
+            });
+        }
+
+        function createStructure() {
+            while(crystalGroup.children.length > 0) crystalGroup.remove(crystalGroup.children[0]);
+
+            const spacing = 4.0; 
+            setupPlanes(spacing);
+
+            const range = viewMode === 'unit' ? 1 : 2;
+            const offset = -(range * spacing) / 2;
+
+            if (currentStructure === 'NaCl') {
+                for (let x = 0; x <= range; x++) {
+                    for (let y = 0; y <= range; y++) {
+                        for (let z = 0; z <= range; z++) {
+                            const pX = x * spacing + offset;
+                            const pY = y * spacing + offset;
+                            const pZ = z * spacing + offset;
+                            const isNa = (x + y + z) % 2 !== 0;
+
+                            if (ratioMode && (x > 1 || y > 1 || z > 1)) continue;
+
+                            crystalGroup.add(createSolidClippedSphere(
+                                isNa ? COLORS.Na : COLORS.Cl, 
+                                isNa ? 0.52 : 0.75, 
+                                pX, pY, pZ
+                            ));
+
+                            if (showSticks) {
+                                const p1 = new THREE.Vector3(pX, pY, pZ);
+                                if (x < range) crystalGroup.add(createStick(p1, new THREE.Vector3(pX + spacing, pY, pZ)));
+                                if (y < range) crystalGroup.add(createStick(p1, new THREE.Vector3(pX, pY + spacing, pZ)));
+                                if (z < range) crystalGroup.add(createStick(p1, new THREE.Vector3(pX, pY, pZ + spacing)));
+                            }
+                        }
+                    }
+                }
+            } else {
+                for (let x = 0; x <= range; x++) {
+                    for (let y = 0; y <= range; y++) {
+                        for (let z = 0; z <= range; z++) {
+                            const pX = x * spacing + offset;
+                            const pY = y * spacing + offset;
+                            const pZ = z * spacing + offset;
+
+                            if (ratioMode && (x > 1 || y > 1 || z > 1)) continue;
+
+                            crystalGroup.add(createSolidClippedSphere(COLORS.Cl, 0.75, pX, pY, pZ));
+                            
+                            if (showSticks) {
+                                const p1 = new THREE.Vector3(pX, pY, pZ);
+                                if (x < range) crystalGroup.add(createStick(p1, new THREE.Vector3(pX + spacing, pY, pZ)));
+                                if (y < range) crystalGroup.add(createStick(p1, new THREE.Vector3(pX, pY + spacing, pZ)));
+                                if (z < range) crystalGroup.add(createStick(p1, new THREE.Vector3(pX, pY, pZ + spacing)));
+                            }
+
+                            if (x < range && y < range && z < range) {
+                                const midX = pX + spacing/2;
+                                const midY = pY + spacing/2;
+                                const midZ = pZ + spacing/2;
+                                crystalGroup.add(createSolidClippedSphere(COLORS.Cs, 0.65, midX, midY, midZ));
+                                
+                                if (showSticks) {
+                                    const pMid = new THREE.Vector3(midX, midY, midZ);
+                                    for(let dx=0; dx<=1; dx++) for(let dy=0; dy<=1; dy++) for(let dz=0; dz<=1; dz++) {
+                                        crystalGroup.add(createStick(pMid, new THREE.Vector3(pX+dx*spacing, pY+dy*spacing, pZ+dz*spacing)));
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        function updateUI() {
+            const data = DATA[currentStructure];
+            // Desktop panel
+            document.getElementById('struct-title').innerText = data.title;
+            document.getElementById('struct-desc').innerText = data.desc;
+            document.getElementById('ion-label-1').innerText = data.ion1;
+            document.getElementById('ion-label-2').innerText = data.ion2;
+            document.getElementById('ion-color-1').className = 'legend-dot ' + data.color1;
+            document.getElementById('ion-color-2').className = 'legend-dot ' + data.color2;
+
+            // Mobile specific updates
+            document.getElementById('m-struct-title').innerText = data.title;
+            document.getElementById('m-struct-desc').innerText = data.desc;
+            document.getElementById('m-ion-label-1').innerText = data.ion1.split(' ')[0];
+            document.getElementById('m-ion-label-2').innerText = data.ion2.split(' ')[0];
+            document.getElementById('m-ion-color-1').className = 'legend-dot ' + data.color1;
+            document.getElementById('m-ion-color-2').className = 'legend-dot ' + data.color2;
+
+            document.getElementById('ratio-details').innerHTML = data.ratioHtml;
+
+            document.getElementById('ratio-panel').classList.toggle('hidden', !ratioMode);
+            document.getElementById('desktop-info-panel').classList.toggle('hidden', ratioMode);
+            document.getElementById('mobile-desc-only').classList.toggle('hidden', ratioMode);
+
+            const ratioContainer = document.getElementById('ratio-mode-container');
+            const ratioCheckbox = document.getElementById('check-ratio');
+            
+            if (viewMode === 'lattice') {
+                ratioContainer.classList.add('disabled-ui');
+                ratioCheckbox.disabled = true;
+            } else {
+                ratioContainer.classList.remove('disabled-ui');
+                ratioCheckbox.disabled = false;
+            }
+
+            ['btn-nacl', 'btn-cscl', 'btn-unit', 'btn-lattice'].forEach(id => {
+                const b = document.getElementById(id);
+                if(b) {
+                    b.classList.remove('bg-blue-600', 'border-blue-400');
+                    b.classList.add('bg-slate-700', 'border-transparent');
+                }
+            });
+            
+            document.getElementById(currentStructure === 'NaCl' ? 'btn-nacl' : 'btn-cscl').classList.replace('bg-slate-700', 'bg-blue-600');
+            document.getElementById(viewMode === 'unit' ? 'btn-unit' : 'btn-lattice').classList.replace('bg-slate-700', 'bg-blue-600');
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if (ratioMode) {
+                crystalGroup.updateMatrixWorld();
+                for (let i = 0; i < baseClippingPlanes.length; i++) {
+                    activeClippingPlanes[i].copy(baseClippingPlanes[i]).applyMatrix4(crystalGroup.matrixWorld);
+                }
+            }
+            renderer.render(scene, camera);
+        }
+
+        document.getElementById('btn-nacl').onclick = () => { currentStructure = 'NaCl'; createStructure(); updateUI(); };
+        document.getElementById('btn-cscl').onclick = () => { currentStructure = 'CsCl'; createStructure(); updateUI(); };
+        document.getElementById('btn-unit').onclick = () => { viewMode = 'unit'; createStructure(); updateUI(); };
+        document.getElementById('btn-lattice').onclick = () => { 
+            viewMode = 'lattice'; 
+            ratioMode = false;
+            document.getElementById('check-ratio').checked = false;
+            createStructure(); 
+            updateUI(); 
+        };
+        document.getElementById('check-sticks').onchange = (e) => { showSticks = e.target.checked; createStructure(); };
+        document.getElementById('check-ratio').onchange = (e) => { ratioMode = e.target.checked; createStructure(); updateUI(); };
+
         window.onload = init;
     </script>
 </body>
