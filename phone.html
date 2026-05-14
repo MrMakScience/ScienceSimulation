@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ionic Formula Cross Method Simulator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+            scroll-behavior: smooth;
+        }
+
+        .ion-card {
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .ion-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        }
+
+        .selected-ion {
+            border: 2px solid #3b82f6;
+            background-color: #eff6ff;
+        }
+
+        .step-container {
+            min-height: 400px;
+        }
+
+        .formula-subscript {
+            vertical-align: sub;
+            font-size: 0.6em;
+            font-weight: bold;
+            line-height: 0;
+        }
+
+        .formula-superscript {
+            vertical-align: super;
+            font-size: 0.6em;
+            font-weight: bold;
+            line-height: 0;
+        }
+
+        .moving-charge {
+            position: absolute;
+            transition: all 2s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 50;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+
+        /* Bracket Fade-in Animation */
+        .bracket-fade {
+            opacity: 0;
+            display: inline-block;
+            transition: opacity 1s ease-in-out;
+        }
+
+        .bracket-visible {
+            opacity: 1;
+        }
+
+        #visual-area {
+            transition: gap 0.8s ease-in-out;
+            max-width: 100%;
+        }
+
+        .merge-gap {
+            gap: 0 !important;
+        }
+
+        .merged-style {
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+            border-color: transparent !important;
+            background-color: transparent !important;
+            background: none !important;
+            min-width: 0 !important;
+        }
+
+        /* Strike-through animation */
+        .strike-container {
+            position: relative;
+            display: inline-block;
+        }
+
+        .strike-line {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            width: 0;
+            height: 4px;
+            background: #ef4444;
+            transform: translateY(-50%) rotate(-15deg);
+            transition: width 0.5s ease-out;
+        }
+
+        .strike-active .strike-line {
+            width: 110%;
+        }
+
+        .simplify-fade {
+            opacity: 0;
+            transition: opacity 0.5s ease-in;
+        }
+
+        .simplify-visible {
+            opacity: 1;
+        }
+
+        /* Fade out for subscript 1 */
+        .subscript-fade-out {
+            transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+        }
+
+        .fade-hidden {
+            opacity: 0 !important;
+            transform: translateY(-5px);
+        }
+
+        @keyframes pulse-success {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .animate-success {
+            animation: pulse-success 0.5s ease-in-out;
+        }
+
+        /* Mobile specific fixes */
+        @media (max-width: 640px) {
+            #visual-area {
+                gap: 1rem;
+                font-size: 2.25rem;
+            }
+            .ion-box-mobile {
+                padding: 0.75rem !important;
+                min-width: 80px !important;
+            }
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+<div class="max-w-6xl mx-auto">
+    <header class="text-center mb-8">
+        <h1 class="text-3xl font-bold text-slate-800">Ionic Formula Builder</h1>
+        <p class="text-slate-600">Master the Cross Method step-by-step</p>
+    </header>
+
+    <!-- Selection View -->
+    <div id="setup-view" class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+            <h2 class="text-xl font-semibold mb-4 text-blue-700 border-b pb-2">Select a Cation</h2>
+            <div id="cation-list" class="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-[500px] overflow-y-auto pr-2"></div>
+        </div>
+
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+            <h2 class="text-xl font-semibold mb-4 text-red-700 border-b pb-2">Select an Anion</h2>
+            <div id="anion-list" class="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-[500px] overflow-y-auto pr-2"></div>
+        </div>
+    </div>
+
+    <div id="controls" class="mt-8 flex justify-center hidden">
+        <button id="start-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-full font-bold shadow-lg transition-all transform hover:scale-105">
+            Start Simulation
+        </button>
+    </div>
+
+    <!-- Simulation View -->
+    <div id="simulation-view" class="mt-8 bg-white p-4 md:p-8 rounded-2xl shadow-xl border border-slate-200 hidden">
+        <div class="flex justify-between items-center mb-8">
+            <h2 id="step-title" class="text-2xl font-bold text-slate-800">Step 1: Identify Charges</h2>
+            <button id="reset-btn" class="text-slate-500 hover:text-red-600 text-sm font-medium">Cancel & Reset</button>
+        </div>
+
+        <div class="step-container flex flex-col items-center justify-center relative overflow-visible">
+            <div id="visual-area" class="flex items-center gap-12 md:gap-48 text-5xl md:text-7xl font-bold mb-12 relative w-full justify-center">
+                <div id="v-cation" class="ion-box-mobile relative p-6 rounded-2xl bg-blue-50 border-2 border-blue-200 text-blue-800 transition-all duration-500 min-w-[100px] md:min-w-[120px] text-center"></div>
+                <div id="v-operator" class="text-slate-300 transition-opacity duration-500">+</div>
+                <div id="v-anion" class="ion-box-mobile relative p-6 rounded-2xl bg-red-50 border-2 border-red-200 text-red-800 transition-all duration-500 min-w-[100px] md:min-w-[120px] text-center"></div>
+            </div>
+
+            <div id="step-description" class="text-center w-full max-w-2xl bg-slate-50 p-6 rounded-xl border border-slate-100 min-h-[100px]">
+                <p class="text-lg text-slate-700"></p>
+            </div>
+        </div>
+
+        <div class="mt-8 flex justify-center gap-4">
+            <button id="back-btn" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-6 py-3 rounded-lg font-semibold transition-all hidden">
+                Back
+            </button>
+            <button id="next-btn" class="bg-slate-800 hover:bg-slate-900 text-white px-10 py-3 rounded-lg font-semibold transition-all">
+                Next Step
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const cations = [
+        { name: "Lithium ion", symbol: "Li", charge: 1, poly: false },
+        { name: "Sodium ion", symbol: "Na", charge: 1, poly: false },
+        { name: "Potassium ion", symbol: "K", charge: 1, poly: false },
+        { name: "Copper(I) ion", symbol: "Cu", charge: 1, poly: false },
+        { name: "Silver ion", symbol: "Ag", charge: 1, poly: false },
+        { name: "Mercury(I) ion", symbol: "Hg", charge: 1, poly: false },
+        { name: "Ammonium ion", symbol: "NH4", charge: 1, poly: true },
+        { name: "Magnesium ion", symbol: "Mg", charge: 2, poly: false },
+        { name: "Calcium ion", symbol: "Ca", charge: 2, poly: false },
+        { name: "Barium ion", symbol: "Ba", charge: 2, poly: false },
+        { name: "Zinc ion", symbol: "Zn", charge: 2, poly: false },
+        { name: "Iron(II) ion", symbol: "Fe", charge: 2, poly: false },
+        { name: "Copper(II) ion", symbol: "Cu", charge: 2, poly: false },
+        { name: "Cobalt(II) ion", symbol: "Co", charge: 2, poly: false },
+        { name: "Nickel(II) ion", symbol: "Ni", charge: 2, poly: false },
+        { name: "Manganese(II) ion", symbol: "Mn", charge: 2, poly: false },
+        { name: "Mercury(II) ion", symbol: "Hg", charge: 2, poly: false },
+        { name: "Lead(II) ion", symbol: "Pb", charge: 2, poly: false },
+        { name: "Aluminum ion", symbol: "Al", charge: 3, poly: false },
+        { name: "Iron(III) ion", symbol: "Fe", charge: 3, poly: false },
+        { name: "Chromium(III) ion", symbol: "Cr", charge: 3, poly: false }
+    ];
+
+    const anions = [
+        { name: "Fluoride ion", symbol: "F", charge: -1, poly: false },
+        { name: "Chloride ion", symbol: "Cl", charge: -1, poly: false },
+        { name: "Bromide ion", symbol: "Br", charge: -1, poly: false },
+        { name: "Iodide ion", symbol: "I", charge: -1, poly: false },
+        { name: "Nitrite ion", symbol: "NO2", charge: -1, poly: true },
+        { name: "Nitrate ion", symbol: "NO3", charge: -1, poly: true },
+        { name: "Hydroxide ion", symbol: "OH", charge: -1, poly: true },
+        { name: "Hydrogencarbonate ion", symbol: "HCO3", charge: -1, poly: true },
+        { name: "Hydrogensulphate ion", symbol: "HSO4", charge: -1, poly: true },
+        { name: "Cyanide ion", symbol: "CN", charge: -1, poly: true },
+        { name: "Permanganate Ion", symbol: "MnO4", charge: -1, poly: true },
+        { name: "Hypochlorite ion", symbol: "ClO", charge: -1, poly: true },
+        { name: "Chlorate ion", symbol: "ClO3", charge: -1, poly: true },
+        { name: "Oxide ion", symbol: "O", charge: -2, poly: false },
+        { name: "Sulphide ion", symbol: "S", charge: -2, poly: false },
+        { name: "Sulphite ion", symbol: "SO3", charge: -2, poly: true },
+        { name: "Sulphate ion", symbol: "SO4", charge: -2, poly: true },
+        { name: "Thiosulphate ion", symbol: "S2O3", charge: -2, poly: true },
+        { name: "Carbonate ion", symbol: "CO3", charge: -2, poly: true },
+        { name: "Silicate ion", symbol: "SiO3", charge: -2, poly: true },
+        { name: "Chromate ion", symbol: "CrO4", charge: -2, poly: true },
+        { name: "Dichromate ion", symbol: "Cr2O7", charge: -2, poly: true },
+        { name: "Nitride ion", symbol: "N", charge: -3, poly: false },
+        { name: "Phosphide ion", symbol: "P", charge: -3, poly: false },
+        { name: "Phosphate ion", symbol: "PO4", charge: -3, poly: true }
+    ];
+
+    let selectedCation = null;
+    let selectedAnion = null;
+    let currentStep = 0;
+
+    function gcd(a, b) { return b ? gcd(b, a % b) : a; }
+
+    function formatSymbol(symbol) {
+        return symbol.replace(/(\d+)/g, '<span class="formula-subscript">$1</span>');
+    }
+
+    function formatCharge(val) {
+        const absVal = Math.abs(val);
+        const sign = val > 0 ? '+' : '-';
+        return `<span class="formula-superscript">${absVal === 1 ? '' : absVal}${sign}</span>`;
+    }
+
+    function renderLists() {
+        const cList = document.getElementById('cation-list');
+        const aList = document.getElementById('anion-list');
+        cList.innerHTML = '';
+        aList.innerHTML = '';
+        [cations, anions].forEach((list, idx) => {
+            const container = idx === 0 ? cList : aList;
+            list.forEach(ion => {
+                const div = document.createElement('div');
+                div.className = 'ion-card p-3 rounded-lg border bg-white text-sm text-center';
+                div.innerHTML = `<div>${formatSymbol(ion.symbol)}${formatCharge(ion.charge)}</div><div class="text-[10px] text-slate-500 uppercase font-bold">${ion.name}</div>`;
+                div.onclick = () => {
+                    document.querySelectorAll(`#${container.id} .ion-card`).forEach(el => el.classList.remove('selected-ion'));
+                    div.classList.add('selected-ion');
+                    if (idx === 0) selectedCation = ion; else selectedAnion = ion;
+                    checkReady();
+                };
+                container.appendChild(div);
+            });
+        });
+    }
+
+    function checkReady() {
+        if (selectedCation && selectedAnion) document.getElementById('controls').classList.remove('hidden');
+    }
+
+    function clearMovingElements() {
+        document.querySelectorAll('.moving-charge').forEach(el => el.remove());
+    }
+
+    function resetSimulationState() {
+        selectedCation = null;
+        selectedAnion = null;
+        currentStep = 0;
+        
+        document.getElementById('simulation-view').classList.add('hidden');
+        document.getElementById('setup-view').classList.remove('hidden');
+        document.getElementById('controls').classList.add('hidden');
+        
+        const vCation = document.getElementById('v-cation');
+        const vAnion = document.getElementById('v-anion');
+        const vArea = document.getElementById('visual-area');
+        vCation.classList.remove('merged-style');
+        vAnion.classList.remove('merged-style');
+        vArea.classList.remove('merge-gap', 'animate-success');
+        
+        renderLists();
+        window.scrollTo(0, 0);
+    }
+
+    async function runStep() {
+        const vCation = document.getElementById('v-cation');
+        const vAnion = document.getElementById('v-anion');
+        const vOp = document.getElementById('v-operator');
+        const vArea = document.getElementById('visual-area');
+        const title = document.getElementById('step-title');
+        const desc = document.getElementById('step-description');
+        const nextBtn = document.getElementById('next-btn');
+        const backBtn = document.getElementById('back-btn');
+
+        const catVal = Math.abs(selectedCation.charge);
+        const aniVal = Math.abs(selectedAnion.charge);
+        const common = gcd(catVal, aniVal);
+        
+        const rawSubCat = aniVal;
+        const rawSubAni = catVal;
+        const simpCat = aniVal / common;
+        const simpAni = catVal / common;
+
+        clearMovingElements();
+        
+        if (currentStep === 0) {
+            backBtn.classList.add('hidden');
+        } else {
+            backBtn.classList.remove('hidden');
+        }
+
+        switch(currentStep) {
+            case 0:
+                title.innerText = "Step 1: Identify the Ions";
+                vCation.innerHTML = `${formatSymbol(selectedCation.symbol)}<span id="c-charge" class="formula-superscript">${catVal === 1 ? '' : catVal}+</span>`;
+                vAnion.innerHTML = `${formatSymbol(selectedAnion.symbol)}<span id="a-charge" class="formula-superscript">${aniVal === 1 ? '' : aniVal}-</span>`;
+                vOp.style.opacity = "1";
+                vOp.style.display = "block";
+                vArea.classList.remove('merge-gap');
+                vArea.classList.remove('animate-success');
+                vCation.className = "ion-box-mobile relative p-6 rounded-2xl bg-blue-50 border-2 border-blue-200 text-blue-800 transition-all duration-500 min-w-[100px] md:min-w-[120px] text-center";
+                vAnion.className = "ion-box-mobile relative p-6 rounded-2xl bg-red-50 border-2 border-red-200 text-red-800 transition-all duration-500 min-w-[100px] md:min-w-[120px] text-center";
+                desc.innerHTML = `We have <strong>${selectedCation.name}</strong> and <strong>${selectedAnion.name}</strong>. Let's look at their charges.`;
+                nextBtn.innerText = "Cross Charges";
+                break;
+
+            case 1:
+                title.innerText = "Step 2: The Cross Method";
+                vOp.style.opacity = "0.2";
+                vOp.style.display = "block";
+                vArea.classList.remove('merge-gap');
+                vCation.innerHTML = `${formatSymbol(selectedCation.symbol)}<span id="c-charge" class="formula-superscript">${catVal === 1 ? '' : catVal}+</span>`;
+                vAnion.innerHTML = `${formatSymbol(selectedAnion.symbol)}<span id="a-charge" class="formula-superscript">${aniVal === 1 ? '' : aniVal}-</span>`;
+                
+                desc.innerHTML = `Watch the charge values move! They cross over to become subscripts for the opposite ion.`;
+                
+                setTimeout(() => {
+                    const cChargeEl = document.getElementById('c-charge');
+                    const aChargeEl = document.getElementById('a-charge');
+                    const cRect = cChargeEl.getBoundingClientRect();
+                    const aRect = aChargeEl.getBoundingClientRect();
+                    const scrollY = window.scrollY;
+
+                    const floatC = document.createElement('div');
+                    floatC.className = 'moving-charge text-blue-600 font-bold text-4xl';
+                    floatC.innerText = catVal;
+                    floatC.style.left = `${cRect.left}px`;
+                    floatC.style.top = `${cRect.top + scrollY}px`;
+                    
+                    const floatA = document.createElement('div');
+                    floatA.className = 'moving-charge text-red-600 font-bold text-4xl';
+                    floatA.innerText = aniVal;
+                    floatA.style.left = `${aRect.left}px`;
+                    floatA.style.top = `${aRect.top + scrollY}px`;
+
+                    document.body.appendChild(floatC);
+                    document.body.appendChild(floatA);
+
+                    cChargeEl.style.opacity = '0';
+                    aChargeEl.style.opacity = '0';
+
+                    setTimeout(() => {
+                        const catContainer = vCation.getBoundingClientRect();
+                        const aniContainer = vAnion.getBoundingClientRect();
+                        floatC.style.left = `${aniContainer.right - (window.innerWidth < 640 ? 15 : 25)}px`;
+                        floatC.style.top = `${aniContainer.bottom - (window.innerWidth < 640 ? 15 : 25) + scrollY}px`;
+                        floatC.style.fontSize = window.innerWidth < 640 ? '1.4rem' : '1.8rem';
+                        floatA.style.left = `${catContainer.right - (window.innerWidth < 640 ? 15 : 25)}px`;
+                        floatA.style.top = `${catContainer.bottom - (window.innerWidth < 640 ? 15 : 25) + scrollY}px`;
+                        floatA.style.fontSize = window.innerWidth < 640 ? '1.4rem' : '1.8rem';
+                    }, 50);
+                }, 100);
+
+                nextBtn.innerText = "Simplify Ratio";
+                break;
+
+            case 2:
+                title.innerText = "Step 3: Simplify the Ratio";
+                vOp.style.opacity = "0.2";
+                vOp.style.display = "block";
+                vArea.classList.remove('merge-gap');
+                
+                let cBody3 = formatSymbol(selectedCation.symbol);
+                const showCatBrackets = simpCat > 1 && selectedCation.poly;
+                if (showCatBrackets) {
+                    cBody3 = `<span class="bracket-fade">(</span>${cBody3}<span class="bracket-fade">)</span>`;
+                }
+                
+                let aBody3 = formatSymbol(selectedAnion.symbol);
+                const showAniBrackets = simpAni > 1 && selectedAnion.poly;
+                if (showAniBrackets) {
+                    aBody3 = `<span class="bracket-fade">(</span>${aBody3}<span class="bracket-fade">)</span>`;
+                }
+
+                let bracketReminder = (showCatBrackets || showAniBrackets) ? 
+                    "<div class='mt-2 text-sm text-blue-600 font-semibold'>💡 Reminder: Added brackets for polyatomic ions with subscripts > 1.</div>" : "";
+
+                if (common > 1) {
+                    vCation.innerHTML = `${cBody3}<span class="formula-subscript text-blue-600 inline-flex items-center">
+                        <span id="sub-cat-raw" class="strike-container">${rawSubCat}<span class="strike-line"></span></span>
+                        <span id="sub-cat-simp" class="simplify-fade ml-1">${simpCat}</span>
+                    </span>`;
+                    vAnion.innerHTML = `${aBody3}<span class="formula-subscript text-red-600 inline-flex items-center">
+                        <span id="sub-ani-raw" class="strike-container">${rawSubAni}<span class="strike-line"></span></span>
+                        <span id="sub-ani-simp" class="simplify-fade ml-1">${simpAni}</span>
+                    </span>`;
+                    
+                    desc.innerHTML = `The ratio <strong>${rawSubCat}:${rawSubAni}</strong> simplifies to <strong>${simpCat}:${simpAni}</strong>.${bracketReminder}`;
+                    
+                    setTimeout(() => {
+                        const rc = document.getElementById('sub-cat-raw');
+                        const ra = document.getElementById('sub-ani-raw');
+                        if(rc) rc.classList.add('strike-active');
+                        if(ra) ra.classList.add('strike-active');
+                        setTimeout(() => {
+                            const sc = document.getElementById('sub-cat-simp');
+                            const sa = document.getElementById('sub-ani-simp');
+                            if(sc) sc.classList.add('simplify-visible');
+                            if(sa) sa.classList.add('simplify-visible');
+                        }, 500);
+                    }, 800);
+
+                } else {
+                    vCation.innerHTML = `${cBody3}<span class="formula-subscript text-blue-600">${simpCat}</span>`;
+                    vAnion.innerHTML = `${aBody3}<span class="formula-subscript text-red-600">${simpAni}</span>`;
+                    desc.innerHTML = `The ratio <strong>${simpCat}:${simpAni}</strong> is shown. We keep the "1" to show the final balance.${bracketReminder}`;
+                }
+                
+                setTimeout(() => {
+                    document.querySelectorAll('.bracket-fade').forEach(el => el.classList.add('bracket-visible'));
+                }, 100);
+
+                nextBtn.innerText = "Finalize & Merge";
+                break;
+
+            case 3:
+                title.innerText = "Step 4: Final Formula";
+                vOp.style.opacity = "0.2";
+                
+                let cStep4 = formatSymbol(selectedCation.symbol);
+                if (simpCat > 1 && selectedCation.poly) cStep4 = `(${cStep4})`;
+                let catSubscriptHtml = `<span id="final-sub-cat" class="formula-subscript ${simpCat === 1 ? 'subscript-fade-out' : ''}">${simpCat}</span>`;
+                
+                let aStep4 = formatSymbol(selectedAnion.symbol);
+                if (simpAni > 1 && selectedAnion.poly) aStep4 = `(${aStep4})`;
+                let aniSubscriptHtml = `<span id="final-sub-ani" class="formula-subscript ${simpAni === 1 ? 'subscript-fade-out' : ''}">${simpAni}</span>`;
+
+                vCation.innerHTML = cStep4 + catSubscriptHtml;
+                vAnion.innerHTML = aStep4 + aniSubscriptHtml;
+                
+                desc.innerHTML = `Final step: merge the ions and remove any subscripts of "1".`;
+
+                setTimeout(() => {
+                    vOp.style.opacity = "0";
+                    vCation.classList.add('merged-style');
+                    vAnion.classList.add('merged-style');
+                    vArea.classList.add('merge-gap');
+                    
+                    const fsc = document.getElementById('final-sub-cat');
+                    const fsa = document.getElementById('final-sub-ani');
+                    if (simpCat === 1 && fsc) fsc.classList.add('fade-hidden');
+                    if (simpAni === 1 && fsa) fsa.classList.add('fade-hidden');
+                    
+                    setTimeout(() => {
+                        if(currentStep === 3) vOp.style.display = "none";
+                        vArea.classList.add('animate-success');
+                        
+                        let successC = formatSymbol(selectedCation.symbol);
+                        if (simpCat > 1) {
+                            if (selectedCation.poly) successC = `(${successC})`;
+                            successC += `<span class="formula-subscript">${simpCat}</span>`;
+                        }
+                        let successA = formatSymbol(selectedAnion.symbol);
+                        if (simpAni > 1) {
+                            if (selectedAnion.poly) successA = `(${successA})`;
+                            successA += `<span class="formula-subscript">${simpAni}</span>`;
+                        }
+                        
+                        desc.innerHTML = `
+                            <div class="text-3xl font-bold text-green-600 mb-2">Success!</div>
+                            The chemical formula is <span class="text-2xl font-bold text-slate-800">${successC + successA}</span>.
+                        `;
+                    }, 800);
+                }, 500);
+
+                nextBtn.innerText = "Start with a new compound";
+                break;
+        }
+    }
+
+    document.getElementById('start-btn').onclick = () => {
+        document.getElementById('setup-view').classList.add('hidden');
+        document.getElementById('controls').classList.add('hidden');
+        document.getElementById('simulation-view').classList.remove('hidden');
+        currentStep = 0;
+        runStep();
+    };
+
+    document.getElementById('next-btn').onclick = () => {
+        if (currentStep < 3) {
+            currentStep++;
+            runStep();
+        } else {
+            resetSimulationState();
+        }
+    };
+
+    document.getElementById('back-btn').onclick = () => {
+        if (currentStep > 0) {
+            currentStep--;
+            runStep();
+        }
+    };
+
+    document.getElementById('reset-btn').onclick = () => resetSimulationState();
+    renderLists();
+
+    window.addEventListener('resize', () => {
+        if (currentStep === 1) {
+            clearMovingElements();
+            runStep();
+        }
+    });
+</script>
+</body>
+</html>
