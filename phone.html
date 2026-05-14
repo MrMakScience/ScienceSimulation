@@ -29,7 +29,7 @@
         /* Mobile Adjustments */
         @media (max-width: 768px) {
             .lab-bench {
-                height: 700px; /* Taller bench for more vertical space */
+                height: 580px; /* Reduced to ensure it fits on phone screen without scroll */
             }
         }
 
@@ -76,7 +76,7 @@
         @media (max-width: 768px) {
             .burner-container {
                 left: 75%;
-                bottom: 80px;
+                bottom: 60px; /* Adjusted burner position */
             }
         }
 
@@ -208,8 +208,8 @@
         
         @media (max-width: 768px) {
             .heatproof-mat {
-                height: 140px;
-                bottom: 30px;
+                height: 100px;
+                bottom: 20px;
             }
         }
 
@@ -224,8 +224,8 @@
 
         @media (max-width: 768px) {
             .pickup-wire-container {
-                bottom: 80px; /* Raise wire higher on phone */
-                left: 20px;
+                bottom: 35px; /* Raised from very bottom for visibility */
+                left: 10px;
             }
         }
 
@@ -243,8 +243,8 @@
         
         @media (max-width: 768px) {
             .wire-placeholder {
-                bottom: 80px;
-                left: 20px;
+                bottom: 35px;
+                left: 10px;
             }
         }
 
@@ -284,8 +284,8 @@
 
         @media (max-width: 768px) {
             .hcl-station {
-                bottom: 150px;
-                left: 140px; /* Shifted right for easier dipping on phone */
+                bottom: 90px; /* Reduced vertical distance to fit screen */
+                left: 110px; /* Shifted to provide better separation from wire */
             }
         }
 
@@ -370,15 +370,15 @@
 
         @media (max-width: 768px) {
             .sample-tray {
-                top: 20px;
-                right: 15px;
+                top: 10px;
+                right: 10px;
                 bottom: auto;
                 left: auto;
-                gap: 8px;
+                gap: 6px;
             }
             .sample-target {
-                width: 110px !important;
-                padding: 6px !important;
+                width: 105px !important;
+                padding: 4px !important;
             }
         }
 
@@ -635,7 +635,7 @@
 
             if (!state.isHoldingWire) {
                 const handleRect = startHandle.getBoundingClientRect();
-                const buffer = 30; // Increased buffer for touch
+                const buffer = 40; // High buffer for easier pick-up on small screens
                 if (clientX >= handleRect.left - buffer && clientX <= handleRect.right + buffer && 
                     clientY >= handleRect.top - buffer && clientY <= handleRect.bottom + buffer) {
                     pickUpWire(clientX, clientY);
