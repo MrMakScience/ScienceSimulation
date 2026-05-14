@@ -74,7 +74,7 @@
 
         @media (max-width: 768px) {
             .burner-container {
-                left: 80%; /* Shifted right */
+                left: 80%;
                 bottom: 60px;
             }
         }
@@ -216,7 +216,7 @@
 
         @media (max-width: 768px) {
             .pickup-wire-container {
-                bottom: 35px;
+                bottom: 80px; /* Moved up for mobile */
                 left: 10px;
             }
         }
@@ -235,7 +235,7 @@
         
         @media (max-width: 768px) {
             .wire-placeholder {
-                bottom: 35px;
+                bottom: 80px; /* Moved up for mobile */
                 left: 10px;
             }
         }
@@ -271,8 +271,8 @@
         @media (max-width: 768px) {
             .hcl-station {
                 bottom: 80px;
-                left: 60%; /* Shifting HCl closer to burner on right */
-                flex-direction: column-reverse; /* Put label above beaker */
+                left: 60%; 
+                flex-direction: column-reverse; 
                 gap: 4px;
             }
         }
@@ -654,9 +654,10 @@
 
             const tipRect = activeTip.getBoundingClientRect();
 
-            // HCl Collision
+            // HCl Collision - Increased buffer for phone convenience
             const hclArea = document.getElementById('hcl-target-area').getBoundingClientRect();
-            if (isColliding(tipRect, hclArea, 20)) {
+            const hclBuffer = window.innerWidth < 768 ? 40 : 20;
+            if (isColliding(tipRect, hclArea, hclBuffer)) {
                 state.isWet = true;
                 state.activeSample = null;
                 droplets.style.display = 'block';
@@ -667,13 +668,11 @@
                 return;
             }
 
-            // Sample Collision - High precision logic for mobile
+            // Sample Collision
             const sampleElements = document.querySelectorAll('.sample-target');
             for (let el of sampleElements) {
                 const rect = el.getBoundingClientRect();
-                // Tighten collision box on mobile to prevent overlapping triggers
                 const vertBuffer = window.innerWidth < 768 ? 5 : 10;
-                const horizBuffer = window.innerWidth < 768 ? 5 : 10;
 
                 if (isColliding(tipRect, rect, vertBuffer)) {
                     const type = el.dataset.type;
