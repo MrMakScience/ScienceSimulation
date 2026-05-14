@@ -26,10 +26,9 @@
             cursor: default;
         }
 
-        /* Mobile Adjustments */
         @media (max-width: 768px) {
             .lab-bench {
-                height: 580px; /* Reduced to ensure it fits on phone screen without scroll */
+                height: 580px;
             }
         }
 
@@ -75,8 +74,8 @@
 
         @media (max-width: 768px) {
             .burner-container {
-                left: 75%;
-                bottom: 60px; /* Adjusted burner position */
+                left: 80%; /* Shifted right */
+                bottom: 60px;
             }
         }
 
@@ -205,13 +204,6 @@
             z-index: 0;
             box-shadow: inset 0 2px 10px rgba(0,0,0,0.1);
         }
-        
-        @media (max-width: 768px) {
-            .heatproof-mat {
-                height: 100px;
-                bottom: 20px;
-            }
-        }
 
         .pickup-wire-container {
             position: absolute;
@@ -224,7 +216,7 @@
 
         @media (max-width: 768px) {
             .pickup-wire-container {
-                bottom: 35px; /* Raised from very bottom for visibility */
+                bottom: 35px;
                 left: 10px;
             }
         }
@@ -250,12 +242,6 @@
 
         .wire-placeholder.active {
             opacity: 0.4;
-            animation: pulse-placeholder 2s infinite ease-in-out;
-        }
-
-        @keyframes pulse-placeholder {
-            0%, 100% { opacity: 0.2; }
-            50% { opacity: 0.5; }
         }
 
         .wire-handle-ghost {
@@ -284,8 +270,10 @@
 
         @media (max-width: 768px) {
             .hcl-station {
-                bottom: 90px; /* Reduced vertical distance to fit screen */
-                left: 110px; /* Shifted to provide better separation from wire */
+                bottom: 80px;
+                left: 60%; /* Shifting HCl closer to burner on right */
+                flex-direction: column-reverse; /* Put label above beaker */
+                gap: 4px;
             }
         }
 
@@ -453,12 +441,6 @@
             max-width: 95%;
         }
 
-        @media (max-width: 768px) {
-            #instruction-pill {
-                padding: 8px 16px;
-            }
-        }
-
         .warning-text {
             color: #b91c1c;
             text-decoration: underline;
@@ -523,7 +505,7 @@
                     </div>
                 </div>
 
-                <div class="sample-tray">
+                <div class="sample-tray" id="tray">
                     <div class="text-center sample-target" data-type="Cu">
                         <div class="watch-glass"><div class="powder-pile bg-emerald-500/90"></div></div>
                         <span class="text-[10px] md:text-sm font-black text-white">Sample of Cu<sup>2+</sup></span>
@@ -635,7 +617,7 @@
 
             if (!state.isHoldingWire) {
                 const handleRect = startHandle.getBoundingClientRect();
-                const buffer = 40; // High buffer for easier pick-up on small screens
+                const buffer = 40; 
                 if (clientX >= handleRect.left - buffer && clientX <= handleRect.right + buffer && 
                     clientY >= handleRect.top - buffer && clientY <= handleRect.bottom + buffer) {
                     pickUpWire(clientX, clientY);
@@ -674,7 +656,7 @@
 
             // HCl Collision
             const hclArea = document.getElementById('hcl-target-area').getBoundingClientRect();
-            if (isColliding(tipRect, hclArea, 25)) {
+            if (isColliding(tipRect, hclArea, 20)) {
                 state.isWet = true;
                 state.activeSample = null;
                 droplets.style.display = 'block';
@@ -685,10 +667,15 @@
                 return;
             }
 
-            // Sample Collision
+            // Sample Collision - High precision logic for mobile
             const sampleElements = document.querySelectorAll('.sample-target');
             for (let el of sampleElements) {
-                if (isColliding(tipRect, el.getBoundingClientRect(), 10)) {
+                const rect = el.getBoundingClientRect();
+                // Tighten collision box on mobile to prevent overlapping triggers
+                const vertBuffer = window.innerWidth < 768 ? 5 : 10;
+                const horizBuffer = window.innerWidth < 768 ? 5 : 10;
+
+                if (isColliding(tipRect, rect, vertBuffer)) {
                     const type = el.dataset.type;
                     
                     if (state.activeSample || !state.isWet) {
@@ -755,11 +742,11 @@
             }
         }
 
-        function isColliding(r1, r2, customBuffer = 35) {
-            return !(r1.right < r2.left - customBuffer || 
-                     r1.left > r2.right + customBuffer || 
-                     r1.bottom < r2.top - customBuffer || 
-                     r1.top > r2.bottom + customBuffer);
+        function isColliding(r1, r2, buffer = 35) {
+            return !(r1.right < r2.left - buffer || 
+                     r1.left > r2.right + buffer || 
+                     r1.bottom < r2.top - buffer || 
+                     r1.top > r2.bottom + buffer);
         }
 
         function cycleAirHole() {
