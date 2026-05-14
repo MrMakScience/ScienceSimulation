@@ -6,12 +6,13 @@
     <title>Dative Covalent Bond Simulation</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        /* Changed to Roboto for better subscript/superscript legibility */
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap');
         
         :root { --app-height: 100%; }
 
         body { 
-            font-family: 'Inter', sans-serif; 
+            font-family: 'Roboto', sans-serif; 
             background-color: #f1f5f9; 
             overflow: hidden;
             margin: 0;
@@ -19,6 +20,7 @@
             height: var(--app-height);
             display: flex;
             flex-direction: column;
+            -webkit-tap-highlight-color: transparent;
         }
         
         .move-transition { 
@@ -50,90 +52,133 @@
             flex-shrink: 1;
         }
 
+        /* Highly Legible Chemical Subscripts for Roboto */
+        .example-btn sub {
+            font-size: 0.7em;
+            line-height: 0;
+            vertical-align: -0.35em; /* Lowered for better visibility */
+            margin-left: 1px;
+            font-weight: 700;
+        }
+        .example-btn sup {
+            font-size: 0.7em;
+            line-height: 0;
+            vertical-align: 0.4em;
+            font-weight: 700;
+        }
+
         /* Fullscreen styles */
         :fullscreen body { background-color: #0f172a; }
         :fullscreen #main-header { display: none; }
-        :fullscreen .main-content { padding: 0.5rem; max-width: 100vw; }
 
-        /* Tablet/Landscape Phone optimizations */
+        /* Mobile Optimization for Landscape */
         @media (max-height: 500px) and (orientation: landscape) {
-            #main-header { display: none !important; }
-            .grid-container { grid-template-columns: 200px 1fr !important; gap: 0.5rem !important; }
+            .grid-container { grid-template-columns: 180px 1fr !important; gap: 0.5rem !important; }
             #guidance-box { padding: 0.5rem !important; min-height: unset !important; }
-            #guidance-text { font-size: 0.85rem !important; }
-            .struct-panel { min-height: unset !important; height: 100%; }
+            #guidance-text { font-size: 0.8rem !important; }
+            .struct-panel { height: 100%; min-height: unset !important; }
+            #main-header { padding: 0.25rem 0.75rem !important; margin-bottom: 0.5rem !important; }
+            #main-header h1 { font-size: 0.9rem !important; }
+        }
+
+        .example-scroll-hint {
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            width: 40px;
+            background: linear-gradient(to right, transparent, white);
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        #case-selector::-webkit-scrollbar { display: none; }
+        #case-selector { 
+            -ms-overflow-style: none; 
+            scrollbar-width: none; 
+            scroll-behavior: smooth;
         }
 
         .struct-line { stroke: #334155; stroke-width: 2.2; }
-        .struct-text { font-family: 'Inter', sans-serif; font-weight: 700; font-size: 18px; fill: #1e293b; }
-        
+        .struct-text { font-family: 'Roboto', sans-serif; font-weight: 700; font-size: 18px; fill: #1e293b; }
         .symbol-draw { stroke-width: 2.5; fill: none; }
-        .symbol-fill { transition: opacity 0.5s ease; }
-
         .ion-bracket { stroke: #334155; stroke-width: 3; fill: none; stroke-linecap: round; }
         .ion-charge { font-weight: bold; font-size: 1.6rem; fill: #1e293b; }
-        
         .struct-bracket { stroke: #000000; stroke-width: 2; fill: none; }
         .struct-charge { font-size: 16px; font-weight: bold; fill: #1e293b; }
-        
-        /* Hide scrollbar but keep functionality */
-        #case-selector::-webkit-scrollbar { display: none; }
-        #case-selector { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* Touch State Visual Feedback */
+        .active-touch {
+            transform: scale(0.96);
+            opacity: 0.8;
+        }
     </style>
 </head>
 <body class="p-2 md:p-4">
     <div id="app-wrapper" class="max-w-7xl mx-auto flex flex-col h-full w-full">
-        <!-- Header: Hidden in landscape mobile / Fullscreen -->
+        <!-- Header -->
         <header id="main-header" class="mb-3 flex justify-between items-center bg-white p-3 rounded-xl shadow-sm border border-slate-200">
-            <div>
-                <h1 class="text-lg md:text-2xl font-bold text-slate-800">Dative Covalent Bonds</h1>
-                <p class="text-[10px] md:text-xs text-slate-500 uppercase tracking-wider">Formation Simulation</p>
+            <div class="overflow-hidden">
+                <h1 class="text-sm md:text-2xl font-black text-slate-800 truncate tracking-tight">Dative Covalent Bonds</h1>
+                <p class="hidden xs:block text-[8px] md:text-xs text-slate-500 uppercase font-bold tracking-widest">Interactive Visualization</p>
             </div>
-            <button id="fullscreen-btn" class="p-2 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors flex items-center gap-2 text-xs font-semibold text-slate-600">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
-                <span>Toggle Full Screen</span>
+            <!-- Enhanced Touch Target for Mobile Fullscreen -->
+            <button id="fullscreen-btn" class="flex-shrink-0 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg transition-all flex items-center gap-2 text-[11px] md:text-sm font-bold ml-2 shadow-sm touch-manipulation">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+                <span class="hidden sm:inline">Full Screen</span>
             </button>
         </header>
 
         <div class="grid-container grid grid-cols-1 lg:grid-cols-4 gap-3 flex-grow overflow-hidden">
-            <!-- Sidebar: Structural Formula -->
+            <!-- Structural Panel -->
             <div class="lg:col-span-1 flex flex-col gap-3 overflow-hidden">
-                <div class="struct-panel bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex flex-col flex-grow overflow-hidden">
-                    <p class="text-[10px] font-bold text-slate-400 mb-2 uppercase tracking-widest text-center">Structural Formula</p>
-                    <div id="struct-svg-container" class="flex-grow flex items-center justify-center min-h-0"></div>
+                <div class="struct-panel bg-white p-2 rounded-xl border border-slate-200 shadow-sm flex flex-col flex-grow overflow-hidden">
+                    <p class="text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest text-center border-b pb-1">Structural Formula</p>
+                    <div id="struct-svg-container" class="flex-grow flex items-center justify-center min-h-0 w-full overflow-visible"></div>
                 </div>
             </div>
 
-            <!-- Main Content: Viz + Controls -->
+            <!-- Visualization Content -->
             <div class="lg:col-span-3 flex flex-col gap-3 overflow-hidden">
-                <div class="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col flex-grow overflow-hidden p-2">
-                    <!-- Integrated Selector (Always Visible) -->
-                    <div class="flex items-center gap-2 border-b border-slate-100 pb-2 mb-2">
-                        <span class="text-[9px] font-bold text-slate-400 uppercase vertical-text whitespace-nowrap px-1">Examples</span>
-                        <div id="case-selector" class="flex gap-2 overflow-x-auto flex-grow no-scrollbar">
-                            <!-- Buttons injected here -->
+                <div class="bg-white rounded-xl shadow-md border-2 border-white flex flex-col flex-grow overflow-hidden">
+                    
+                    <!-- SELECTOR BAR -->
+                    <div class="bg-slate-50 p-2 md:p-3 border-b border-slate-200 shrink-0">
+                        <div class="flex items-center gap-3 relative">
+                            <div class="flex flex-col shrink-0 pr-2 border-r border-slate-300">
+                                <span class="text-[9px] font-black text-blue-600 uppercase">Change</span>
+                                <span class="text-[9px] font-black text-slate-500 uppercase">Example</span>
+                            </div>
+                            <div class="relative flex-grow overflow-hidden">
+                                <div id="case-selector" class="flex gap-4 overflow-x-auto py-1 px-1">
+                                    <!-- Dynamic Buttons -->
+                                </div>
+                                <div class="example-scroll-hint"></div>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="canvas-container bg-slate-50 border border-slate-100 rounded-lg">
-                        <svg id="main-svg" viewBox="0 0 800 450" class="w-full h-full">
-                            <g id="drawing-area">
-                                <g id="donor-group" class="move-transition"></g>
-                                <g id="acceptor-group" class="move-transition"></g>
-                                <g id="lone-pair-group" class="move-transition"></g>
-                            </g>
-                        </svg>
+                    <div class="p-2 flex-grow flex flex-col min-h-0">
+                        <div class="canvas-container bg-slate-50 border border-slate-100 rounded-lg flex-grow relative">
+                            <svg id="main-svg" viewBox="0 0 840 480" class="w-full h-full" preserveAspectRatio="xMidYMid meet">
+                                <g id="drawing-area" transform="translate(20, 15)">
+                                    <g id="donor-group" class="move-transition"></g>
+                                    <g id="acceptor-group" class="move-transition"></g>
+                                    <g id="lone-pair-group" class="move-transition"></g>
+                                </g>
+                            </svg>
+                        </div>
                     </div>
                 </div>
 
-                <div id="guidance-box" class="bg-white p-3 md:p-4 rounded-xl shadow-sm border border-slate-200 flex items-center">
-                    <p id="guidance-text" class="text-xs md:text-base text-slate-700 text-center w-full leading-tight font-medium"></p>
+                <div id="guidance-box" class="bg-white p-3 md:p-4 rounded-xl shadow-sm border-l-4 border-l-blue-500 flex items-center min-h-[60px] shrink-0">
+                    <p id="guidance-text" class="text-sm md:text-lg text-slate-700 text-center w-full leading-tight font-medium"></p>
                 </div>
 
-                <div class="flex justify-between items-center bg-slate-900 p-2 md:p-3 rounded-xl text-white">
-                    <button id="prev-btn" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg disabled:opacity-30 transition-colors text-xs md:text-sm">Back</button>
-                    <div id="step-indicator" class="font-mono text-[10px] md:text-sm">STEP 1 / 3</div>
-                    <button id="next-btn" class="px-5 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg disabled:opacity-30 transition-colors text-xs md:text-sm font-bold">Continue</button>
+                <div class="flex justify-between items-center bg-slate-900 p-2 md:p-3 rounded-xl text-white shadow-lg shrink-0">
+                    <button id="prev-btn" class="px-4 sm:px-6 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg disabled:opacity-20 transition-all text-[10px] md:text-sm font-bold border border-slate-700">Back</button>
+                    <div id="step-indicator" class="font-mono text-[9px] md:text-sm tracking-widest text-blue-400 font-bold uppercase">Step 1 / 3</div>
+                    <button id="next-btn" class="px-5 sm:px-8 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg disabled:opacity-20 transition-all text-[10px] md:text-sm font-black uppercase tracking-wider">Next Step</button>
                 </div>
             </div>
         </div>
@@ -144,17 +189,14 @@
         const DONOR_MOL_COLOR = '#3b82f6', ACCEPTOR_MOL_COLOR = '#f59e0b', DATIVE_COLOR = '#ef4444';
 
         const getCrossSVG = (color, size = 4.5, weight = 2.5) => `<path d="M-${size},-${size} L${size},${size} M-${size},${size} L${size},-${size}" stroke="${color}" stroke-width="${weight}" fill="none" class="symbol-draw" />`;
-        const getDotSVG = (color) => `<circle cx="0" cy="0" r="4.5" fill="${color}" class="symbol-fill" />`;
+        const getDotSVG = (color) => `<circle cx="0" cy="0" r="4.5" fill="${color}" />`;
         const getCircleSVG = (color) => `<circle cx="0" cy="0" r="5" fill="white" stroke="${color}" stroke-width="2.2" class="symbol-draw" />`;
 
         function getInternalBrackets(radius, charge, isLarge = false) {
             if (!charge) return '';
-            const pad = isLarge ? 110 : 25, hPad = isLarge ? 160 : 25, hook = 20;
+            const pad = isLarge ? 115 : 30, hPad = isLarge ? 170 : 30, hook = 20;
             const left = -radius - hPad, right = radius + hPad, top = -radius - pad, bottom = radius + pad;
-            return `<g class="bracket-internal">
-                <path d="M ${left + hook},${top} L ${left},${top} L ${left},${bottom} L ${left + hook},${bottom}" class="ion-bracket" />
-                <path d="M ${right - hook},${top} L ${right},${top} L ${right},${bottom} L ${right - hook},${bottom}" class="ion-bracket" />
-                <text x="${right + 8}" y="${top + 18}" class="ion-charge">${charge}</text></g>`;
+            return `<g><path d="M ${left + hook},${top} L ${left},${top} L ${left},${bottom} L ${left + hook},${bottom}" class="ion-bracket" /><path d="M ${right - hook},${top} L ${right},${top} L ${right},${bottom} L ${right - hook},${bottom}" class="ion-bracket" /><text x="${right + 8}" y="${top + 18}" class="ion-charge">${charge}</text></g>`;
         }
 
         function getAtomHtml(color, label, radius = MAIN_RADIUS) {
@@ -219,14 +261,13 @@
         };
 
         function renderRefinedStruct(step, dSym, aSym, dNeighbors, aNeighbors, arrowColor, isIon=false, charge='', dIsIon=false, aIsIon=false) {
-            const isMerged = step === 2, cx = 130, cy = 110, unit = 32, dX = isMerged ? -20 : -38, aX = isMerged ? 20 : 38;
+            const isMerged = step === 2, cx = 150, cy = 110, unit = 32, dX = isMerged ? -20 : -55, aX = isMerged ? 20 : 55;
             const drawBonds = (neighbors, side, molColor) => {
                 let html = ''; const positions = neighbors.length === 3 ? [{x:0, y:-12, dx:0, dy:-unit+14},{x:side==='L'?-12:12, y:0, dx:side==='L'?-unit+14:unit-14, dy:0},{x:0, y:12, dx:0, dy:unit-14}] : (neighbors.length === 2 ? [{x:side==='L'?-12:12, y:0, dx:side==='L'?-unit+14:unit-14, dy:0},{x:0, y:12, dx:0, dy:unit-14}] : (neighbors.length === 1 ? [{x:side==='L'?-12:12, y:0, dx:side==='L'?-unit+14:unit-14, dy:0}] : []));
-                neighbors.forEach((sym, i) => { const p = positions[i]; html += `<line x1="${p.x}" y1="${p.y}" x2="${p.x+p.dx}" y2="${p.y+p.dy}" class="struct-line" /><text x="${p.x+p.dx+(p.dx>0?8:(p.dx<0?-8:0))}" y="${p.y+p.dy+(p.dy>0?14:(p.dy<0?-6:7))}" text-anchor="middle" class="struct-text" style="fill:${molColor}">${sym}</text>`; });
+                neighbors.forEach((sym, i) => { const p = positions[i]; html += `<line x1="${p.x}" y1="${p.y}" x2="${p.x+p.dx}" y2="${p.y+p.dy}" class="struct-line" /><text x="${p.x+p.dx+(p.dx>0?8:(p.dx<0?-8:0))}" y="${p.y+p.dy+(p.dy>0 ? 14 : (p.dy<0 ? -6 : 7))}" text-anchor="middle" class="struct-text" style="fill:${molColor}">${sym}</text>`; });
                 return html;
             };
-            const atomBracket = (sign) => `<g><path d="M -18,-24 L -22,-24 L -22,24 L -18,24" class="struct-bracket" /><path d="M 18,-24 L 22,-24 L 22,24 L 18,24" class="struct-bracket" /><text x="28" y="-12" class="struct-charge">${sign}</text></g>`;
-            return `<svg width="100%" height="100%" viewBox="0 0 260 220" preserveAspectRatio="xMidYMid meet"><defs><marker id="arr" markerWidth="6" markerHeight="6" refX="4" refY="3" orient="auto"><polygon points="0 0, 4 3, 0 6" fill="${arrowColor}"/></marker></defs><g transform="translate(${cx}, ${cy})">${(isMerged && isIon) ? `<g><path d="M -85,-75 L -95,-75 L -95,80 L -85,80" class="struct-bracket" /><path d="M 85,-75 L 95,-75 L 95,80 L 85,80" class="struct-bracket" /><text x="100" y="-60" class="ion-charge" style="fill:#000">${charge}</text></g>` : ''}<g transform="translate(${dX}, 0)"><text x="0" y="7" text-anchor="middle" class="struct-text" style="fill:${DONOR_MOL_COLOR}">${dSym}</text>${drawBonds(dNeighbors, 'L', DONOR_MOL_COLOR)}${(!isMerged) ? `<g transform="translate(15,0)"><g transform="translate(0,-5)">${getCrossSVG(arrowColor, 3, 2)}</g><g transform="translate(0,5)">${getCrossSVG(arrowColor, 3, 2)}</g></g>` : ''}${(!isMerged && dIsIon) ? atomBracket(charge) : ''}</g><g transform="translate(${aX}, 0)"><text x="0" y="7" text-anchor="middle" class="struct-text" style="fill:${ACCEPTOR_MOL_COLOR}">${aSym}</text>${drawBonds(aNeighbors, 'R', ACCEPTOR_MOL_COLOR)}${(!isMerged && aIsIon) ? atomBracket(charge) : ''}</g>${isMerged ? `<line x1="${dX+10}" y1="0" x2="${aX-8}" y2="0" stroke="${arrowColor}" stroke-width="2.5" marker-end="url(#arr)"/>` : ''}</g></svg>`;
+            return `<svg width="100%" height="100%" viewBox="0 0 300 220" preserveAspectRatio="xMidYMid meet" style="overflow:visible"><defs><marker id="arr" markerWidth="6" markerHeight="6" refX="4" refY="3" orient="auto"><polygon points="0 0, 4 3, 0 6" fill="${arrowColor}"/></marker></defs><g transform="translate(${cx}, ${cy})">${(isMerged && isIon) ? `<g><path d="M -115,-85 L -125,-85 L -125,90 L -115,90" class="struct-bracket" /><path d="M 115,-85 L 125,-85 L 125,90 L 115,90" class="struct-bracket" /><text x="135" y="-70" class="ion-charge" style="fill:#000">${charge}</text></g>` : ''}<g transform="translate(${dX}, 0)"><text x="0" y="7" text-anchor="middle" class="struct-text" style="fill:${DONOR_MOL_COLOR}">${dSym}</text>${drawBonds(dNeighbors, 'L', DONOR_MOL_COLOR)}${(!isMerged) ? `<g transform="translate(15,0)"><g transform="translate(0,-5)">${getCrossSVG(arrowColor, 3, 2)}</g><g transform="translate(0,5)">${getCrossSVG(arrowColor, 3, 2)}</g></g>` : ''}</g><g transform="translate(${aX}, 0)"><text x="0" y="7" text-anchor="middle" class="struct-text" style="fill:${ACCEPTOR_MOL_COLOR}">${aSym}</text>${drawBonds(aNeighbors, 'R', ACCEPTOR_MOL_COLOR)}</g>${isMerged ? `<line x1="${dX+10}" y1="0" x2="${aX-8}" y2="0" stroke="${arrowColor}" stroke-width="2.5" marker-end="url(#arr)"/>` : ''}</g></svg>`;
         }
 
         let currentKey = 'nh3bf3', currentStep = 0;
@@ -237,7 +278,7 @@
 
         Object.keys(cases).forEach(key => {
             const btn = document.createElement('button');
-            btn.className = "whitespace-nowrap px-3 py-1.5 rounded-full border border-slate-200 bg-white text-slate-700 text-[10px] md:text-xs font-semibold shadow-sm transition-all active:scale-95";
+            btn.className = "example-btn whitespace-nowrap px-6 py-3 rounded-lg border-2 text-base md:text-xl font-black transition-all transform active:scale-95 shadow-sm";
             btn.innerHTML = formatChem(cases[key].name);
             btn.onclick = () => { currentKey = key; currentStep = 0; update(); };
             caseSelector.appendChild(btn);
@@ -248,20 +289,46 @@
             guidanceText.innerText = currentStep === 0 ? `${c.donor} atom in ${c.dMol} contains lone pair electron.` : (currentStep === 1 ? `While ${c.acceptor} atom in ${c.aMol} outermost electron shell is not fully filled, which has a vacant site to accept the electron.` : `${c.acceptor} atom in ${c.aMol} accepts the lone pair electron from ${c.donor} atom in ${c.dMol} to form dative covalent bond, so that ${c.acceptor.toLowerCase()} atom in ${c.final} attains a stable ${c.octet} structure.`);
             document.getElementById('step-indicator').innerText = `STEP ${currentStep + 1} / 3`;
             document.getElementById('prev-btn').disabled = currentStep === 0; document.getElementById('next-btn').disabled = currentStep === 2;
+            
             Array.from(caseSelector.children).forEach(b => {
                 const isActive = b.innerHTML === formatChem(c.name);
-                b.className = isActive ? "whitespace-nowrap px-3 py-1.5 rounded-full border border-blue-500 bg-blue-600 text-white text-[10px] md:text-xs font-bold shadow-md" : "whitespace-nowrap px-3 py-1.5 rounded-full border border-slate-200 bg-white text-slate-700 text-[10px] md:text-xs font-semibold shadow-sm hover:border-blue-300";
+                b.className = isActive 
+                    ? "example-btn whitespace-nowrap px-6 py-3 rounded-lg border-blue-600 bg-blue-600 text-white text-base md:text-xl font-black shadow-md ring-4 ring-blue-100" 
+                    : "example-btn whitespace-nowrap px-6 py-3 rounded-lg border-slate-300 bg-white text-slate-700 text-base md:text-xl font-bold shadow-sm hover:border-blue-400 hover:text-blue-600";
             });
         }
 
-        document.getElementById('fullscreen-btn').onclick = () => {
-            const wrapper = document.documentElement;
-            if (!document.fullscreenElement) wrapper.requestFullscreen?.() || wrapper.webkitRequestFullscreen?.();
-            else document.exitFullscreen?.() || document.webkitExitFullscreen?.();
-        };
+        /* ROBUST MOBILE FULLSCREEN HANDLING */
+        const fsBtn = document.getElementById('fullscreen-btn');
+        
+        function toggleFullScreen() {
+            const doc = document.documentElement;
+            const requestFS = doc.requestFullscreen || doc.webkitRequestFullscreen || doc.mozRequestFullScreen || doc.msRequestFullscreen;
+            const exitFS = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen || document.msExitFullscreen;
+
+            if (!document.fullscreenElement && !document.webkitFullscreenElement && !document.mozFullScreenElement && !document.msFullscreenElement) {
+                if (requestFS) requestFS.call(doc).catch(e => console.error(e));
+            } else {
+                if (exitFS) exitFS.call(document);
+            }
+        }
+
+        // Use touchstart for immediate mobile response
+        fsBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault(); // Prevent double trigger with click
+            fsBtn.classList.add('active-touch');
+            toggleFullScreen();
+        }, {passive: false});
+
+        fsBtn.addEventListener('touchend', () => {
+            fsBtn.classList.remove('active-touch');
+        });
+
+        fsBtn.onclick = toggleFullScreen;
 
         document.getElementById('prev-btn').onclick = () => { if(currentStep > 0) { currentStep--; update(); }};
         document.getElementById('next-btn').onclick = () => { if(currentStep < 2) { currentStep++; update(); }};
+        
         window.onload = () => {
             update();
             const setHeight = () => document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`);
