@@ -68,6 +68,7 @@
 
         #visual-area {
             transition: gap 0.8s ease-in-out;
+            max-width: 100%;
         }
 
         .merge-gap {
@@ -75,11 +76,12 @@
         }
 
         .merged-style {
-            padding-left: 0.25rem !important;
-            padding-right: 0.25rem !important;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
             border-color: transparent !important;
             background-color: transparent !important;
             background: none !important;
+            min-width: 0 !important;
         }
 
         /* Strike-through animation */
@@ -131,6 +133,18 @@
         .animate-success {
             animation: pulse-success 0.5s ease-in-out;
         }
+
+        /* Mobile specific fixes */
+        @media (max-width: 640px) {
+            #visual-area {
+                gap: 1rem;
+                font-size: 2.25rem;
+            }
+            .ion-box-mobile {
+                padding: 0.75rem !important;
+                min-width: 80px !important;
+            }
+        }
     </style>
 </head>
 <body class="p-4 md:p-8">
@@ -161,20 +175,20 @@
     </div>
 
     <!-- Simulation View -->
-    <div id="simulation-view" class="mt-8 bg-white p-8 rounded-2xl shadow-xl border border-slate-200 hidden">
+    <div id="simulation-view" class="mt-8 bg-white p-4 md:p-8 rounded-2xl shadow-xl border border-slate-200 hidden">
         <div class="flex justify-between items-center mb-8">
             <h2 id="step-title" class="text-2xl font-bold text-slate-800">Step 1: Identify Charges</h2>
             <button id="reset-btn" class="text-slate-500 hover:text-red-600 text-sm font-medium">Cancel & Reset</button>
         </div>
 
         <div class="step-container flex flex-col items-center justify-center relative overflow-visible">
-            <div id="visual-area" class="flex items-center gap-24 md:gap-48 text-5xl md:text-7xl font-bold mb-12 relative">
-                <div id="v-cation" class="relative p-6 rounded-2xl bg-blue-50 border-2 border-blue-200 text-blue-800 transition-all duration-500 min-w-[120px] text-center"></div>
+            <div id="visual-area" class="flex items-center gap-12 md:gap-48 text-5xl md:text-7xl font-bold mb-12 relative w-full justify-center">
+                <div id="v-cation" class="ion-box-mobile relative p-6 rounded-2xl bg-blue-50 border-2 border-blue-200 text-blue-800 transition-all duration-500 min-w-[100px] md:min-w-[120px] text-center"></div>
                 <div id="v-operator" class="text-slate-300 transition-opacity duration-500">+</div>
-                <div id="v-anion" class="relative p-6 rounded-2xl bg-red-50 border-2 border-red-200 text-red-800 transition-all duration-500 min-w-[120px] text-center"></div>
+                <div id="v-anion" class="ion-box-mobile relative p-6 rounded-2xl bg-red-50 border-2 border-red-200 text-red-800 transition-all duration-500 min-w-[100px] md:min-w-[120px] text-center"></div>
             </div>
 
-            <div id="step-description" class="text-center max-w-2xl bg-slate-50 p-6 rounded-xl border border-slate-100 min-h-[100px]">
+            <div id="step-description" class="text-center w-full max-w-2xl bg-slate-50 p-6 rounded-xl border border-slate-100 min-h-[100px]">
                 <p class="text-lg text-slate-700"></p>
             </div>
         </div>
@@ -345,8 +359,8 @@
                 vOp.style.display = "block";
                 vArea.classList.remove('merge-gap');
                 vArea.classList.remove('animate-success');
-                vCation.className = "relative p-6 rounded-2xl bg-blue-50 border-2 border-blue-200 text-blue-800 transition-all duration-500 min-w-[120px] text-center";
-                vAnion.className = "relative p-6 rounded-2xl bg-red-50 border-2 border-red-200 text-red-800 transition-all duration-500 min-w-[120px] text-center";
+                vCation.className = "ion-box-mobile relative p-6 rounded-2xl bg-blue-50 border-2 border-blue-200 text-blue-800 transition-all duration-500 min-w-[100px] md:min-w-[120px] text-center";
+                vAnion.className = "ion-box-mobile relative p-6 rounded-2xl bg-red-50 border-2 border-red-200 text-red-800 transition-all duration-500 min-w-[100px] md:min-w-[120px] text-center";
                 desc.innerHTML = `We have <strong>${selectedCation.name}</strong> and <strong>${selectedAnion.name}</strong>. Let's look at their charges.`;
                 nextBtn.innerText = "Cross Charges";
                 break;
@@ -366,18 +380,19 @@
                     const aChargeEl = document.getElementById('a-charge');
                     const cRect = cChargeEl.getBoundingClientRect();
                     const aRect = aChargeEl.getBoundingClientRect();
+                    const scrollY = window.scrollY;
 
                     const floatC = document.createElement('div');
                     floatC.className = 'moving-charge text-blue-600 font-bold text-4xl';
                     floatC.innerText = catVal;
                     floatC.style.left = `${cRect.left}px`;
-                    floatC.style.top = `${cRect.top}px`;
+                    floatC.style.top = `${cRect.top + scrollY}px`;
                     
                     const floatA = document.createElement('div');
                     floatA.className = 'moving-charge text-red-600 font-bold text-4xl';
                     floatA.innerText = aniVal;
                     floatA.style.left = `${aRect.left}px`;
-                    floatA.style.top = `${aRect.top}px`;
+                    floatA.style.top = `${aRect.top + scrollY}px`;
 
                     document.body.appendChild(floatC);
                     document.body.appendChild(floatA);
@@ -388,12 +403,12 @@
                     setTimeout(() => {
                         const catContainer = vCation.getBoundingClientRect();
                         const aniContainer = vAnion.getBoundingClientRect();
-                        floatC.style.left = `${aniContainer.right - 25}px`;
-                        floatC.style.top = `${aniContainer.bottom - 25}px`;
-                        floatC.style.fontSize = '1.8rem';
-                        floatA.style.left = `${catContainer.right - 25}px`;
-                        floatA.style.top = `${catContainer.bottom - 25}px`;
-                        floatA.style.fontSize = '1.8rem';
+                        floatC.style.left = `${aniContainer.right - (window.innerWidth < 640 ? 15 : 25)}px`;
+                        floatC.style.top = `${aniContainer.bottom - (window.innerWidth < 640 ? 15 : 25) + scrollY}px`;
+                        floatC.style.fontSize = window.innerWidth < 640 ? '1.4rem' : '1.8rem';
+                        floatA.style.left = `${catContainer.right - (window.innerWidth < 640 ? 15 : 25)}px`;
+                        floatA.style.top = `${catContainer.bottom - (window.innerWidth < 640 ? 15 : 25) + scrollY}px`;
+                        floatA.style.fontSize = window.innerWidth < 640 ? '1.4rem' : '1.8rem';
                     }, 50);
                 }, 100);
 
