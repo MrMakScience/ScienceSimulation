@@ -28,7 +28,7 @@
 
         @media (max-width: 768px) {
             .lab-bench {
-                height: 580px;
+                height: 640px; /* Increased height for vertical view */
             }
         }
 
@@ -216,7 +216,7 @@
 
         @media (max-width: 768px) {
             .pickup-wire-container {
-                bottom: 80px; /* Moved up for mobile */
+                bottom: 80px; 
                 left: 10px;
             }
         }
@@ -235,7 +235,7 @@
         
         @media (max-width: 768px) {
             .wire-placeholder {
-                bottom: 80px; /* Moved up for mobile */
+                bottom: 80px; 
                 left: 10px;
             }
         }
@@ -270,8 +270,8 @@
 
         @media (max-width: 768px) {
             .hcl-station {
-                bottom: 80px;
-                left: 60%; 
+                bottom: 220px; /* Moved much higher to separate from handle */
+                left: 35%; /* Centered slightly more */
                 flex-direction: column-reverse; 
                 gap: 4px;
             }
@@ -643,20 +643,26 @@
         }
 
         function handleActiveInteractions(clientX, clientY) {
+            const benchRect = bench.getBoundingClientRect();
             const staticHandle = placeholder.getBoundingClientRect();
-            const dropBuffer = 60;
+            
+            // Define Return Area: Must be near the original placeholder 
+            // In mobile, we restrict it to the bottom-left corner only
+            const isMobile = window.innerWidth < 768;
+            const returnBuffer = isMobile ? 80 : 60;
+            const inReturnZone = (clientX >= staticHandle.left - returnBuffer && clientX <= staticHandle.right + returnBuffer && 
+                                  clientY >= staticHandle.top - returnBuffer && clientY <= staticHandle.bottom + returnBuffer);
 
-            if (clientX >= staticHandle.left - dropBuffer && clientX <= staticHandle.right + dropBuffer && 
-                clientY >= staticHandle.top - dropBuffer && clientY <= staticHandle.bottom + dropBuffer) {
+            if (inReturnZone) {
                 dropWire();
                 return;
             }
 
             const tipRect = activeTip.getBoundingClientRect();
 
-            // HCl Collision - Increased buffer for phone convenience
+            // HCl Collision
             const hclArea = document.getElementById('hcl-target-area').getBoundingClientRect();
-            const hclBuffer = window.innerWidth < 768 ? 40 : 20;
+            const hclBuffer = isMobile ? 30 : 20; 
             if (isColliding(tipRect, hclArea, hclBuffer)) {
                 state.isWet = true;
                 state.activeSample = null;
@@ -672,9 +678,9 @@
             const sampleElements = document.querySelectorAll('.sample-target');
             for (let el of sampleElements) {
                 const rect = el.getBoundingClientRect();
-                const vertBuffer = window.innerWidth < 768 ? 5 : 10;
+                const sampleBuffer = isMobile ? 15 : 10;
 
-                if (isColliding(tipRect, rect, vertBuffer)) {
+                if (isColliding(tipRect, rect, sampleBuffer)) {
                     const type = el.dataset.type;
                     
                     if (state.activeSample || !state.isWet) {
