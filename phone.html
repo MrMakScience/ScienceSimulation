@@ -76,7 +76,6 @@
         
         #hammerIcon {
             position: absolute;
-            left: -100px;
             top: 20px; 
             font-size: 70px;
             pointer-events: none;
@@ -84,19 +83,22 @@
             opacity: 0;
             z-index: 20;
             filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.2));
+            /* Default Desktop left position */
+            left: -100px;
         }
 
         /* Mobile specific adjustments for the hammer */
         @media (max-width: 640px) {
             #hammerIcon {
-                left: -40px; /* Bring it closer so it's not off-screen */
-                font-size: 50px; /* Scale down for smaller screens */
-                top: 10px;
+                /* Use a percentage or smaller negative value to keep it in the viewport */
+                left: 10px; 
+                font-size: 50px; 
+                top: 5px;
             }
             @keyframes strike {
                 0% { transform: scaleX(-1) translate(0, 0) rotate(45deg); }
-                70% { transform: scaleX(-1) translate(50px, 40px) rotate(-15deg); }
-                100% { transform: scaleX(-1) translate(45px, 45px) rotate(-10deg); }
+                70% { transform: scaleX(-1) translate(40px, 40px) rotate(-15deg); }
+                100% { transform: scaleX(-1) translate(35px, 45px) rotate(-10deg); }
             }
         }
 
