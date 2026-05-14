@@ -103,10 +103,10 @@
                         </div>
                     </div>
 
-                    <!-- Calculation Box -->
-                    <div class="mb-6 p-4 bg-slate-50 rounded-xl border border-slate-200 overflow-x-auto">
+                    <!-- Calculation Box - UPDATED FOR MOBILE RESPONSIVENESS -->
+                    <div class="mb-6 p-4 bg-slate-50 rounded-xl border border-slate-200">
                         <div class="text-[10px] uppercase font-bold text-slate-400 mb-2 tracking-wider">Weighted Average Calculation</div>
-                        <div id="ram-calculation" class="font-mono text-xs md:text-sm text-slate-600 whitespace-nowrap">
+                        <div id="ram-calculation" class="font-mono text-xs md:text-sm text-slate-600 break-words leading-relaxed overflow-hidden">
                             <!-- Calculation string populated by JS -->
                         </div>
                     </div>
@@ -139,48 +139,48 @@
     <script>
         const elements = [
             { name: "Hydrogen", symbol: "H", isotopes: [
-                { mass: 1.0078, abundance: 99.98, color: "#bfdbfe", label: "H-1" }, // Light Blue
-                { mass: 2.0141, abundance: 0.02, color: "#1d4ed8", label: "H-2" }  // Dark Blue
+                { mass: 1.0078, abundance: 99.98, color: "#bfdbfe", label: "H-1" },
+                { mass: 2.0141, abundance: 0.02, color: "#1d4ed8", label: "H-2" }
             ]},
             { name: "Helium", symbol: "He", isotopes: [
-                { mass: 3.0160, abundance: 0.0001, color: "#fef3c7", label: "He-3" }, // Pale Yellow
-                { mass: 4.0026, abundance: 99.9999, color: "#b45309", label: "He-4" }  // Burnt Orange/Amber
+                { mass: 3.0160, abundance: 0.0001, color: "#fef3c7", label: "He-3" },
+                { mass: 4.0026, abundance: 99.9999, color: "#b45309", label: "He-4" }
             ]},
             { name: "Lithium", symbol: "Li", isotopes: [
-                { mass: 6.0151, abundance: 7.5, color: "#fee2e2", label: "Li-6" }, // Light Red
-                { mass: 7.0160, abundance: 92.5, color: "#b91c1c", label: "Li-7" }  // Deep Red
+                { mass: 6.0151, abundance: 7.5, color: "#fee2e2", label: "Li-6" },
+                { mass: 7.0160, abundance: 92.5, color: "#b91c1c", label: "Li-7" }
             ]},
             { name: "Carbon", symbol: "C", isotopes: [
-                { mass: 12.0000, abundance: 98.93, color: "#cbd5e1", label: "C-12" }, // Light Slate
-                { mass: 13.0033, abundance: 1.07, color: "#1e293b", label: "C-13" }  // Very Dark Slate
+                { mass: 12.0000, abundance: 98.93, color: "#cbd5e1", label: "C-12" },
+                { mass: 13.0033, abundance: 1.07, color: "#1e293b", label: "C-13" }
             ]},
             { name: "Oxygen", symbol: "O", isotopes: [
-                { mass: 15.9949, abundance: 99.76, color: "#dcfce7", label: "O-16" }, // Mint Green
-                { mass: 16.9991, abundance: 0.04, color: "#22c55e", label: "O-17" }, // Mid Green
-                { mass: 17.9991, abundance: 0.20, color: "#14532d", label: "O-18" }  // Deep Forest Green
+                { mass: 15.9949, abundance: 99.76, color: "#dcfce7", label: "O-16" },
+                { mass: 16.9991, abundance: 0.04, color: "#22c55e", label: "O-17" },
+                { mass: 17.9991, abundance: 0.20, color: "#14532d", label: "O-18" }
             ]},
             { name: "Neon", symbol: "Ne", isotopes: [
-                { mass: 19.9924, abundance: 90.48, color: "#fce7f3", label: "Ne-20" }, // Light Pink
-                { mass: 20.9938, abundance: 0.27, color: "#ec4899", label: "Ne-21" }, // Hot Pink
-                { mass: 21.9913, abundance: 9.25, color: "#831843", label: "Ne-22" }  // Deep Maroon
+                { mass: 19.9924, abundance: 90.48, color: "#fce7f3", label: "Ne-20" },
+                { mass: 20.9938, abundance: 0.27, color: "#ec4899", label: "Ne-21" },
+                { mass: 21.9913, abundance: 9.25, color: "#831843", label: "Ne-22" }
             ]},
             { name: "Magnesium", symbol: "Mg", isotopes: [
-                { mass: 23.9850, abundance: 78.99, color: "#ede9fe", label: "Mg-24" }, // Pale Violet
-                { mass: 24.9858, abundance: 10.00, color: "#8b5cf6", label: "Mg-25" }, // Purple
-                { mass: 25.9825, abundance: 11.01, color: "#4c1d95", label: "Mg-26" }  // Dark Purple
+                { mass: 23.9850, abundance: 78.99, color: "#ede9fe", label: "Mg-24" },
+                { mass: 24.9858, abundance: 10.00, color: "#8b5cf6", label: "Mg-25" },
+                { mass: 25.9825, abundance: 11.01, color: "#4c1d95", label: "Mg-26" }
             ]},
             { name: "Chlorine", symbol: "Cl", isotopes: [
-                { mass: 34.9688, abundance: 75.76, color: "#ecfccb", label: "Cl-35" }, // Pale Lime
-                { mass: 36.9659, abundance: 24.24, color: "#3f6212", label: "Cl-37" }  // Dark Olive
+                { mass: 34.9688, abundance: 75.76, color: "#ecfccb", label: "Cl-35" },
+                { mass: 36.9659, abundance: 24.24, color: "#3f6212", label: "Cl-37" }
             ]},
             { name: "Argon", symbol: "Ar", isotopes: [
-                { mass: 35.9675, abundance: 0.33, color: "#cffafe", label: "Ar-36" }, // Very Light Cyan
-                { mass: 37.9627, abundance: 0.06, color: "#06b6d4", label: "Ar-38" }, // Mid Cyan
-                { mass: 39.9623, abundance: 99.61, color: "#164e63", label: "Ar-40" }  // Dark Teal
+                { mass: 35.9675, abundance: 0.33, color: "#cffafe", label: "Ar-36" },
+                { mass: 37.9627, abundance: 0.06, color: "#06b6d4", label: "Ar-38" },
+                { mass: 39.9623, abundance: 99.61, color: "#164e63", label: "Ar-40" }
             ]}
         ];
 
-        let currentElement = elements[3]; // Default Carbon
+        let currentElement = elements[3];
         let currentIsotope = elements[3].isotopes[0];
 
         function init() {
@@ -203,7 +203,6 @@
                 `;
                 btn.onclick = () => {
                     currentElement = el;
-                    // Logic update: find the isotope with the highest abundance for the selected element
                     currentIsotope = [...el.isotopes].sort((a, b) => b.abundance - a.abundance)[0];
                     renderElementList();
                     updateSimulation();
@@ -224,12 +223,10 @@
             document.getElementById('ratio-display').innerText = `1 : ${ratio}`;
             document.getElementById('rim-display').innerText = currentIsotope.mass.toFixed(4);
             
-            // Fix: ensure the symbol on the pan preserves case
             const labelEl = document.getElementById('right-label');
             labelEl.innerText = currentIsotope.label;
             labelEl.classList.add('normal-case');
 
-            // Visual balance tilt - dampened so it doesn't swing too low
             const diff = currentIsotope.mass - 12;
             const angle = Math.max(-12, Math.min(12, diff * 1.2));
             
@@ -237,12 +234,10 @@
             document.getElementById('left-pan').style.transform = `rotate(${-angle}deg)`;
             document.getElementById('right-pan').style.transform = `rotate(${-angle}deg)`;
 
-            // Right pan content
             const rightContent = document.getElementById('right-content');
             rightContent.style.backgroundColor = currentIsotope.color;
             rightContent.innerHTML = `<span class="${isDark(currentIsotope.color) ? 'text-white' : 'text-slate-800'} text-[10px] md:text-xs font-bold normal-case">${currentIsotope.label}</span>`;
             
-            // Left pan content (Carbon-12)
             const leftContent = document.getElementById('left-content');
             leftContent.innerHTML = `<span class="text-slate-600 text-[10px] md:text-xs font-bold">C-12</span>`;
         }
@@ -268,8 +263,8 @@
                 const contribution = (iso.mass * iso.abundance / 100);
                 ram += contribution;
                 
-                // Add to calculation string
-                calcParts.push(`(${iso.mass.toFixed(3)} × ${iso.abundance.toFixed(2)}%)`);
+                // Add to calculation string - simplified slightly for wrapping
+                calcParts.push(`(${iso.mass.toFixed(3)}&times;${iso.abundance.toFixed(2)}%)`);
 
                 const isActive = iso.label === currentIsotope.label;
                 const row = document.createElement('div');
@@ -294,11 +289,14 @@
 
             document.getElementById('ram-badge').innerHTML = `Relative Atomic Mass (A<sub>r</sub>): ${ram.toFixed(4)}`;
             
-            // Build the calculation display
+            // Build the calculation display with flex-wrap friendly spacing
             calcDisplay.innerHTML = `
-                <span class="text-indigo-600 font-bold">A<sub>r</sub></span> = 
-                ${calcParts.join(' + ')} 
-                = <span class="text-emerald-600 font-bold">${ram.toFixed(4)}</span>
+                <span class="text-indigo-600 font-bold inline-block mr-1">A<sub>r</sub></span> = 
+                <span class="inline-flex flex-wrap gap-x-1 items-center">
+                    ${calcParts.join(' + ')} 
+                    <span class="mx-1">=</span>
+                    <span class="text-emerald-600 font-bold">${ram.toFixed(4)}</span>
+                </span>
             `;
         }
 
