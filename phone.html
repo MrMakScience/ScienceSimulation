@@ -13,7 +13,8 @@
         }
 
         body {
-            touch-action: none; /* Prevents scrolling while interacting */
+            touch-action: none;
+            background-color: #f1f5f9;
         }
 
         .lab-bench {
@@ -25,10 +26,10 @@
             cursor: default;
         }
 
-        /* Mobile specific bench height adjustment */
+        /* Mobile Adjustments */
         @media (max-width: 768px) {
             .lab-bench {
-                height: 600px;
+                height: 700px; /* Taller bench for more vertical space */
             }
         }
 
@@ -72,11 +73,10 @@
             height: 180px;
         }
 
-        /* Adjust burner position on mobile to avoid overlap */
         @media (max-width: 768px) {
             .burner-container {
-                left: 70%;
-                bottom: 60px;
+                left: 75%;
+                bottom: 80px;
             }
         }
 
@@ -205,6 +205,13 @@
             z-index: 0;
             box-shadow: inset 0 2px 10px rgba(0,0,0,0.1);
         }
+        
+        @media (max-width: 768px) {
+            .heatproof-mat {
+                height: 140px;
+                bottom: 30px;
+            }
+        }
 
         .pickup-wire-container {
             position: absolute;
@@ -213,6 +220,13 @@
             display: flex;
             align-items: center;
             z-index: 10;
+        }
+
+        @media (max-width: 768px) {
+            .pickup-wire-container {
+                bottom: 80px; /* Raise wire higher on phone */
+                left: 20px;
+            }
         }
 
         .wire-placeholder {
@@ -225,6 +239,13 @@
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.3s;
+        }
+        
+        @media (max-width: 768px) {
+            .wire-placeholder {
+                bottom: 80px;
+                left: 20px;
+            }
         }
 
         .wire-placeholder.active {
@@ -261,11 +282,10 @@
             z-index: 10;
         }
 
-        /* Position HCl above wire on mobile */
         @media (max-width: 768px) {
             .hcl-station {
-                bottom: 110px;
-                left: 40px;
+                bottom: 150px;
+                left: 140px; /* Shifted right for easier dipping on phone */
             }
         }
 
@@ -338,14 +358,6 @@
             pointer-events: none;
         }
 
-        /* Responsive adjustment for watch glass size on mobile */
-        @media (max-width: 768px) {
-            .watch-glass {
-                width: 60px;
-                height: 16px;
-            }
-        }
-
         .sample-tray {
             position: absolute;
             bottom: 40px;
@@ -356,26 +368,17 @@
             z-index: 10;
         }
 
-        /* Switch sample tray to horizontal top row on mobile */
         @media (max-width: 768px) {
             .sample-tray {
-                flex-direction: row;
-                top: 15px;
-                left: 10px;
-                right: 10px;
+                top: 20px;
+                right: 15px;
                 bottom: auto;
-                justify-content: center;
-                gap: 6px;
-                flex-wrap: wrap;
+                left: auto;
+                gap: 8px;
             }
-            
             .sample-target {
-                width: 75px !important; /* Smaller width for horizontal row */
+                width: 110px !important;
                 padding: 6px !important;
-            }
-
-            .sample-target span {
-                font-size: 8px !important;
             }
         }
 
@@ -403,12 +406,6 @@
             height: 6px;
             border-radius: 50%;
             filter: blur(1px);
-        }
-
-        @media (max-width: 768px) {
-            .powder-pile {
-                width: 35px;
-            }
         }
 
         .action-log-container {
@@ -469,7 +466,7 @@
         }
     </style>
 </head>
-<body class="bg-slate-200 p-2 md:p-4 font-sans select-none overflow-hidden">
+<body class="p-2 md:p-4 font-sans select-none overflow-hidden">
 
     <div class="max-w-6xl mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden border-4 border-slate-300 relative">
         <div class="bg-slate-800 p-4 text-white flex flex-col md:flex-row justify-between items-center gap-4">
@@ -529,19 +526,19 @@
                 <div class="sample-tray">
                     <div class="text-center sample-target" data-type="Cu">
                         <div class="watch-glass"><div class="powder-pile bg-emerald-500/90"></div></div>
-                        <span class="text-xs md:text-sm font-black text-white">Sample of Cu<sup>2+</sup></span>
+                        <span class="text-[10px] md:text-sm font-black text-white">Sample of Cu<sup>2+</sup></span>
                     </div>
                     <div class="text-center sample-target" data-type="K">
                         <div class="watch-glass"><div class="powder-pile bg-white"></div></div>
-                        <span class="text-xs md:text-sm font-black text-white">Sample of K<sup>+</sup></span>
+                        <span class="text-[10px] md:text-sm font-black text-white">Sample of K<sup>+</sup></span>
                     </div>
                     <div class="text-center sample-target" data-type="Na">
                         <div class="watch-glass"><div class="powder-pile bg-white"></div></div>
-                        <span class="text-xs md:text-sm font-black text-white">Sample of Na<sup>+</sup></span>
+                        <span class="text-[10px] md:text-sm font-black text-white">Sample of Na<sup>+</sup></span>
                     </div>
                     <div class="text-center sample-target" data-type="Ca">
                         <div class="watch-glass"><div class="powder-pile bg-white"></div></div>
-                        <span class="text-xs md:text-sm font-black text-white">Sample of Ca<sup>2+</sup></span>
+                        <span class="text-[10px] md:text-sm font-black text-white">Sample of Ca<sup>2+</sup></span>
                     </div>
                 </div>
                 
@@ -638,7 +635,7 @@
 
             if (!state.isHoldingWire) {
                 const handleRect = startHandle.getBoundingClientRect();
-                const buffer = 20;
+                const buffer = 30; // Increased buffer for touch
                 if (clientX >= handleRect.left - buffer && clientX <= handleRect.right + buffer && 
                     clientY >= handleRect.top - buffer && clientY <= handleRect.bottom + buffer) {
                     pickUpWire(clientX, clientY);
@@ -675,9 +672,9 @@
 
             const tipRect = activeTip.getBoundingClientRect();
 
-            // Collision detection for HCl
+            // HCl Collision
             const hclArea = document.getElementById('hcl-target-area').getBoundingClientRect();
-            if (isColliding(tipRect, hclArea, 20)) {
+            if (isColliding(tipRect, hclArea, 25)) {
                 state.isWet = true;
                 state.activeSample = null;
                 droplets.style.display = 'block';
@@ -688,10 +685,10 @@
                 return;
             }
 
-            // Sample Tray Collision
+            // Sample Collision
             const sampleElements = document.querySelectorAll('.sample-target');
             for (let el of sampleElements) {
-                if (isColliding(tipRect, el.getBoundingClientRect(), 5)) {
+                if (isColliding(tipRect, el.getBoundingClientRect(), 10)) {
                     const type = el.dataset.type;
                     
                     if (state.activeSample || !state.isWet) {
@@ -821,7 +818,7 @@
                     logEvent(`TESTING ${s.name.toUpperCase()}...`);
                 } else {
                     document.documentElement.style.setProperty('--flame-color', 'rgba(255, 180, 50, 0.9)'); 
-                    logEvent("The luminous flame mask the flame colour of ions. Change to non-luminous flame.");
+                    logEvent("Luminous flame masks ion color. Open air hole.");
                 }
                 activeTip.style.borderColor = '#ff6b6b';
             } else {
