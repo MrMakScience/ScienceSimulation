@@ -23,13 +23,15 @@
             border-bottom: 8px solid #1e293b;
             overflow: hidden;
             touch-action: none;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            padding-bottom: 10px;
         }
 
+        /* The Trough - everything inside is relative to its bottom */
         .trough {
-            position: absolute;
-            bottom: 10px;
-            left: 50%;
-            transform: translateX(-50%);
+            position: relative;
             width: 50%; 
             height: 65%; 
             background: transparent;
@@ -37,10 +39,10 @@
             border-top: none;
             border-bottom-left-radius: 12px;
             border-bottom-right-radius: 12px;
-            z-index: 10; 
-            pointer-events: none; 
+            z-index: 10;
         }
 
+        /* Water body is 70% height of trough */
         #water-body {
             position: absolute;
             bottom: 0;
@@ -53,16 +55,18 @@
             border-bottom-right-radius: 8px;
         }
 
+        /* Meniscus line is now INSIDE the trough container */
         .water-surface {
             position: absolute;
-            bottom: calc(10px + (0.65 * 40vh * 0.7)); 
-            left: 25%; 
-            width: 50%;
+            bottom: 70%; /* Matches water-body height exactly */
+            left: 0;
+            width: 100%;
             height: 3px;
-            background: rgba(255, 255, 255, 0.9);
-            box-shadow: 0 0 12px rgba(56, 189, 248, 0.6);
-            z-index: 15; 
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+            z-index: 15;
             pointer-events: none;
+            transform: translateY(50%); /* Center the line thickness on the 70% mark */
         }
 
         .control-panel {
@@ -108,10 +112,10 @@
             transition: border-radius 1.5s ease-in-out, box-shadow 1s ease;
         }
 
-        /* H2 Collection Apparatus Styles */
+        /* H2 Collection Apparatus */
         #h2-setup {
             position: absolute;
-            bottom: 10px;
+            bottom: 0; /* Relative to trough bottom */
             left: 50%;
             transform: translateX(-50%);
             width: 120px;
@@ -192,19 +196,21 @@
     <div id="canvas-container">
         <div class="trough" id="main-trough">
             <div id="water-body"></div>
-        </div>
-        <div class="water-surface" id="surface-line"></div>
-        
-        <!-- H2 Setup (Hidden by default) -->
-        <div id="h2-setup">
-            <div id="test-tube">
-                <div id="tube-water"></div>
+            <div class="water-surface" id="surface-line"></div>
+            
+            <!-- Apparatus moved inside trough for perfect sync -->
+            <div id="h2-setup">
+                <div id="test-tube">
+                    <div id="tube-water"></div>
+                </div>
+                <div id="funnel"></div>
             </div>
-            <div id="funnel"></div>
+            
+            <!-- Reaction zone inside trough -->
+            <div id="simulation-area" class="absolute inset-0 overflow-visible pointer-events-none"></div>
         </div>
 
-        <div id="simulation-area" class="relative w-full h-full"></div>
-
+        <!-- Litmus remains in global container for free dragging -->
         <div id="litmus-paper" style="left: 20px; top: 20px;">
             <div id="litmus-wet-part"></div>
         </div>
@@ -223,14 +229,14 @@
                 <label class="inline-flex items-center cursor-pointer">
                     <input type="checkbox" value="" class="sr-only peer" id="litmus-toggle" onchange="toggleLitmus()">
                     <div class="relative w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-500"></div>
-                    <span class="ms-2 text-lg font-medium text-slate-300">Red Litmus Paper</span>
+                    <span class="ms-2 text-xl font-bold text-slate-300">Red Litmus Paper</span>
                 </label>
 
                 <div id="setup-toggle-container" class="opacity-30 pointer-events-none transition-opacity">
                     <label class="inline-flex items-center cursor-pointer">
                         <input type="checkbox" value="" class="sr-only peer" id="setup-toggle" onchange="toggleSetup()">
                         <div class="relative w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
-                        <span class="ms-2 text-lg font-medium text-slate-300">H<sub>2</sub> collecting set-up</span>
+                        <span class="ms-2 text-xl font-bold text-slate-300">H<sub>2</sub> collecting set-up</span>
                     </label>
                 </div>
             </div>
@@ -267,7 +273,7 @@
         let reactionInterval = null;
         let activeMetal = null;
         let isSolutionAlkaline = false;
-        let gasVolumeInTube = 100; // 100% water initially
+        let gasVolumeInTube = 100;
 
         const DATA = {
             sodium: {
@@ -275,14 +281,14 @@
                 wordEquation: "Sodium + Water → Sodium hydroxide + Hydrogen",
                 observations: ["Na melts to form a silvery ball.", "Hissing sound is generated.", "Na moves rapidly on water surface.", "Na burns with golden yellow flame.", "Solution turns red litmus blue."],
                 color: "#cbd5e1", flameColor: "rgba(255, 215, 0, 0.9)",
-                behavior: "float", shrinkSpeed: 0.08, moveSpeed: 6, bubbleProb: 0.5, hissPitch: 1400, hissVol: 0.03
+                behavior: "float", shrinkSpeed: 0.08, moveSpeed: 4, bubbleProb: 0.5, hissPitch: 1400, hissVol: 0.03
             },
             potassium: {
                 equation: "2K(s) + 2H₂O(l) → 2KOH(aq) + H₂(g)",
                 wordEquation: "Potassium + Water → Potassium hydroxide + Hydrogen",
                 observations: ["K melts to form a silvery ball.", "Hissing sound is generated.", "K moves rapidly on water surface.", "K burns with lilac flame.", "Solution turns red litmus blue."],
                 color: "#cbd5e1", flameColor: "rgba(230, 190, 255, 0.9)",
-                behavior: "float", shrinkSpeed: 0.22, moveSpeed: 12, bubbleProb: 0.95, hissPitch: 2200, hissVol: 0.12
+                behavior: "float", shrinkSpeed: 0.22, moveSpeed: 8, bubbleProb: 0.95, hissPitch: 2200, hissVol: 0.12
             },
             calcium: {
                 equation: "Ca(s) + 2H₂O(l) → Ca(OH)₂(aq) + H₂(g)",
@@ -293,7 +299,6 @@
             }
         };
 
-        // Touch-enabled Drag Logic for Tablet
         let isDragging = false;
         let dragOffset = { x: 0, y: 0 };
 
@@ -335,7 +340,10 @@
             const paperRect = litmusPaper.getBoundingClientRect();
             const waterRect = waterBody.getBoundingClientRect();
             const troughRect = troughElement.getBoundingClientRect();
+            
+            // Checking if paper overlaps with the trough area horizontally
             const withinX = paperRect.right > troughRect.left && paperRect.left < troughRect.right;
+            
             if (withinX && paperRect.bottom > waterRect.top) {
                 const overlap = Math.min(paperRect.bottom, waterRect.bottom) - waterRect.top;
                 const pct = Math.max(0, Math.min(100, (overlap / paperRect.height) * 100));
@@ -350,13 +358,6 @@
 
         function toggleSetup() {
             h2Setup.style.display = setupToggle.checked ? 'block' : 'none';
-        }
-
-        function alignWaterLevel() {
-            const trRect = troughElement.getBoundingClientRect();
-            const waterH = troughElement.offsetHeight * 0.7; 
-            const contRect = document.getElementById('canvas-container').getBoundingClientRect();
-            surfaceLine.style.top = ((trRect.bottom - waterH) - contRect.top) + 'px';
         }
 
         function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
@@ -382,7 +383,7 @@
                 spark.style.left = x + 'px'; spark.style.top = y + 'px';
                 simArea.appendChild(spark);
                 const ang = Math.random() * Math.PI * 2;
-                const d = Math.random() * 200 + 50;
+                const d = Math.random() * 150 + 50;
                 const start = Date.now();
                 const anim = () => {
                     const p = (Date.now() - start) / 1000;
@@ -424,31 +425,35 @@
             bubble.className = 'bubble';
             const size = Math.random() * 5 + 2;
             bubble.style.width = size + 'px'; bubble.style.height = size + 'px';
-            bubble.style.left = x + 'px'; bubble.style.top = y + 'px';
+            bubble.style.left = x + 'px'; bubble.style.bottom = (troughElement.offsetHeight - y) + 'px';
             simArea.appendChild(bubble);
 
             const start = Date.now();
             const duration = 1200;
-            const surfaceY = surfaceLine.offsetTop;
+            const surfaceBottomPct = 70; // 70% of trough height
 
             const anim = () => {
                 const p = (Date.now() - start) / duration;
                 if (p >= 1) { bubble.remove(); return; }
-                let curY = y - (p * 250);
                 
-                // If setup is active and metal is calcium, collect gas
+                // Current bottom position in pixels relative to trough bottom
+                let curBottomPx = (troughElement.offsetHeight - y) + (p * 200);
+                let curBottomPct = (curBottomPx / troughElement.offsetHeight) * 100;
+                
                 if (setupToggle.checked && activeMetal === 'calcium') {
-                    const tubeRect = document.getElementById('test-tube').getBoundingClientRect();
-                    const contRect = document.getElementById('canvas-container').getBoundingClientRect();
-                    const tubeTopBoundary = (tubeRect.top - contRect.top) + 20;
-                    if (curY < tubeTopBoundary) {
-                        gasVolumeInTube = Math.max(0, gasVolumeInTube - 0.15);
+                    const tubeHeight = 160; 
+                    const setupHeight = 220;
+                    // Check if inside test tube zone
+                    if (curBottomPx > (setupHeight - tubeHeight) && Math.abs(x - troughElement.offsetWidth/2) < 15) {
+                        gasVolumeInTube = Math.max(0, gasVolumeInTube - 0.2);
                         tubeWater.style.height = gasVolumeInTube + '%';
                         bubble.remove(); return;
                     }
-                } else if (curY < surfaceY) { bubble.remove(); return; }
+                }
                 
-                bubble.style.top = curY + 'px';
+                if (curBottomPct >= surfaceBottomPct) { bubble.remove(); return; }
+                
+                bubble.style.bottom = curBottomPx + 'px';
                 bubble.style.opacity = 1 - p;
                 requestAnimationFrame(anim);
             };
@@ -490,7 +495,6 @@
             h2Setup.style.display = 'none';
             gasVolumeInTube = 100;
             tubeWater.style.height = '100%';
-            alignWaterLevel();
         }
 
         function startReaction(type) {
@@ -516,11 +520,14 @@
             const el = document.createElement('div');
             el.id = 'metal-piece';
             el.className = 'absolute z-30 shadow-md border border-white/20';
-            let size = 35;
-            let posX = simArea.clientWidth / 2 - size/2;
-            let posY = -40;
-            const surfaceY = surfaceLine.offsetTop;
-            const floorY = (troughElement.offsetTop + troughElement.offsetHeight) - 8;
+            
+            let size = 30;
+            let posX = troughElement.offsetWidth / 2 - size/2;
+            let posY = -50; 
+            
+            const surfaceTopPct = 30; // (100 - 70)
+            const surfaceY = (troughElement.offsetHeight * surfaceTopPct) / 100;
+            const floorY = troughElement.offsetHeight - 4;
 
             el.style.width = size + 'px'; el.style.height = size + 'px';
             el.style.backgroundColor = metal.color;
@@ -543,13 +550,13 @@
                     }
                 } else {
                     size -= metal.shrinkSpeed;
-                    if (!melted && type !== 'calcium' && size < 33) {
+                    if (!melted && type !== 'calcium' && size < 28) {
                         melted = true;
                         el.style.borderRadius = '50%';
                         el.style.boxShadow = 'inset -3px -3px 8px rgba(0,0,0,0.5), 0 0 10px rgba(255,255,255,0.7)';
                     }
 
-                    if (type === 'potassium' && size <= 14) {
+                    if (type === 'potassium' && size <= 12) {
                         playExplosion(posX + size/2, posY + size/2, metal.flameColor);
                         clearInterval(reactionInterval); el.remove(); playHiss(false); return;
                     }
@@ -559,8 +566,8 @@
                         posY = surfaceY - (size * 0.7);
                         posX += Math.cos(angle) * metal.moveSpeed;
                         if (Math.random() > 0.9) angle = Math.random() * Math.PI * 2;
-                        const L = simArea.clientWidth * 0.25 + 5;
-                        const R = simArea.clientWidth * 0.75 - size - 5;
+                        const L = 10;
+                        const R = troughElement.offsetWidth - size - 10;
                         if (posX < L || posX > R) angle += Math.PI;
                         posX = Math.max(L, Math.min(R, posX));
                         createFlame(posX + size/2, posY + size/2, metal.flameColor, type === 'potassium' ? 1.5 : 1);
@@ -578,9 +585,6 @@
                 checkLitmusSubmersion();
             }, 40);
         }
-
-        setTimeout(alignWaterLevel, 200);
-        window.addEventListener('resize', alignWaterLevel);
     </script>
 </body>
 </html>
