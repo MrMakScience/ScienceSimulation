@@ -2,566 +2,836 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ionic Formula Cross Method Simulator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Chemistry Lab: Flame Test Simulation</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-        
+        :root {
+            --flame-color: rgba(255, 200, 50, 0.8);
+            --glow-color: rgba(255, 150, 0, 0.3);
+            --inner-flame-color: rgba(100, 200, 255, 0.6);
+        }
+
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f8fafc;
-            scroll-behavior: smooth;
+            touch-action: none; /* Prevents scrolling while interacting */
         }
 
-        .ion-card {
-            transition: all 0.2s ease;
-            cursor: pointer;
-        }
-
-        .ion-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-        }
-
-        .selected-ion {
-            border: 2px solid #3b82f6;
-            background-color: #eff6ff;
-        }
-
-        .step-container {
-            min-height: 400px;
-        }
-
-        .formula-subscript {
-            vertical-align: sub;
-            font-size: 0.6em;
-            font-weight: bold;
-            line-height: 0;
-        }
-
-        .formula-superscript {
-            vertical-align: super;
-            font-size: 0.6em;
-            font-weight: bold;
-            line-height: 0;
-        }
-
-        .moving-charge {
-            position: absolute;
-            transition: all 2s cubic-bezier(0.4, 0, 0.2, 1);
-            z-index: 50;
-            pointer-events: none;
-            white-space: nowrap;
-        }
-
-        /* Bracket Fade-in Animation */
-        .bracket-fade {
-            opacity: 0;
-            display: inline-block;
-            transition: opacity 1s ease-in-out;
-        }
-
-        .bracket-visible {
-            opacity: 1;
-        }
-
-        #visual-area {
-            transition: gap 0.8s ease-in-out;
-            max-width: 100%;
-        }
-
-        .merge-gap {
-            gap: 0 !important;
-        }
-
-        .merged-style {
-            padding-left: 0 !important;
-            padding-right: 0 !important;
-            border-color: transparent !important;
-            background-color: transparent !important;
-            background: none !important;
-            min-width: 0 !important;
-        }
-
-        /* Strike-through animation */
-        .strike-container {
+        .lab-bench {
+            background: #2c3e50;
+            border-bottom: 20px solid #1a252f;
+            height: 520px;
             position: relative;
-            display: inline-block;
+            overflow: hidden;
+            cursor: default;
         }
 
-        .strike-line {
+        /* Mobile specific bench height adjustment */
+        @media (max-width: 768px) {
+            .lab-bench {
+                height: 600px;
+            }
+        }
+
+        .wire-handle-style {
+            width: 100px;
+            height: 14px;
+            background: #8e44ad;
+            border-radius: 7px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            cursor: pointer;
+            transition: filter 0.1s;
+        }
+        
+        .wire-handle-style:hover {
+            filter: brightness(1.1);
+        }
+
+        .wire-stem-style {
+            width: 100px;
+            height: 3px;
+            background: #7f8c8d;
+        }
+
+        .wire-tip-style {
+            width: 18px;
+            height: 18px;
+            background: transparent;
+            border: 2.5px solid #95a5a6;
+            border-radius: 50%;
+            position: relative;
+            box-sizing: border-box;
+            box-shadow: 0 0 2px rgba(0,0,0,0.3);
+        }
+
+        .burner-container {
+            position: absolute;
+            bottom: 40px;
+            left: 62%;
+            transform: translateX(-50%);
+            width: 120px;
+            height: 180px;
+        }
+
+        /* Adjust burner position on mobile to avoid overlap */
+        @media (max-width: 768px) {
+            .burner-container {
+                left: 70%;
+                bottom: 60px;
+            }
+        }
+
+        .burner-base {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 110px;
+            height: 18px;
+            background: #34495e;
+            border-radius: 50% 50% 10% 10%;
+            box-shadow: inset 0 -4px 6px rgba(0,0,0,0.4);
+        }
+
+        .burner-chimney {
+            position: absolute;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 18px;
+            height: 110px;
+            background: linear-gradient(90deg, #95a5a6, #ecf0f1, #95a5a6);
+            border-top: 2px solid #7f8c8d;
+            z-index: 5;
+        }
+
+        .burner-collar {
+            position: absolute;
+            bottom: 22px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 26px;
+            height: 24px;
+            background: #95a5a6; 
+            border: 1px solid #7f8c8d;
+            border-radius: 3px;
+            cursor: pointer;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .air-hole-base {
+            position: relative;
+            width: 12px;
+            height: 12px;
+            background: linear-gradient(90deg, #95a5a6, #ecf0f1, #95a5a6);
+            border-radius: 50%;
+            overflow: hidden;
+        }
+
+        .shutter-plate {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #111;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transform: translateX(-12px) scale(1.1);
+            border-radius: 50%;
+        }
+
+        .flame-container {
+            position: absolute;
+            bottom: 125px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 100px;
+            pointer-events: none;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            z-index: 4;
+        }
+
+        .flame-outer {
+            width: 30px;
+            height: 80px;
+            background: var(--flame-color);
+            border-radius: 50% 50% 20% 20% / 100% 100% 10% 10%;
+            filter: blur(4px);
+            animation: flicker 0.15s infinite alternate;
+            box-shadow: 0 0 20px var(--glow-color);
+            transition: background 0.3s, box-shadow 0.3s;
+        }
+
+        .flame-inner {
+            position: absolute;
+            bottom: 5px;
+            width: 12px;
+            height: 35px;
+            background: var(--inner-flame-color);
+            border-radius: 50% 50% 20% 20% / 100% 100% 10% 10%;
+            filter: blur(2px);
+            display: none;
+        }
+
+        @keyframes flicker {
+            0% { transform: scaleY(1); opacity: 0.8; }
+            100% { transform: scaleY(1.05) scaleX(1.02); opacity: 1; }
+        }
+
+        #nichrome-tool {
+            position: absolute;
+            width: 220px;
+            height: 30px;
+            pointer-events: none;
+            display: none;
+            z-index: 999;
+            align-items: center;
+        }
+
+        .heatproof-mat {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 96%;
+            height: 100px;
+            background: #dcdde1;
+            border-radius: 8px;
+            z-index: 0;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .pickup-wire-container {
+            position: absolute;
+            bottom: 45px;
+            left: 40px;
+            display: flex;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .wire-placeholder {
+            position: absolute;
+            bottom: 45px;
+            left: 40px;
+            display: flex;
+            align-items: center;
+            z-index: 1;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+
+        .wire-placeholder.active {
+            opacity: 0.4;
+            animation: pulse-placeholder 2s infinite ease-in-out;
+        }
+
+        @keyframes pulse-placeholder {
+            0%, 100% { opacity: 0.2; }
+            50% { opacity: 0.5; }
+        }
+
+        .wire-handle-ghost {
+            width: 100px;
+            height: 14px;
+            background: transparent;
+            border: 2px dashed #8e44ad;
+            border-radius: 7px;
+        }
+
+        .wire-stem-ghost {
+            width: 100px;
+            height: 2px;
+            border-top: 2px dashed #7f8c8d;
+        }
+
+        .hcl-station {
+            position: absolute;
+            bottom: 120px;
+            left: 230px; 
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 10;
+        }
+
+        /* Position HCl above wire on mobile */
+        @media (max-width: 768px) {
+            .hcl-station {
+                bottom: 110px;
+                left: 40px;
+            }
+        }
+
+        .hcl-beaker {
+            width: 60px;
+            height: 45px;
+            background: rgba(255, 255, 255, 0.15);
+            border: 2px solid rgba(255,255,255,0.4);
+            border-radius: 0 0 12px 12px;
+            position: relative;
+            overflow: hidden;
+            pointer-events: none; 
+        }
+
+        .hcl-liquid {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 60%;
+            background: rgba(186, 230, 253, 0.4);
+        }
+
+        .hcl-tag {
+            font-size: 10px;
+            font-weight: 800;
+            color: white;
+            background: #475569;
+            padding: 2px 8px;
+            border-radius: 4px;
+            pointer-events: none;
+        }
+
+        .droplets {
             position: absolute;
             top: 50%;
-            left: 0;
-            width: 0;
-            height: 4px;
-            background: #ef4444;
-            transform: translateY(-50%) rotate(-15deg);
-            transition: width 0.5s ease-out;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 10px;
+            height: 10px;
+            background: rgba(186, 230, 253, 0.7);
+            border-radius: 50%;
+            display: none;
+            filter: blur(1px);
         }
 
-        .strike-active .strike-line {
-            width: 110%;
+        .powder-specks {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            display: none;
+            filter: blur(0.5px);
         }
 
-        .simplify-fade {
-            opacity: 0;
-            transition: opacity 0.5s ease-in;
+        .watch-glass {
+            background: rgba(255, 255, 255, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            width: 70px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 4px auto;
+            position: relative;
+            pointer-events: none;
         }
 
-        .simplify-visible {
-            opacity: 1;
-        }
-
-        /* Fade out for subscript 1 */
-        .subscript-fade-out {
-            transition: opacity 0.8s ease-out, transform 0.8s ease-out;
-        }
-
-        .fade-hidden {
-            opacity: 0 !important;
-            transform: translateY(-5px);
-        }
-
-        @keyframes pulse-success {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
-        }
-
-        .animate-success {
-            animation: pulse-success 0.5s ease-in-out;
-        }
-
-        /* Mobile specific fixes */
-        @media (max-width: 640px) {
-            #visual-area {
-                gap: 1rem;
-                font-size: 2.25rem;
+        /* Responsive adjustment for watch glass size on mobile */
+        @media (max-width: 768px) {
+            .watch-glass {
+                width: 60px;
+                height: 16px;
             }
-            .ion-box-mobile {
-                padding: 0.75rem !important;
-                min-width: 80px !important;
+        }
+
+        .sample-tray {
+            position: absolute;
+            bottom: 40px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 10;
+        }
+
+        /* Switch sample tray to horizontal top row on mobile */
+        @media (max-width: 768px) {
+            .sample-tray {
+                flex-direction: row;
+                top: 15px;
+                left: 10px;
+                right: 10px;
+                bottom: auto;
+                justify-content: center;
+                gap: 6px;
+                flex-wrap: wrap;
             }
+            
+            .sample-target {
+                width: 75px !important; /* Smaller width for horizontal row */
+                padding: 6px !important;
+            }
+
+            .sample-target span {
+                font-size: 8px !important;
+            }
+        }
+
+        .sample-target {
+            background: rgba(15, 23, 42, 0.85);
+            padding: 10px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            transition: all 0.2s;
+            cursor: pointer;
+            width: 140px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        .sample-target:hover {
+            background: rgba(15, 23, 42, 0.95);
+            transform: scale(1.02);
+        }
+
+        .powder-pile {
+            width: 45px;
+            height: 6px;
+            border-radius: 50%;
+            filter: blur(1px);
+        }
+
+        @media (max-width: 768px) {
+            .powder-pile {
+                width: 35px;
+            }
+        }
+
+        .action-log-container {
+            background: #0f172a;
+            border: 2px solid #334155;
+            border-radius: 12px;
+            padding: 16px;
+            height: 160px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        #log-text {
+            color: #10b981;
+            font-family: monospace;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .click-highlight {
+            display: inline-block;
+            background: #000000;
+            color: #00ffff;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-weight: 900;
+            text-transform: uppercase;
+            border: 1px solid #00ffff;
+        }
+
+        #instruction-pill {
+            background: #fbbf24;
+            border: 3px solid #b45309;
+            padding: 12px 24px;
+            border-radius: 14px;
+            color: #1e293b;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 100;
+            width: max-content;
+            max-width: 95%;
+        }
+
+        @media (max-width: 768px) {
+            #instruction-pill {
+                padding: 8px 16px;
+            }
+        }
+
+        .warning-text {
+            color: #b91c1c;
+            text-decoration: underline;
+            font-weight: 900;
         }
     </style>
 </head>
-<body class="p-4 md:p-8">
+<body class="bg-slate-200 p-2 md:p-4 font-sans select-none overflow-hidden">
 
-<div class="max-w-6xl mx-auto">
-    <header class="text-center mb-8">
-        <h1 class="text-3xl font-bold text-slate-800">Ionic Formula Builder</h1>
-        <p class="text-slate-600">Master the Cross Method step-by-step</p>
-    </header>
-
-    <!-- Selection View -->
-    <div id="setup-view" class="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-            <h2 class="text-xl font-semibold mb-4 text-blue-700 border-b pb-2">Select a Cation</h2>
-            <div id="cation-list" class="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-[500px] overflow-y-auto pr-2"></div>
-        </div>
-
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-            <h2 class="text-xl font-semibold mb-4 text-red-700 border-b pb-2">Select an Anion</h2>
-            <div id="anion-list" class="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-[500px] overflow-y-auto pr-2"></div>
-        </div>
-    </div>
-
-    <div id="controls" class="mt-8 flex justify-center hidden">
-        <button id="start-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-full font-bold shadow-lg transition-all transform hover:scale-105">
-            Start Simulation
-        </button>
-    </div>
-
-    <!-- Simulation View -->
-    <div id="simulation-view" class="mt-8 bg-white p-4 md:p-8 rounded-2xl shadow-xl border border-slate-200 hidden">
-        <div class="flex justify-between items-center mb-8">
-            <h2 id="step-title" class="text-2xl font-bold text-slate-800">Step 1: Identify Charges</h2>
-            <button id="reset-btn" class="text-slate-500 hover:text-red-600 text-sm font-medium">Cancel & Reset</button>
-        </div>
-
-        <div class="step-container flex flex-col items-center justify-center relative overflow-visible">
-            <div id="visual-area" class="flex items-center gap-12 md:gap-48 text-5xl md:text-7xl font-bold mb-12 relative w-full justify-center">
-                <div id="v-cation" class="ion-box-mobile relative p-6 rounded-2xl bg-blue-50 border-2 border-blue-200 text-blue-800 transition-all duration-500 min-w-[100px] md:min-w-[120px] text-center"></div>
-                <div id="v-operator" class="text-slate-300 transition-opacity duration-500">+</div>
-                <div id="v-anion" class="ion-box-mobile relative p-6 rounded-2xl bg-red-50 border-2 border-red-200 text-red-800 transition-all duration-500 min-w-[100px] md:min-w-[120px] text-center"></div>
+    <div class="max-w-6xl mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden border-4 border-slate-300 relative">
+        <div class="bg-slate-800 p-4 text-white flex flex-col md:flex-row justify-between items-center gap-4">
+            <div>
+                <h1 class="text-xl font-bold italic tracking-tight">Flame Test Lab</h1>
             </div>
-
-            <div id="step-description" class="text-center w-full max-w-2xl bg-slate-50 p-6 rounded-xl border border-slate-100 min-h-[100px]">
-                <p class="text-lg text-slate-700"></p>
+            <div id="instruction-pill">
+                <span class="text-xl animate-bounce">⚠️</span>
+                <span id="instruction-text" class="text-sm md:text-base">To pick up wire, <span class="click-highlight">CLICK</span> the PURPLE HANDLE</span>
             </div>
         </div>
 
-        <div class="mt-8 flex justify-center gap-4">
-            <button id="back-btn" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-6 py-3 rounded-lg font-semibold transition-all hidden">
-                Back
-            </button>
-            <button id="next-btn" class="bg-slate-800 hover:bg-slate-900 text-white px-10 py-3 rounded-lg font-semibold transition-all">
-                Next Step
-            </button>
+        <div class="grid grid-cols-1 md:grid-cols-4">
+            <div class="md:col-span-3 lab-bench" id="bench">
+                <div class="heatproof-mat"></div>
+
+                <div id="wire-placeholder" class="wire-placeholder">
+                    <div class="wire-handle-ghost"></div>
+                    <div class="wire-stem-ghost"></div>
+                </div>
+
+                <div id="static-wire-container" class="pickup-wire-container">
+                    <div class="flex flex-col gap-1">
+                        <span class="text-[9px] font-bold text-slate-500 uppercase tracking-widest ml-1">Nichrome Wire</span>
+                        <div class="flex items-center">
+                            <div class="wire-handle-style" id="start-handle"></div>
+                            <div class="wire-stem-style"></div>
+                            <div id="static-wire-tip" class="wire-tip-style">
+                                <div id="static-droplets" class="droplets"></div>
+                                <div id="static-powder" class="powder-specks"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="hcl-station" id="hcl-target-area">
+                    <div class="hcl-beaker">
+                        <div class="hcl-liquid"></div>
+                    </div>
+                    <span class="hcl-tag">conc. HCl</span>
+                </div>
+
+                <div class="burner-container">
+                    <div class="burner-base"></div>
+                    <div id="collar" class="burner-collar">
+                        <div class="air-hole-base">
+                            <div id="shutter-plate" class="shutter-plate"></div>
+                        </div>
+                    </div>
+                    <div class="burner-chimney"></div>
+                    <div class="flame-container" id="flame-target">
+                        <div id="flame-outer" class="flame-outer"></div>
+                        <div id="flame-inner" class="flame-inner"></div>
+                    </div>
+                </div>
+
+                <div class="sample-tray">
+                    <div class="text-center sample-target" data-type="Cu">
+                        <div class="watch-glass"><div class="powder-pile bg-emerald-500/90"></div></div>
+                        <span class="text-xs md:text-sm font-black text-white">Sample of Cu<sup>2+</sup></span>
+                    </div>
+                    <div class="text-center sample-target" data-type="K">
+                        <div class="watch-glass"><div class="powder-pile bg-white"></div></div>
+                        <span class="text-xs md:text-sm font-black text-white">Sample of K<sup>+</sup></span>
+                    </div>
+                    <div class="text-center sample-target" data-type="Na">
+                        <div class="watch-glass"><div class="powder-pile bg-white"></div></div>
+                        <span class="text-xs md:text-sm font-black text-white">Sample of Na<sup>+</sup></span>
+                    </div>
+                    <div class="text-center sample-target" data-type="Ca">
+                        <div class="watch-glass"><div class="powder-pile bg-white"></div></div>
+                        <span class="text-xs md:text-sm font-black text-white">Sample of Ca<sup>2+</sup></span>
+                    </div>
+                </div>
+                
+                <div id="nichrome-tool" class="flex items-center">
+                    <div class="wire-handle-style"></div>
+                    <div class="wire-stem-style"></div>
+                    <div class="wire-tip-style" id="wire-active-tip">
+                        <div id="hcl-droplets" class="droplets"></div>
+                        <div id="sample-powder" class="powder-specks"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="md:col-span-1 bg-slate-50 border-l border-slate-200 p-6 flex flex-col gap-4">
+                <div>
+                    <h3 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-2">Flame Status</h3>
+                    <div class="bg-white p-3 rounded-lg shadow-sm border border-slate-200">
+                        <span id="flame-label" class="text-xs font-black text-orange-500 uppercase">LUMINOUS FLAME</span>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-2">Action Log</h3>
+                    <div class="action-log-container">
+                        <div id="log-text">Ready.</div>
+                    </div>
+                </div>
+                <button onclick="window.location.reload()" class="w-full py-4 bg-slate-800 hover:bg-red-700 text-white font-black rounded-xl transition-all">RESET</button>
+            </div>
         </div>
     </div>
-</div>
 
-<script>
-    const cations = [
-        { name: "Lithium ion", symbol: "Li", charge: 1, poly: false },
-        { name: "Sodium ion", symbol: "Na", charge: 1, poly: false },
-        { name: "Potassium ion", symbol: "K", charge: 1, poly: false },
-        { name: "Copper(I) ion", symbol: "Cu", charge: 1, poly: false },
-        { name: "Silver ion", symbol: "Ag", charge: 1, poly: false },
-        { name: "Mercury(I) ion", symbol: "Hg", charge: 1, poly: false },
-        { name: "Ammonium ion", symbol: "NH4", charge: 1, poly: true },
-        { name: "Magnesium ion", symbol: "Mg", charge: 2, poly: false },
-        { name: "Calcium ion", symbol: "Ca", charge: 2, poly: false },
-        { name: "Barium ion", symbol: "Ba", charge: 2, poly: false },
-        { name: "Zinc ion", symbol: "Zn", charge: 2, poly: false },
-        { name: "Iron(II) ion", symbol: "Fe", charge: 2, poly: false },
-        { name: "Copper(II) ion", symbol: "Cu", charge: 2, poly: false },
-        { name: "Cobalt(II) ion", symbol: "Co", charge: 2, poly: false },
-        { name: "Nickel(II) ion", symbol: "Ni", charge: 2, poly: false },
-        { name: "Manganese(II) ion", symbol: "Mn", charge: 2, poly: false },
-        { name: "Mercury(II) ion", symbol: "Hg", charge: 2, poly: false },
-        { name: "Lead(II) ion", symbol: "Pb", charge: 2, poly: false },
-        { name: "Aluminum ion", symbol: "Al", charge: 3, poly: false },
-        { name: "Iron(III) ion", symbol: "Fe", charge: 3, poly: false },
-        { name: "Chromium(III) ion", symbol: "Cr", charge: 3, poly: false }
-    ];
+    <script>
+        const state = {
+            isHoldingWire: false,
+            collarState: 0, 
+            isWet: false,
+            activeSample: null,
+            isOverFlame: false
+        };
 
-    const anions = [
-        { name: "Fluoride ion", symbol: "F", charge: -1, poly: false },
-        { name: "Chloride ion", symbol: "Cl", charge: -1, poly: false },
-        { name: "Bromide ion", symbol: "Br", charge: -1, poly: false },
-        { name: "Iodide ion", symbol: "I", charge: -1, poly: false },
-        { name: "Nitrite ion", symbol: "NO2", charge: -1, poly: true },
-        { name: "Nitrate ion", symbol: "NO3", charge: -1, poly: true },
-        { name: "Hydroxide ion", symbol: "OH", charge: -1, poly: true },
-        { name: "Hydrogencarbonate ion", symbol: "HCO3", charge: -1, poly: true },
-        { name: "Hydrogensulphate ion", symbol: "HSO4", charge: -1, poly: true },
-        { name: "Cyanide ion", symbol: "CN", charge: -1, poly: true },
-        { name: "Permanganate Ion", symbol: "MnO4", charge: -1, poly: true },
-        { name: "Hypochlorite ion", symbol: "ClO", charge: -1, poly: true },
-        { name: "Chlorate ion", symbol: "ClO3", charge: -1, poly: true },
-        { name: "Oxide ion", symbol: "O", charge: -2, poly: false },
-        { name: "Sulphide ion", symbol: "S", charge: -2, poly: false },
-        { name: "Sulphite ion", symbol: "SO3", charge: -2, poly: true },
-        { name: "Sulphate ion", symbol: "SO4", charge: -2, poly: true },
-        { name: "Thiosulphate ion", symbol: "S2O3", charge: -2, poly: true },
-        { name: "Carbonate ion", symbol: "CO3", charge: -2, poly: true },
-        { name: "Silicate ion", symbol: "SiO3", charge: -2, poly: true },
-        { name: "Chromate ion", symbol: "CrO4", charge: -2, poly: true },
-        { name: "Dichromate ion", symbol: "Cr2O7", charge: -2, poly: true },
-        { name: "Nitride ion", symbol: "N", charge: -3, poly: false },
-        { name: "Phosphide ion", symbol: "P", charge: -3, poly: false },
-        { name: "Phosphate ion", symbol: "PO4", charge: -3, poly: true }
-    ];
+        const samples = {
+            'Cu': { name: 'copper (II)', color: 'rgba(0, 255, 180, 0.8)', glow: 'rgba(0, 255, 150, 0.6)', powder: '#10b981' },
+            'K': { name: 'potassium', color: 'rgba(200, 150, 255, 0.8)', glow: 'rgba(180, 100, 255, 0.6)', powder: '#ffffff' },
+            'Na': { name: 'sodium', color: 'rgba(255, 200, 0, 0.9)', glow: 'rgba(255, 150, 0, 0.7)', powder: '#ffffff' },
+            'Ca': { name: 'calcium', color: 'rgba(255, 80, 0, 0.8)', glow: 'rgba(255, 50, 0, 0.6)', powder: '#ffffff' }
+        };
 
-    let selectedCation = null;
-    let selectedAnion = null;
-    let currentStep = 0;
+        const bench = document.getElementById('bench');
+        const tool = document.getElementById('nichrome-tool');
+        const placeholder = document.getElementById('wire-placeholder');
+        const staticContainer = document.getElementById('static-wire-container');
+        const shutterPlate = document.getElementById('shutter-plate');
+        const droplets = document.getElementById('hcl-droplets');
+        const powder = document.getElementById('sample-powder');
+        const staticDroplets = document.getElementById('static-droplets');
+        const staticPowder = document.getElementById('static-powder');
+        const instructionText = document.getElementById('instruction-text');
+        const logText = document.getElementById('log-text');
+        const activeTip = document.getElementById('wire-active-tip');
+        const startHandle = document.getElementById('start-handle');
+        const collar = document.getElementById('collar');
 
-    function gcd(a, b) { return b ? gcd(b, a % b) : a; }
+        function setInstruction(html) {
+            instructionText.innerHTML = html;
+        }
 
-    function formatSymbol(symbol) {
-        return symbol.replace(/(\d+)/g, '<span class="formula-subscript">$1</span>');
-    }
+        function updateToolPosition(clientX, clientY) {
+            const benchRect = bench.getBoundingClientRect();
+            const relX = clientX - benchRect.left;
+            const relY = clientY - benchRect.top;
+            tool.style.left = (relX - 50) + 'px'; 
+            tool.style.top = (relY - 15) + 'px';
+        }
 
-    function formatCharge(val) {
-        const absVal = Math.abs(val);
-        const sign = val > 0 ? '+' : '-';
-        return `<span class="formula-superscript">${absVal === 1 ? '' : absVal}${sign}</span>`;
-    }
+        const onMove = (e) => {
+            if (!state.isHoldingWire) return;
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            updateToolPosition(clientX, clientY);
+            checkFlameCollision();
+        };
 
-    function renderLists() {
-        const cList = document.getElementById('cation-list');
-        const aList = document.getElementById('anion-list');
-        cList.innerHTML = '';
-        aList.innerHTML = '';
-        [cations, anions].forEach((list, idx) => {
-            const container = idx === 0 ? cList : aList;
-            list.forEach(ion => {
-                const div = document.createElement('div');
-                div.className = 'ion-card p-3 rounded-lg border bg-white text-sm text-center';
-                div.innerHTML = `<div>${formatSymbol(ion.symbol)}${formatCharge(ion.charge)}</div><div class="text-[10px] text-slate-500 uppercase font-bold">${ion.name}</div>`;
-                div.onclick = () => {
-                    document.querySelectorAll(`#${container.id} .ion-card`).forEach(el => el.classList.remove('selected-ion'));
-                    div.classList.add('selected-ion');
-                    if (idx === 0) selectedCation = ion; else selectedAnion = ion;
-                    checkReady();
-                };
-                container.appendChild(div);
-            });
+        bench.addEventListener('mousemove', onMove);
+        bench.addEventListener('touchmove', (e) => {
+            if (state.isHoldingWire) {
+                e.preventDefault(); 
+                onMove(e);
+            }
+        }, { passive: false });
+
+        const handleStartInteraction = (e) => {
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+            if (!state.isHoldingWire) {
+                const handleRect = startHandle.getBoundingClientRect();
+                const buffer = 20;
+                if (clientX >= handleRect.left - buffer && clientX <= handleRect.right + buffer && 
+                    clientY >= handleRect.top - buffer && clientY <= handleRect.bottom + buffer) {
+                    pickUpWire(clientX, clientY);
+                }
+            } else {
+                handleActiveInteractions(clientX, clientY);
+            }
+        };
+
+        function pickUpWire(clientX, clientY) {
+            state.isHoldingWire = true;
+            staticContainer.style.visibility = 'hidden'; 
+            placeholder.classList.add('active');
+            tool.style.display = 'flex';
+            
+            droplets.style.display = state.isWet ? 'block' : 'none';
+            powder.style.display = state.activeSample ? 'block' : 'none';
+            if(state.activeSample) powder.style.backgroundColor = samples[state.activeSample].powder;
+            
+            updateToolPosition(clientX, clientY);
+            updateGeneralInstruction();
+            logEvent("Picked up nichrome wire");
+        }
+
+        function handleActiveInteractions(clientX, clientY) {
+            const staticHandle = placeholder.getBoundingClientRect();
+            const dropBuffer = 60;
+
+            if (clientX >= staticHandle.left - dropBuffer && clientX <= staticHandle.right + dropBuffer && 
+                clientY >= staticHandle.top - dropBuffer && clientY <= staticHandle.bottom + dropBuffer) {
+                dropWire();
+                return;
+            }
+
+            const tipRect = activeTip.getBoundingClientRect();
+
+            // Collision detection for HCl
+            const hclArea = document.getElementById('hcl-target-area').getBoundingClientRect();
+            if (isColliding(tipRect, hclArea, 20)) {
+                state.isWet = true;
+                state.activeSample = null;
+                droplets.style.display = 'block';
+                powder.style.display = 'none';
+                logEvent("Dipping wire in HCl");
+                updateGeneralInstruction();
+                updateFlame();
+                return;
+            }
+
+            // Sample Tray Collision
+            const sampleElements = document.querySelectorAll('.sample-target');
+            for (let el of sampleElements) {
+                if (isColliding(tipRect, el.getBoundingClientRect(), 5)) {
+                    const type = el.dataset.type;
+                    
+                    if (state.activeSample || !state.isWet) {
+                        logEvent("CLEAN WIRE WITH HCl FIRST");
+                        setInstruction('<span class="click-highlight">CLICK</span> HCl beaker to <span class="warning-text">WASH THE WIRE</span>');
+                        return;
+                    }
+                    
+                    state.activeSample = type;
+                    state.isWet = false;
+                    droplets.style.display = 'none';
+                    powder.style.display = 'block';
+                    powder.style.backgroundColor = samples[type].powder;
+                    logEvent(`Picked up ${samples[type].name} sample`);
+                    updateGeneralInstruction();
+                    return;
+                }
+            }
+        }
+
+        function dropWire() {
+            state.isHoldingWire = false;
+            tool.style.display = 'none';
+            placeholder.classList.remove('active');
+            staticContainer.style.visibility = 'visible';
+            
+            staticDroplets.style.display = state.isWet ? 'block' : 'none';
+            staticPowder.style.display = state.activeSample ? 'block' : 'none';
+            if(state.activeSample) staticPowder.style.backgroundColor = samples[state.activeSample].powder;
+            
+            setInstruction('To pick up wire, <span class="click-highlight">CLICK</span> the PURPLE HANDLE');
+            logEvent("Returned wire to mat");
+        }
+
+        bench.addEventListener('mousedown', handleStartInteraction);
+        bench.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            handleStartInteraction(e);
+        }, { passive: false });
+
+        collar.addEventListener('mousedown', (e) => {
+            e.stopPropagation();
+            cycleAirHole();
         });
-    }
+        collar.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            cycleAirHole();
+        }, { passive: false });
 
-    function checkReady() {
-        if (selectedCation && selectedAnion) document.getElementById('controls').classList.remove('hidden');
-    }
-
-    function clearMovingElements() {
-        document.querySelectorAll('.moving-charge').forEach(el => el.remove());
-    }
-
-    function resetSimulationState() {
-        selectedCation = null;
-        selectedAnion = null;
-        currentStep = 0;
-        
-        document.getElementById('simulation-view').classList.add('hidden');
-        document.getElementById('setup-view').classList.remove('hidden');
-        document.getElementById('controls').classList.add('hidden');
-        
-        const vCation = document.getElementById('v-cation');
-        const vAnion = document.getElementById('v-anion');
-        const vArea = document.getElementById('visual-area');
-        vCation.classList.remove('merged-style');
-        vAnion.classList.remove('merged-style');
-        vArea.classList.remove('merge-gap', 'animate-success');
-        
-        renderLists();
-        window.scrollTo(0, 0);
-    }
-
-    async function runStep() {
-        const vCation = document.getElementById('v-cation');
-        const vAnion = document.getElementById('v-anion');
-        const vOp = document.getElementById('v-operator');
-        const vArea = document.getElementById('visual-area');
-        const title = document.getElementById('step-title');
-        const desc = document.getElementById('step-description');
-        const nextBtn = document.getElementById('next-btn');
-        const backBtn = document.getElementById('back-btn');
-
-        const catVal = Math.abs(selectedCation.charge);
-        const aniVal = Math.abs(selectedAnion.charge);
-        const common = gcd(catVal, aniVal);
-        
-        const rawSubCat = aniVal;
-        const rawSubAni = catVal;
-        const simpCat = aniVal / common;
-        const simpAni = catVal / common;
-
-        clearMovingElements();
-        
-        if (currentStep === 0) {
-            backBtn.classList.add('hidden');
-        } else {
-            backBtn.classList.remove('hidden');
-        }
-
-        switch(currentStep) {
-            case 0:
-                title.innerText = "Step 1: Identify the Ions";
-                vCation.innerHTML = `${formatSymbol(selectedCation.symbol)}<span id="c-charge" class="formula-superscript">${catVal === 1 ? '' : catVal}+</span>`;
-                vAnion.innerHTML = `${formatSymbol(selectedAnion.symbol)}<span id="a-charge" class="formula-superscript">${aniVal === 1 ? '' : aniVal}-</span>`;
-                vOp.style.opacity = "1";
-                vOp.style.display = "block";
-                vArea.classList.remove('merge-gap');
-                vArea.classList.remove('animate-success');
-                vCation.className = "ion-box-mobile relative p-6 rounded-2xl bg-blue-50 border-2 border-blue-200 text-blue-800 transition-all duration-500 min-w-[100px] md:min-w-[120px] text-center";
-                vAnion.className = "ion-box-mobile relative p-6 rounded-2xl bg-red-50 border-2 border-red-200 text-red-800 transition-all duration-500 min-w-[100px] md:min-w-[120px] text-center";
-                desc.innerHTML = `We have <strong>${selectedCation.name}</strong> and <strong>${selectedAnion.name}</strong>. Let's look at their charges.`;
-                nextBtn.innerText = "Cross Charges";
-                break;
-
-            case 1:
-                title.innerText = "Step 2: The Cross Method";
-                vOp.style.opacity = "0.2";
-                vOp.style.display = "block";
-                vArea.classList.remove('merge-gap');
-                vCation.innerHTML = `${formatSymbol(selectedCation.symbol)}<span id="c-charge" class="formula-superscript">${catVal === 1 ? '' : catVal}+</span>`;
-                vAnion.innerHTML = `${formatSymbol(selectedAnion.symbol)}<span id="a-charge" class="formula-superscript">${aniVal === 1 ? '' : aniVal}-</span>`;
-                
-                desc.innerHTML = `Watch the charge values move! They cross over to become subscripts for the opposite ion.`;
-                
-                setTimeout(() => {
-                    const cChargeEl = document.getElementById('c-charge');
-                    const aChargeEl = document.getElementById('a-charge');
-                    const cRect = cChargeEl.getBoundingClientRect();
-                    const aRect = aChargeEl.getBoundingClientRect();
-                    const scrollY = window.scrollY;
-
-                    const floatC = document.createElement('div');
-                    floatC.className = 'moving-charge text-blue-600 font-bold text-4xl';
-                    floatC.innerText = catVal;
-                    floatC.style.left = `${cRect.left}px`;
-                    floatC.style.top = `${cRect.top + scrollY}px`;
-                    
-                    const floatA = document.createElement('div');
-                    floatA.className = 'moving-charge text-red-600 font-bold text-4xl';
-                    floatA.innerText = aniVal;
-                    floatA.style.left = `${aRect.left}px`;
-                    floatA.style.top = `${aRect.top + scrollY}px`;
-
-                    document.body.appendChild(floatC);
-                    document.body.appendChild(floatA);
-
-                    cChargeEl.style.opacity = '0';
-                    aChargeEl.style.opacity = '0';
-
-                    setTimeout(() => {
-                        const catContainer = vCation.getBoundingClientRect();
-                        const aniContainer = vAnion.getBoundingClientRect();
-                        floatC.style.left = `${aniContainer.right - (window.innerWidth < 640 ? 15 : 25)}px`;
-                        floatC.style.top = `${aniContainer.bottom - (window.innerWidth < 640 ? 15 : 25) + scrollY}px`;
-                        floatC.style.fontSize = window.innerWidth < 640 ? '1.4rem' : '1.8rem';
-                        floatA.style.left = `${catContainer.right - (window.innerWidth < 640 ? 15 : 25)}px`;
-                        floatA.style.top = `${catContainer.bottom - (window.innerWidth < 640 ? 15 : 25) + scrollY}px`;
-                        floatA.style.fontSize = window.innerWidth < 640 ? '1.4rem' : '1.8rem';
-                    }, 50);
-                }, 100);
-
-                nextBtn.innerText = "Simplify Ratio";
-                break;
-
-            case 2:
-                title.innerText = "Step 3: Simplify the Ratio";
-                vOp.style.opacity = "0.2";
-                vOp.style.display = "block";
-                vArea.classList.remove('merge-gap');
-                
-                let cBody3 = formatSymbol(selectedCation.symbol);
-                const showCatBrackets = simpCat > 1 && selectedCation.poly;
-                if (showCatBrackets) {
-                    cBody3 = `<span class="bracket-fade">(</span>${cBody3}<span class="bracket-fade">)</span>`;
-                }
-                
-                let aBody3 = formatSymbol(selectedAnion.symbol);
-                const showAniBrackets = simpAni > 1 && selectedAnion.poly;
-                if (showAniBrackets) {
-                    aBody3 = `<span class="bracket-fade">(</span>${aBody3}<span class="bracket-fade">)</span>`;
-                }
-
-                let bracketReminder = (showCatBrackets || showAniBrackets) ? 
-                    "<div class='mt-2 text-sm text-blue-600 font-semibold'>💡 Reminder: Added brackets for polyatomic ions with subscripts > 1.</div>" : "";
-
-                if (common > 1) {
-                    vCation.innerHTML = `${cBody3}<span class="formula-subscript text-blue-600 inline-flex items-center">
-                        <span id="sub-cat-raw" class="strike-container">${rawSubCat}<span class="strike-line"></span></span>
-                        <span id="sub-cat-simp" class="simplify-fade ml-1">${simpCat}</span>
-                    </span>`;
-                    vAnion.innerHTML = `${aBody3}<span class="formula-subscript text-red-600 inline-flex items-center">
-                        <span id="sub-ani-raw" class="strike-container">${rawSubAni}<span class="strike-line"></span></span>
-                        <span id="sub-ani-simp" class="simplify-fade ml-1">${simpAni}</span>
-                    </span>`;
-                    
-                    desc.innerHTML = `The ratio <strong>${rawSubCat}:${rawSubAni}</strong> simplifies to <strong>${simpCat}:${simpAni}</strong>.${bracketReminder}`;
-                    
-                    setTimeout(() => {
-                        const rc = document.getElementById('sub-cat-raw');
-                        const ra = document.getElementById('sub-ani-raw');
-                        if(rc) rc.classList.add('strike-active');
-                        if(ra) ra.classList.add('strike-active');
-                        setTimeout(() => {
-                            const sc = document.getElementById('sub-cat-simp');
-                            const sa = document.getElementById('sub-ani-simp');
-                            if(sc) sc.classList.add('simplify-visible');
-                            if(sa) sa.classList.add('simplify-visible');
-                        }, 500);
-                    }, 800);
-
+        function updateGeneralInstruction() {
+            if (state.isOverFlame) {
+                if (state.collarState === 0) {
+                    setInstruction('To <span class="click-highlight">CLICK</span> air hole collar, OPEN air hole');
                 } else {
-                    vCation.innerHTML = `${cBody3}<span class="formula-subscript text-blue-600">${simpCat}</span>`;
-                    vAnion.innerHTML = `${aBody3}<span class="formula-subscript text-red-600">${simpAni}</span>`;
-                    desc.innerHTML = `The ratio <strong>${simpCat}:${simpAni}</strong> is shown. We keep the "1" to show the final balance.${bracketReminder}`;
+                    setInstruction('Observe the flame color');
                 }
-                
-                setTimeout(() => {
-                    document.querySelectorAll('.bracket-fade').forEach(el => el.classList.add('bracket-visible'));
-                }, 100);
-
-                nextBtn.innerText = "Finalize & Merge";
-                break;
-
-            case 3:
-                title.innerText = "Step 4: Final Formula";
-                vOp.style.opacity = "0.2";
-                
-                let cStep4 = formatSymbol(selectedCation.symbol);
-                if (simpCat > 1 && selectedCation.poly) cStep4 = `(${cStep4})`;
-                let catSubscriptHtml = `<span id="final-sub-cat" class="formula-subscript ${simpCat === 1 ? 'subscript-fade-out' : ''}">${simpCat}</span>`;
-                
-                let aStep4 = formatSymbol(selectedAnion.symbol);
-                if (simpAni > 1 && selectedAnion.poly) aStep4 = `(${aStep4})`;
-                let aniSubscriptHtml = `<span id="final-sub-ani" class="formula-subscript ${simpAni === 1 ? 'subscript-fade-out' : ''}">${simpAni}</span>`;
-
-                vCation.innerHTML = cStep4 + catSubscriptHtml;
-                vAnion.innerHTML = aStep4 + aniSubscriptHtml;
-                
-                desc.innerHTML = `Final step: merge the ions and remove any subscripts of "1".`;
-
-                setTimeout(() => {
-                    vOp.style.opacity = "0";
-                    vCation.classList.add('merged-style');
-                    vAnion.classList.add('merged-style');
-                    vArea.classList.add('merge-gap');
-                    
-                    const fsc = document.getElementById('final-sub-cat');
-                    const fsa = document.getElementById('final-sub-ani');
-                    if (simpCat === 1 && fsc) fsc.classList.add('fade-hidden');
-                    if (simpAni === 1 && fsa) fsa.classList.add('fade-hidden');
-                    
-                    setTimeout(() => {
-                        if(currentStep === 3) vOp.style.display = "none";
-                        vArea.classList.add('animate-success');
-                        
-                        let successC = formatSymbol(selectedCation.symbol);
-                        if (simpCat > 1) {
-                            if (selectedCation.poly) successC = `(${successC})`;
-                            successC += `<span class="formula-subscript">${simpCat}</span>`;
-                        }
-                        let successA = formatSymbol(selectedAnion.symbol);
-                        if (simpAni > 1) {
-                            if (selectedAnion.poly) successA = `(${successA})`;
-                            successA += `<span class="formula-subscript">${simpAni}</span>`;
-                        }
-                        
-                        desc.innerHTML = `
-                            <div class="text-3xl font-bold text-green-600 mb-2">Success!</div>
-                            The chemical formula is <span class="text-2xl font-bold text-slate-800">${successC + successA}</span>.
-                        `;
-                    }, 800);
-                }, 500);
-
-                nextBtn.innerText = "Start with a new compound";
-                break;
+            } else if (state.activeSample) {
+                setInstruction('<span class="click-highlight">CLICK</span> the flame area to test');
+            } else if (state.isWet) {
+                setInstruction('<span class="click-highlight">CLICK</span> a chemical sample to test');
+            } else {
+                setInstruction('<span class="click-highlight">CLICK</span> HCl beaker to <span class="warning-text">WASH THE WIRE</span>');
+            }
         }
-    }
 
-    document.getElementById('start-btn').onclick = () => {
-        document.getElementById('setup-view').classList.add('hidden');
-        document.getElementById('controls').classList.add('hidden');
-        document.getElementById('simulation-view').classList.remove('hidden');
-        currentStep = 0;
-        runStep();
-    };
-
-    document.getElementById('next-btn').onclick = () => {
-        if (currentStep < 3) {
-            currentStep++;
-            runStep();
-        } else {
-            resetSimulationState();
+        function isColliding(r1, r2, customBuffer = 35) {
+            return !(r1.right < r2.left - customBuffer || 
+                     r1.left > r2.right + customBuffer || 
+                     r1.bottom < r2.top - customBuffer || 
+                     r1.top > r2.bottom + customBuffer);
         }
-    };
 
-    document.getElementById('back-btn').onclick = () => {
-        if (currentStep > 0) {
-            currentStep--;
-            runStep();
+        function cycleAirHole() {
+            state.collarState = state.collarState === 0 ? 1 : 0;
+            if (state.collarState === 0) {
+                shutterPlate.style.transform = 'translateX(-12px) scale(1.1)';
+                logEvent("Air hole closed");
+            } else {
+                shutterPlate.style.transform = 'translateX(-6px) scale(1.0)';
+                logEvent("Air hole open");
+            }
+            updateFlame();
+            if (state.isHoldingWire) updateGeneralInstruction();
         }
-    };
 
-    document.getElementById('reset-btn').onclick = () => resetSimulationState();
-    renderLists();
-
-    window.addEventListener('resize', () => {
-        if (currentStep === 1) {
-            clearMovingElements();
-            runStep();
+        function updateFlame() {
+            const inner = document.getElementById('flame-inner');
+            const label = document.getElementById('flame-label');
+            if (state.collarState === 0) {
+                document.documentElement.style.setProperty('--flame-color', 'rgba(255, 200, 50, 0.8)');
+                document.documentElement.style.setProperty('--glow-color', 'rgba(255, 150, 0, 0.4)');
+                inner.style.display = 'none';
+                label.textContent = "LUMINOUS FLAME";
+                label.style.color = "#f97316";
+            } else {
+                document.documentElement.style.setProperty('--flame-color', 'rgba(100, 150, 255, 0.2)');
+                document.documentElement.style.setProperty('--glow-color', 'transparent');
+                inner.style.display = 'block';
+                label.textContent = "NON-LUMINOUS FLAME";
+                label.style.color = "#3b82f6";
+            }
+            if (state.isOverFlame) applyChemicalColor();
         }
-    });
-</script>
+
+        function checkFlameCollision() {
+            const burnerRect = document.getElementById('flame-target').getBoundingClientRect();
+            const tipRect = activeTip.getBoundingClientRect();
+            const isOver = isColliding(tipRect, burnerRect, 15);
+            if (isOver !== state.isOverFlame) {
+                state.isOverFlame = isOver;
+                if (isOver) applyChemicalColor();
+                else {
+                    updateFlame();
+                    activeTip.style.borderColor = '#95a5a6';
+                }
+                updateGeneralInstruction();
+            }
+        }
+
+        function applyChemicalColor() {
+            if (state.activeSample) {
+                const s = samples[state.activeSample];
+                if (state.collarState === 1) {
+                    document.documentElement.style.setProperty('--flame-color', s.color);
+                    document.documentElement.style.setProperty('--glow-color', s.glow);
+                    logEvent(`TESTING ${s.name.toUpperCase()}...`);
+                } else {
+                    document.documentElement.style.setProperty('--flame-color', 'rgba(255, 180, 50, 0.9)'); 
+                    logEvent("The luminous flame mask the flame colour of ions. Change to non-luminous flame.");
+                }
+                activeTip.style.borderColor = '#ff6b6b';
+            } else {
+                activeTip.style.borderColor = '#ff6b6b';
+            }
+        }
+
+        function logEvent(msg) {
+            logText.textContent = msg;
+        }
+    </script>
 </body>
 </html>
