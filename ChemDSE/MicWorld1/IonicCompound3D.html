@@ -23,13 +23,16 @@
             .app-container { flex-direction: row; }
             #canvas-container { flex: 1; order: 2; height: 100vh !important; }
             .ui-sidebar { width: 340px; order: 1; height: 100vh; overflow-y: auto; position: relative; z-index: 50; }
+            #mobile-key { display: none; }
         }
 
-        /* Mobile specific layout */
+        /* Mobile specific layout: Key at Top, Crystal in Middle, Panel at Bottom */
         @media (max-width: 767px) {
             .app-container { overflow-y: auto; height: auto; min-height: 100vh; }
-            .ui-sidebar { width: 100%; order: 1; padding: 16px; flex-shrink: 0; }
-            #canvas-container { width: 100%; height: 60vh !important; order: 2; flex-shrink: 0; border-top: 1px solid rgba(255,255,255,0.1); }
+            #mobile-key { order: 1; width: 100%; padding: 12px; background: #0f172a; border-bottom: 1px solid rgba(255,255,255,0.1); z-index: 60; }
+            #canvas-container { width: 100%; height: 50vh !important; order: 2; flex-shrink: 0; }
+            .ui-sidebar { width: 100%; order: 3; padding: 16px; flex-shrink: 0; border-top: 1px solid rgba(255,255,255,0.1); }
+            #desktop-info-panel { display: none; }
         }
 
         #canvas-container { cursor: move; background: #0f172a; touch-action: none; position: relative; }
@@ -51,6 +54,23 @@
 <body>
 
     <div class="app-container">
+        <!-- Mobile Key (Top on phone only) -->
+        <header id="mobile-key">
+            <div class="flex justify-around items-center bg-slate-800/50 rounded-lg py-2 px-4 border border-slate-700">
+                <div class="flex items-center">
+                    <span id="m-ion-color-1" class="legend-dot bg-green-400"></span>
+                    <span id="m-ion-label-1" class="text-xs font-medium">Cl⁻</span>
+                </div>
+                <div class="flex items-center">
+                    <span id="m-ion-color-2" class="legend-dot bg-slate-300"></span>
+                    <span id="m-ion-label-2" class="text-xs font-medium">Na⁺</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- 3D Canvas Container -->
+        <main id="canvas-container"></main>
+
         <!-- Control Panel -->
         <aside class="ui-sidebar p-4 md:p-6">
             <div class="ui-card p-5 md:p-6 rounded-xl shadow-2xl h-full">
@@ -108,7 +128,7 @@
                     <div id="ratio-details" class="text-[11px] leading-relaxed font-mono text-slate-200"></div>
                 </div>
 
-                <div id="info-panel" class="mt-6 pt-4 border-t border-slate-700">
+                <div id="desktop-info-panel" class="mt-6 pt-4 border-t border-slate-700">
                     <h3 class="text-sm font-semibold mb-2" id="struct-title">Sodium Chloride (NaCl)</h3>
                     <div class="space-y-2 text-xs text-slate-300 mb-4">
                         <div class="flex items-center">
@@ -122,11 +142,13 @@
                     </div>
                     <p class="text-[11px] italic text-slate-400 leading-relaxed" id="struct-desc"></p>
                 </div>
+
+                <div id="mobile-desc-only" class="md:hidden mt-6 pt-4 border-t border-slate-700">
+                    <h3 class="text-sm font-semibold mb-2" id="m-struct-title">Sodium Chloride (NaCl)</h3>
+                    <p class="text-[11px] italic text-slate-400 leading-relaxed" id="m-struct-desc"></p>
+                </div>
             </div>
         </aside>
-
-        <!-- 3D Canvas Container -->
-        <main id="canvas-container"></main>
     </div>
 
     <script>
@@ -209,7 +231,6 @@
             let prevCoords = { x: 0, y: 0 };
             let initialPinchDistance = null;
 
-            // Restricted handlers - Only active when interaction starts on the canvas container
             const handleStart = (x, y) => {
                 isDragging = true;
                 prevCoords = { x, y };
@@ -239,12 +260,11 @@
                 camera.lookAt(0, 0, 0);
             };
 
-            // Mouse Events on Canvas
+            // Canvas Interaction Handlers
             container.addEventListener('mousedown', (e) => handleStart(e.clientX, e.clientY));
             window.addEventListener('mousemove', (e) => handleMove(e.clientX, e.clientY));
             window.addEventListener('mouseup', handleEnd);
 
-            // Touch Events on Canvas (restricted to prevent panel scroll interference)
             container.addEventListener('touchstart', (e) => {
                 if (e.touches.length === 1) {
                     handleStart(e.touches[0].clientX, e.touches[0].clientY);
@@ -256,7 +276,6 @@
                 }
             }, { passive: false });
 
-            // Global move so dragging doesn't stop if finger leaves canvas slightly
             window.addEventListener('touchmove', (e) => {
                 if (!isDragging && !initialPinchDistance) return;
                 
@@ -314,8 +333,6 @@
                     { n: new THREE.Vector3(-1, 0, 0), c: b },
                     { n: new THREE.Vector3(1, 0, 0),  c: b },
                     { n: new THREE.Vector3(0, -1, 0), c: b },
-                    { n: new THREE.Vector3(0, 1, 0),  c: b },
-                    { n: new THREE.Vector3(0, -1, 0), c: b }, // Duplicate planes handled by Three
                     { n: new THREE.Vector3(0, 1, 0),  c: b },
                     { n: new THREE.Vector3(0, 0, -1), c: b },
                     { n: new THREE.Vector3(0, 0, 1),  c: b }
@@ -450,16 +467,27 @@
 
         function updateUI() {
             const data = DATA[currentStructure];
+            // Desktop panel
             document.getElementById('struct-title').innerText = data.title;
             document.getElementById('struct-desc').innerText = data.desc;
             document.getElementById('ion-label-1').innerText = data.ion1;
             document.getElementById('ion-label-2').innerText = data.ion2;
             document.getElementById('ion-color-1').className = 'legend-dot ' + data.color1;
             document.getElementById('ion-color-2').className = 'legend-dot ' + data.color2;
+
+            // Mobile specific updates
+            document.getElementById('m-struct-title').innerText = data.title;
+            document.getElementById('m-struct-desc').innerText = data.desc;
+            document.getElementById('m-ion-label-1').innerText = data.ion1.split(' ')[0];
+            document.getElementById('m-ion-label-2').innerText = data.ion2.split(' ')[0];
+            document.getElementById('m-ion-color-1').className = 'legend-dot ' + data.color1;
+            document.getElementById('m-ion-color-2').className = 'legend-dot ' + data.color2;
+
             document.getElementById('ratio-details').innerHTML = data.ratioHtml;
 
             document.getElementById('ratio-panel').classList.toggle('hidden', !ratioMode);
-            document.getElementById('info-panel').classList.toggle('hidden', ratioMode);
+            document.getElementById('desktop-info-panel').classList.toggle('hidden', ratioMode);
+            document.getElementById('mobile-desc-only').classList.toggle('hidden', ratioMode);
 
             const ratioContainer = document.getElementById('ratio-mode-container');
             const ratioCheckbox = document.getElementById('check-ratio');
@@ -474,8 +502,10 @@
 
             ['btn-nacl', 'btn-cscl', 'btn-unit', 'btn-lattice'].forEach(id => {
                 const b = document.getElementById(id);
-                b.classList.remove('bg-blue-600', 'border-blue-400');
-                b.classList.add('bg-slate-700', 'border-transparent');
+                if(b) {
+                    b.classList.remove('bg-blue-600', 'border-blue-400');
+                    b.classList.add('bg-slate-700', 'border-transparent');
+                }
             });
             
             document.getElementById(currentStructure === 'NaCl' ? 'btn-nacl' : 'btn-cscl').classList.replace('bg-slate-700', 'bg-blue-600');
