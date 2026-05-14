@@ -28,8 +28,8 @@
 
         @media (max-width: 768px) {
             .lab-bench {
-                height: 750px; /* Tall bench area for mobile */
-                padding-bottom: 120px; /* Safe area for browser action bars */
+                height: 850px; /* Increased height to push content up */
+                padding-bottom: 250px; /* Huge safe area at bottom */
             }
         }
 
@@ -76,7 +76,7 @@
         @media (max-width: 768px) {
             .burner-container {
                 left: 80%;
-                bottom: 200px; /* Shifted significantly up to avoid browser bar */
+                bottom: 350px; /* Lifted significantly higher to clear action bar */
             }
         }
 
@@ -208,8 +208,8 @@
 
         @media (max-width: 768px) {
             .heatproof-mat {
-                height: 160px; /* Taller mat */
-                bottom: 140px; /* Lifted up from bottom browser zone */
+                height: 180px; 
+                bottom: 280px; /* Lifted up significantly */
             }
         }
 
@@ -224,7 +224,7 @@
 
         @media (max-width: 768px) {
             .pickup-wire-container {
-                bottom: 180px; /* Lifted up */
+                bottom: 320px; /* Lifted way above the bottom edge */
                 left: 10px;
             }
         }
@@ -243,7 +243,7 @@
         
         @media (max-width: 768px) {
             .wire-placeholder {
-                bottom: 180px; 
+                bottom: 320px; 
                 left: 10px;
             }
         }
@@ -278,7 +278,7 @@
 
         @media (max-width: 768px) {
             .hcl-station {
-                bottom: 180px; /* Lifted to be on level with wire */
+                bottom: 320px; /* Matched height with wire for cleaner UI */
                 left: 45%; 
                 flex-direction: column-reverse; 
                 gap: 4px;
@@ -312,45 +312,6 @@
             background: #475569;
             padding: 2px 8px;
             border-radius: 4px;
-            pointer-events: none;
-        }
-
-        .droplets {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 10px;
-            height: 10px;
-            background: rgba(186, 230, 253, 0.7);
-            border-radius: 50%;
-            display: none;
-            filter: blur(1px);
-        }
-
-        .powder-specks {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 9px;
-            height: 9px;
-            border-radius: 50%;
-            display: none;
-            filter: blur(0.5px);
-        }
-
-        .watch-glass {
-            background: rgba(255, 255, 255, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.5);
-            border-radius: 50%;
-            width: 70px;
-            height: 18px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 4px auto;
-            position: relative;
             pointer-events: none;
         }
 
@@ -390,18 +351,6 @@
             flex-direction: column;
             align-items: center;
             box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-        }
-
-        .sample-target:hover {
-            background: rgba(15, 23, 42, 0.95);
-            transform: scale(1.02);
-        }
-
-        .powder-pile {
-            width: 45px;
-            height: 6px;
-            border-radius: 50%;
-            filter: blur(1px);
         }
 
         .action-log-container {
@@ -449,11 +398,52 @@
             max-width: 95%;
         }
 
-        .warning-text {
-            color: #b91c1c;
-            text-decoration: underline;
-            font-weight: 900;
+        .droplets {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 10px;
+            height: 10px;
+            background: rgba(186, 230, 253, 0.7);
+            border-radius: 50%;
+            display: none;
+            filter: blur(1px);
         }
+
+        .powder-specks {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            display: none;
+            filter: blur(0.5px);
+        }
+
+        .watch-glass {
+            background: rgba(255, 255, 255, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            width: 70px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 4px auto;
+            position: relative;
+            pointer-events: none;
+        }
+
+        .powder-pile {
+            width: 45px;
+            height: 6px;
+            border-radius: 50%;
+            filter: blur(1px);
+        }
+
     </style>
 </head>
 <body class="p-2 md:p-4 font-sans select-none overflow-hidden">
@@ -625,7 +615,7 @@
 
             if (!state.isHoldingWire) {
                 const handleRect = startHandle.getBoundingClientRect();
-                const buffer = 40; 
+                const buffer = 50; 
                 if (clientX >= handleRect.left - buffer && clientX <= handleRect.right + buffer && 
                     clientY >= handleRect.top - buffer && clientY <= handleRect.bottom + buffer) {
                     pickUpWire(clientX, clientY);
@@ -651,9 +641,7 @@
         }
 
         function handleActiveInteractions(clientX, clientY) {
-            const benchRect = bench.getBoundingClientRect();
             const staticHandle = placeholder.getBoundingClientRect();
-            
             const isMobile = window.innerWidth < 768;
             const returnBuffer = isMobile ? 80 : 60;
             const inReturnZone = (clientX >= staticHandle.left - returnBuffer && clientX <= staticHandle.right + returnBuffer && 
@@ -665,7 +653,6 @@
             }
 
             const tipRect = activeTip.getBoundingClientRect();
-
             const hclArea = document.getElementById('hcl-target-area').getBoundingClientRect();
             const hclBuffer = isMobile ? 40 : 20; 
             if (isColliding(tipRect, hclArea, hclBuffer)) {
@@ -683,16 +670,13 @@
             for (let el of sampleElements) {
                 const rect = el.getBoundingClientRect();
                 const sampleBuffer = isMobile ? 25 : 10;
-
                 if (isColliding(tipRect, rect, sampleBuffer)) {
                     const type = el.dataset.type;
-                    
                     if (state.activeSample || !state.isWet) {
                         logEvent("CLEAN WIRE WITH HCl FIRST");
                         setInstruction('<span class="click-highlight">CLICK</span> HCl beaker to <span class="warning-text">WASH THE WIRE</span>');
                         return;
                     }
-                    
                     state.activeSample = type;
                     state.isWet = false;
                     droplets.style.display = 'none';
@@ -710,11 +694,9 @@
             tool.style.display = 'none';
             placeholder.classList.remove('active');
             staticContainer.style.visibility = 'visible';
-            
             staticDroplets.style.display = state.isWet ? 'block' : 'none';
             staticPowder.style.display = state.activeSample ? 'block' : 'none';
             if(state.activeSample) staticPowder.style.backgroundColor = samples[state.activeSample].powder;
-            
             setInstruction('To pick up wire, <span class="click-highlight">CLICK</span> the PURPLE HANDLE');
             logEvent("Returned wire to mat");
         }
@@ -793,7 +775,7 @@
         function checkFlameCollision() {
             const burnerRect = document.getElementById('flame-target').getBoundingClientRect();
             const tipRect = activeTip.getBoundingClientRect();
-            const isOver = isColliding(tipRect, burnerRect, 15);
+            const isOver = isColliding(tipRect, burnerRect, 20);
             if (isOver !== state.isOverFlame) {
                 state.isOverFlame = isOver;
                 if (isOver) applyChemicalColor();
