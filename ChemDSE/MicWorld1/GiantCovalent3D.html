@@ -2,39 +2,73 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>3D Giant Covalent Structures</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { margin: 0; overflow: hidden; font-family: sans-serif; background-color: #1a1a1a; color: white; touch-action: none; }
-        canvas { display: block; }
-        .controls {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            background: rgba(0, 0, 0, 0.85);
-            padding: 20px;
-            border-radius: 12px;
-            backdrop-filter: blur(10px);
-            border: 1px solid #444;
-            width: 320px;
-            z-index: 10;
-            max-height: 90vh;
+        body { margin: 0; overflow-x: hidden; font-family: sans-serif; background-color: #1a1a1a; color: white; }
+        
+        /* Main Layout Container */
+        .app-container {
+            display: flex;
+            flex-direction: row;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        #canvas-container {
+            flex-grow: 1;
+            position: relative;
+            z-index: 1;
+            touch-action: none;
+            background-color: #000;
+        }
+
+        .ui-sidebar {
+            width: 360px;
+            height: 100vh;
             overflow-y: auto;
-            touch-action: auto; /* Allow scrolling within the panel */
-        }
-        .info-panel {
-            position: absolute;
-            bottom: 20px;
-            left: 20px;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 15px;
-            border-radius: 12px;
-            border: 1px solid #444;
-            max-width: 450px;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            border-left: 1px solid #444;
+            padding: 20px;
             z-index: 10;
+            flex-shrink: 0;
         }
+
+        /* Mobile Layout */
+        @media (max-width: 768px) {
+            .app-container {
+                flex-direction: column;
+                height: 100vh;
+                overflow: hidden;
+            }
+
+            #canvas-container {
+                height: 50vh;
+                width: 100%;
+                flex-shrink: 0;
+            }
+
+            .ui-sidebar {
+                width: 100%;
+                height: 50vh;
+                overflow-y: auto;
+                border-left: none;
+                border-top: 1px solid #444;
+                background: #000;
+            }
+
+            .legend-panel {
+                top: 10px !important;
+                right: 10px !important;
+                padding: 10px !important;
+                scale: 0.85;
+                transform-origin: top right;
+            }
+        }
+
         .legend-panel {
             position: absolute;
             top: 20px;
@@ -43,118 +77,66 @@
             padding: 15px;
             border-radius: 12px;
             border: 1px solid #444;
-            z-index: 10;
+            z-index: 5;
             min-width: 180px;
         }
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 8px;
-            font-size: 13px;
-        }
-        .swatch {
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            border: 1px solid rgba(255,255,255,0.2);
-        }
-        .swatch-bond {
-            width: 20px;
-            height: 4px;
-            border-radius: 2px;
-        }
-        .swatch-vdw {
-            width: 20px;
-            height: 2px;
-            border: 1px dashed white;
-            background: repeating-linear-gradient(90deg, #fff, #fff 4px, transparent 4px, transparent 8px);
-        }
+
+        .legend-item { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 13px; }
+        .swatch { width: 16px; height: 16px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.2); }
+        .swatch-bond { width: 20px; height: 4px; border-radius: 2px; }
+        .swatch-vdw { width: 20px; height: 2px; border: 1px dashed white; background: repeating-linear-gradient(90deg, #fff, #fff 4px, transparent 4px, transparent 8px); }
+        
         button { transition: all 0.2s; }
         button:active { transform: scale(0.95); }
-        .active-btn { background-color: #3b82f6 !important; }
+        .active-btn { background-color: #3b82f6 !important; border: 2px solid #fff !important; }
         
-        /* Enhanced Glowing Animation for the Interaction Guide */
         @keyframes glow-pulse {
             0% { box-shadow: 0 0 5px rgba(59, 130, 246, 0.2); border-color: rgba(59, 130, 246, 0.3); }
             50% { box-shadow: 0 0 15px rgba(59, 130, 246, 0.6); border-color: rgba(59, 130, 246, 0.8); }
             100% { box-shadow: 0 0 5px rgba(59, 130, 246, 0.2); border-color: rgba(59, 130, 246, 0.3); }
         }
-
-        @keyframes text-flicker {
-            0%, 100% { opacity: 0.9; }
-            50% { opacity: 1; text-shadow: 0 0 8px rgba(255, 255, 255, 0.4); }
-        }
-
-        .guide-glow {
-            animation: glow-pulse 3s infinite ease-in-out;
-        }
-
-        .hint-animate {
-            animation: text-flicker 2s infinite ease-in-out;
-        }
+        .guide-glow { animation: glow-pulse 3s infinite ease-in-out; }
     </style>
 </head>
 <body>
 
-    <div class="controls">
-        <h1 class="text-xl font-bold mb-4">Structure Inspector</h1>
-        
-        <div class="flex flex-col gap-2 mb-6">
-            <button onclick="switchStructure('diamond')" id="btn-diamond" class="active-btn bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded text-left">Diamond (C)</button>
-            <button onclick="switchStructure('graphite')" id="btn-graphite" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded text-left">Graphite (C)</button>
-            <button onclick="switchStructure('quartz')" id="btn-quartz" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded text-left">Quartz (SiO₂)</button>
+    <div class="app-container">
+        <div id="canvas-container">
+            <div class="legend-panel" id="legend">
+                <h3 class="text-xs font-bold uppercase text-gray-400 mb-3 tracking-widest">Key</h3>
+                <div id="legend-content"></div>
+            </div>
         </div>
 
-        <hr class="my-4 border-gray-600">
+        <div class="ui-sidebar">
+            <h1 class="text-xl font-bold mb-4">Structure Inspector</h1>
+            
+            <div class="flex flex-col gap-2 mb-6">
+                <button onclick="switchStructure('diamond')" id="btn-diamond" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded text-left font-medium">Diamond (C)</button>
+                <button onclick="switchStructure('graphite')" id="btn-graphite" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded text-left font-medium">Graphite (C)</button>
+                <button onclick="switchStructure('quartz')" id="btn-quartz" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded text-left font-medium">Quartz (SiO₂)</button>
+            </div>
 
-        <div class="flex flex-col gap-2">
-            <button onclick="toggleFocus()" id="btn-focus" class="bg-amber-600 hover:bg-amber-500 px-4 py-2 rounded font-bold uppercase tracking-wide">
-                Focus Mode: OFF
-            </button>
-            <p class="text-[10px] text-gray-400 mt-2 italic">Focus mode shows the only parts you need to draw in the assessment.</p>
-        </div>
+            <div class="flex flex-col gap-2 mb-6">
+                <button onclick="toggleFocus()" id="btn-focus" class="bg-amber-600 hover:bg-amber-500 px-4 py-3 rounded font-bold uppercase tracking-wide shadow-lg">
+                    Focus Mode: OFF
+                </button>
+                <p class="text-[11px] text-gray-400 mt-2 italic leading-tight">Focus mode shows the only parts you need to draw in the assessment.</p>
+            </div>
 
-        <!-- Redesigned Reset Button -->
-        <div class="mt-8 pt-4 border-t border-gray-700">
-            <button onclick="resetToOriginal()" class="w-full bg-white text-black hover:bg-gray-200 font-bold py-3 px-4 rounded-lg shadow-lg flex items-center justify-center gap-2 group">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="group-hover:rotate-180 transition-transform duration-500"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>
+            <button onclick="resetToOriginal()" class="w-full bg-white text-black hover:bg-gray-200 font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 mb-6 shadow-md">
                 RESET VIEW
             </button>
-        </div>
 
-        <!-- Enhanced Interaction Guide with Glow -->
-        <div class="mt-6 p-4 bg-blue-900/40 border border-blue-500/50 rounded-lg guide-glow">
-            <div class="flex items-center gap-2 text-white font-bold text-xs uppercase tracking-widest mb-3 hint-animate">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-400"><path d="m15 18-6-6 6-6"/></svg>
-                Interaction Guide
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-400"><path d="m9 18 6-6-6-6"/></svg>
+            <div class="mb-6">
+                <h2 class="text-lg font-bold text-blue-400" id="info-title">Diamond</h2>
+                <div class="text-sm mt-2 whitespace-pre-line text-gray-300 leading-relaxed" id="info-desc"></div>
             </div>
-            <div class="space-y-3">
-                <div class="flex items-start gap-3">
-                    <div class="mt-0.5 p-1 bg-blue-500 rounded shadow-sm text-white"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 9 4-4 4 4"/><path d="M9 5v14"/><path d="m11 15-4 4-4-4"/><path d="m15 9 4-4 4 4"/><path d="M19 5v14"/><path d="m21 15-4 4-4-4"/></svg></div>
-                    <p class="text-[11px] leading-tight text-blue-50"><span class="font-black text-white">DRAG / SWIPE:</span> Rotate and explore the 3D model.</p>
-                </div>
-                <div class="flex items-start gap-3">
-                    <div class="mt-0.5 p-1 bg-blue-500 rounded shadow-sm text-white"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m16 12-4-4-4 4"/><path d="M12 8v8"/></svg></div>
-                    <p class="text-[11px] leading-tight text-blue-50"><span class="font-black text-white">SCROLL / PINCH:</span> Zoom in and out for detail.</p>
-                </div>
+
+            <div class="p-4 bg-blue-900/40 border border-blue-500/50 rounded-lg guide-glow">
+                <p class="text-[11px] leading-tight text-blue-50"><span class="font-black text-white uppercase">Interaction:</span> Drag to rotate. Pinch/Scroll to zoom.</p>
             </div>
         </div>
-    </div>
-
-    <!-- Dynamic Legend -->
-    <div class="legend-panel" id="legend">
-        <h3 class="text-xs font-bold uppercase text-gray-400 mb-3 tracking-widest">Key</h3>
-        <div id="legend-content">
-            <!-- Populated by JS -->
-        </div>
-    </div>
-
-    <div class="info-panel" id="info-text">
-        <h2 class="text-lg font-bold text-blue-400" id="info-title">Diamond</h2>
-        <div class="text-sm mt-1 whitespace-pre-line" id="info-desc">Strong covalent bond between C atoms within the whole network.
-Each C atom forms 4 covalent bonds.</div>
     </div>
 
     <script>
@@ -163,13 +145,13 @@ Each C atom forms 4 covalent bonds.</div>
         let isDragging = false;
         let previousMouse = { x: 0, y: 0 };
         let initialPinchDistance = null;
-        const raycaster = new THREE.Raycaster();
-        const mouse = new THREE.Vector2();
+        let currentType = 'diamond';
 
+        // Reset offsetY to 0 to keep models centered in the viewport
         const ORIENTATIONS = {
-            diamond: { x: -1.86, y: -3.81 },
-            graphite: { x: -1.00, y: -3.18 },
-            quartz: { x: -1.92, y: -3.68 }
+            diamond: { x: -1.86, y: -3.81, offsetY: 0 },
+            graphite: { x: -1.00, y: -3.18, offsetY: 0 },
+            quartz: { x: -1.92, y: -3.68, offsetY: 0 }
         };
 
         const ATOM_SCALE = 0.35; 
@@ -213,19 +195,18 @@ Each C atom forms 4 covalent bonds.</div>
             }
         };
 
-        let currentType = 'diamond';
-
         function init() {
+            const container = document.getElementById('canvas-container');
             scene = new THREE.Scene();
-            camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 1000);
             camera.position.set(0, 0, 25);
 
-            renderer = new THREE.WebGLRenderer({ antialias: true });
-            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
             renderer.setPixelRatio(window.devicePixelRatio);
-            document.body.appendChild(renderer.domElement);
+            container.appendChild(renderer.domElement);
 
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
             scene.add(ambientLight);
 
             const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6);
@@ -240,64 +221,43 @@ Each C atom forms 4 covalent bonds.</div>
 
             window.addEventListener('resize', onWindowResize);
             
-            // Mouse Events
-            document.addEventListener('mousedown', onMouseDown);
-            document.addEventListener('mouseup', onMouseUp);
-            document.addEventListener('mousemove', onMouseMove);
-            document.addEventListener('wheel', onWheel, { passive: false });
+            container.addEventListener('mousedown', onMouseDown);
+            window.addEventListener('mouseup', onMouseUp);
+            window.addEventListener('mousemove', onMouseMove);
+            container.addEventListener('wheel', onWheel, { passive: false });
 
-            // Touch Events for Tablets/Mobile
-            document.addEventListener('touchstart', onTouchStart, { passive: false });
-            document.addEventListener('touchend', onTouchEnd, { passive: false });
-            document.addEventListener('touchmove', onTouchMove, { passive: false });
+            container.addEventListener('touchstart', onTouchStart, { passive: false });
+            window.addEventListener('touchend', onTouchEnd);
+            container.addEventListener('touchmove', onTouchMove, { passive: false });
             
             animate();
         }
 
         function updateLegend(type) {
-            const container = document.getElementById('legend-content');
-            const items = structures[type].legend;
-            container.innerHTML = items.map(item => {
+            const content = structures[type].legend.map(item => {
                 let swatchHtml = '';
-                if (item.type === 'atom') {
-                    swatchHtml = `<div class="swatch" style="background-color: ${item.color}"></div>`;
-                } else if (item.type === 'bond') {
-                    swatchHtml = `<div class="swatch-bond" style="background-color: ${item.color}"></div>`;
-                } else if (item.type === 'vdw') {
-                    swatchHtml = `<div class="swatch-vdw"></div>`;
-                }
-                return `
-                    <div class="legend-item">
-                        ${swatchHtml}
-                        <span>${item.label}</span>
-                    </div>
-                `;
+                if (item.type === 'atom') swatchHtml = `<div class="swatch" style="background-color: ${item.color}"></div>`;
+                else if (item.type === 'bond') swatchHtml = `<div class="swatch-bond" style="background-color: ${item.color}"></div>`;
+                else if (item.type === 'vdw') swatchHtml = `<div class="swatch-vdw"></div>`;
+                return `<div class="legend-item">${swatchHtml}<span>${item.label}</span></div>`;
             }).join('');
+            document.getElementById('legend-content').innerHTML = content;
         }
 
         function createAtom(pos, color, size = ATOM_SCALE) {
-            const geo = new THREE.SphereGeometry(size, 24, 24);
-            const mat = new THREE.MeshPhongMaterial({ color: color, shininess: 100 });
+            const geo = new THREE.SphereGeometry(size, 20, 20);
+            const mat = new THREE.MeshPhongMaterial({ color: color, shininess: 80 });
             const mesh = new THREE.Mesh(geo, mat);
             mesh.position.copy(pos);
-            mesh.userData = { type: 'atom', originalColor: color, coord: pos.clone() };
             return mesh;
         }
 
         function createBond(p1, p2, color, isVDW = false) {
             if (isVDW) {
                 const geometry = new THREE.BufferGeometry().setFromPoints([p1, p2]);
-                const material = new THREE.LineDashedMaterial({
-                    color: color,
-                    dashSize: 0.3,
-                    gapSize: 0.2,
-                    scale: 1,
-                    transparent: true,
-                    opacity: 0.8
-                });
+                const material = new THREE.LineDashedMaterial({ color: color, dashSize: 0.3, gapSize: 0.2, scale: 1, transparent: true, opacity: 0.8 });
                 const line = new THREE.Line(geometry, material);
                 line.computeLineDistances();
-                line.userData = { type: 'vdw' };
                 return line;
             } else {
                 const direction = new THREE.Vector3().subVectors(p2, p1);
@@ -308,221 +268,8 @@ Each C atom forms 4 covalent bonds.</div>
                 const center = new THREE.Vector3().addVectors(p1, p2).multiplyScalar(0.5);
                 mesh.position.copy(center);
                 mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.clone().normalize());
-                mesh.userData = { type: 'bond' };
                 return mesh;
             }
-        }
-
-        function clearScene() {
-            while(currentGroup.children.length > 0){ 
-                currentGroup.remove(currentGroup.children[0]); 
-            }
-        }
-
-        function resetToOriginal() {
-            const def = ORIENTATIONS[currentType] || { x: 0, y: 0 };
-            currentGroup.rotation.x = def.x;
-            currentGroup.rotation.y = def.y;
-        }
-
-        function getDiamondAtoms(focus) {
-            let atoms = [];
-            if (focus) {
-                atoms = [[-4,-4,-4],[-3,-3,-3],[-4,-2,-2],[-2,-2,-4],[-1,-3,-1],[0,-2,-2],[0,-4,0],[-2,-2,0],[0,0,-4],[-1,-1,-3],[-2,0,-2],[-3,-1,-1],[-4,0,0],[-2,-4,-2]].map(c => new THREE.Vector3(c[0], c[1], c[2]));
-            } else {
-                const unit = [[0, 0, 0], [2, 2, 0], [2, 0, 2], [0, 2, 2], [1, 1, 1], [3, 3, 1], [3, 1, 3], [1, 3, 3]];
-                for (let i = -1; i <= 0; i++) {
-                    for (let j = -1; j <= 0; j++) {
-                        for (let k = -1; k <= 0; k++) {
-                            unit.forEach(p => atoms.push(new THREE.Vector3(i*4 + p[0], j*4 + p[1], k*4 + p[2])));
-                        }
-                    }
-                }
-            }
-            const centroid = new THREE.Vector3();
-            atoms.forEach(a => centroid.add(a));
-            centroid.divideScalar(atoms.length || 1);
-            return atoms.map(a => a.sub(centroid));
-        }
-
-        function buildDiamond() {
-            clearScene();
-            const config = structures.diamond;
-            const centered = getDiamondAtoms(isFocusMode);
-
-            centered.forEach(pos => currentGroup.add(createAtom(pos, config.color)));
-            for (let i = 0; i < centered.length; i++) {
-                for (let j = i + 1; j < centered.length; j++) {
-                    if (centered[i].distanceTo(centered[j]) < 1.8) {
-                        currentGroup.add(createBond(centered[i], centered[j], config.bondColor));
-                    }
-                }
-            }
-            camera.position.set(0, 0, isFocusMode ? 12 : 20);
-        }
-
-        function buildGraphite() {
-            clearScene();
-            const config = structures.graphite;
-            let atoms = [];
-            
-            if (isFocusMode) {
-                const coords = [
-                    [-0.8,-3.1,-3.4],[-0.1,-1.8,-3.4],[-0.8,-0.6,-3.4],[-3.0,-1.8,-3.4],[-2.2,-3.1,-3.4],[-2.2,-0.6,-3.4],
-                    [-3.0,0.6,-3.4],[-4.4,0.6,-3.4],[-5.1,-0.6,-3.4],[-4.4,-1.8,-3.4],[-0.1,-1.8,3.4],[-0.8,-0.6,3.4],
-                    [-2.2,-0.6,3.4],[-3.0,0.6,3.4],[-4.4,0.6,3.4],[-5.1,-0.6,3.4],[-4.4,-1.8,3.4],[-3.0,-1.8,3.4],
-                    [-2.2,-3.1,3.4],[-0.8,-3.1,3.4],[-0.1,0.6,-3.4],[-0.8,1.8,-3.4],[-2.2,1.8,-3.4],[-0.1,0.6,3.4],
-                    [-0.8,1.8,3.4],[-2.2,1.8,3.4]
-                ];
-                atoms = coords.map(c => new THREE.Vector3(c[0], c[1], c[2]));
-            } else {
-                const a = 1.42;
-                const limit = 2;
-                const layerHeight = 3.35;
-                for (let layer = 0; layer < 3; layer++) {
-                    const z = (layer - 1) * layerHeight;
-                    const shiftX = (layer % 2 !== 0) ? a : 0;
-                    for (let i = -limit; i <= limit; i++) {
-                        for (let j = -limit; j <= limit; j++) {
-                            const xBase = i * 3 * a;
-                            const yBase = j * Math.sqrt(3) * a;
-                            const pts = [
-                                {x: xBase + shiftX, y: yBase},
-                                {x: xBase + a + shiftX, y: yBase},
-                                {x: xBase + 1.5 * a + shiftX, y: yBase + 0.5 * Math.sqrt(3) * a},
-                                {x: xBase + 2.5 * a + shiftX, y: yBase + 0.5 * Math.sqrt(3) * a}
-                            ];
-                            pts.forEach(p => atoms.push(new THREE.Vector3(p.x, p.y, z)));
-                        }
-                    }
-                }
-            }
-
-            const centroid = new THREE.Vector3();
-            atoms.forEach(at => centroid.add(at));
-            centroid.divideScalar(atoms.length || 1);
-            const centered = atoms.map(at => at.sub(centroid));
-            
-            centered.forEach(pos => currentGroup.add(createAtom(pos, config.color, ATOM_SCALE * 0.9)));
-            
-            for (let i = 0; i < centered.length; i++) {
-                for (let j = i + 1; j < centered.length; j++) {
-                    const dz = Math.abs(centered[i].z - centered[j].z);
-                    const planarDist = Math.sqrt(Math.pow(centered[i].x - centered[j].x, 2) + Math.pow(centered[i].y - centered[j].y, 2));
-
-                    if (dz < 0.2 && centered[i].distanceTo(centered[j]) < 1.6) {
-                        currentGroup.add(createBond(centered[i], centered[j], config.bondColor));
-                    } else if (dz > 3.0 && planarDist < 1.0) {
-                        currentGroup.add(createBond(centered[i], centered[j], config.vdwColor, true));
-                    }
-                }
-            }
-            camera.position.set(0, 0, isFocusMode ? 15 : 22);
-        }
-
-        function buildQuartz() {
-            clearScene();
-            const config = structures.quartz;
-            const siAtoms = getDiamondAtoms(isFocusMode);
-            
-            siAtoms.forEach(pos => currentGroup.add(createAtom(pos, config.siColor, QUARTZ_ATOM_SCALE * 1.3)));
-
-            for (let i = 0; i < siAtoms.length; i++) {
-                for (let j = i + 1; j < siAtoms.length; j++) {
-                    const dist = siAtoms[i].distanceTo(siAtoms[j]);
-                    if (dist < 1.8) {
-                        const pSi1 = siAtoms[i];
-                        const pSi2 = siAtoms[j];
-                        const pOxygen = new THREE.Vector3().addVectors(pSi1, pSi2).multiplyScalar(0.5);
-                        currentGroup.add(createAtom(pOxygen, config.oColor, QUARTZ_ATOM_SCALE * 0.8));
-                        currentGroup.add(createBond(pSi1, pOxygen, config.bondColor));
-                        currentGroup.add(createBond(pSi2, pOxygen, config.bondColor));
-                    }
-                }
-            }
-            camera.position.set(0, 0, isFocusMode ? 12 : 20);
-        }
-
-        // Mouse Handlers
-        function onMouseDown(e) {
-            if (e.target.closest('.controls') || e.target.closest('.info-panel') || e.target.closest('.legend-panel')) return;
-            isDragging = true;
-            previousMouse.x = e.clientX;
-            previousMouse.y = e.clientY;
-        }
-
-        function onMouseUp() { isDragging = false; }
-
-        function onMouseMove(e) {
-            if (isDragging) {
-                const deltaX = e.clientX - previousMouse.x;
-                const deltaY = e.clientY - previousMouse.y;
-                currentGroup.rotation.y += deltaX * 0.01;
-                currentGroup.rotation.x += deltaY * 0.01;
-                previousMouse.x = e.clientX;
-                previousMouse.y = e.clientY;
-            }
-        }
-
-        function onWheel(e) {
-            if (e.target.closest('.controls')) return;
-            camera.position.z += e.deltaY * 0.015;
-            camera.position.z = Math.max(2, Math.min(80, camera.position.z));
-            e.preventDefault();
-        }
-
-        // Touch Handlers
-        function onTouchStart(e) {
-            // If the touch started on UI, don't initiate dragging or prevent default
-            if (e.target.closest('.controls') || e.target.closest('.info-panel') || e.target.closest('.legend-panel')) return;
-            
-            if (e.touches.length === 1) {
-                isDragging = true;
-                previousMouse.x = e.touches[0].clientX;
-                previousMouse.y = e.touches[0].clientY;
-            } else if (e.touches.length === 2) {
-                isDragging = false;
-                initialPinchDistance = getTouchDistance(e.touches);
-            }
-            e.preventDefault();
-        }
-
-        function onTouchEnd(e) {
-            isDragging = false;
-            initialPinchDistance = null;
-        }
-
-        function onTouchMove(e) {
-            if (e.target.closest('.controls')) return;
-
-            if (e.touches.length === 1 && isDragging) {
-                const deltaX = e.touches[0].clientX - previousMouse.x;
-                const deltaY = e.touches[0].clientY - previousMouse.y;
-                currentGroup.rotation.y += deltaX * 0.01;
-                currentGroup.rotation.x += deltaY * 0.01;
-                previousMouse.x = e.touches[0].clientX;
-                previousMouse.y = e.touches[0].clientY;
-                e.preventDefault();
-            } else if (e.touches.length === 2 && initialPinchDistance !== null) {
-                const currentDistance = getTouchDistance(e.touches);
-                const diff = initialPinchDistance - currentDistance;
-                camera.position.z += diff * 0.05;
-                camera.position.z = Math.max(2, Math.min(80, camera.position.z));
-                initialPinchDistance = currentDistance;
-                e.preventDefault();
-            }
-        }
-
-        function getTouchDistance(touches) {
-            const dx = touches[0].clientX - touches[1].clientX;
-            const dy = touches[0].clientY - touches[1].clientY;
-            return Math.sqrt(dx * dx + dy * dy);
-        }
-
-        function onWindowResize() {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
         }
 
         function switchStructure(type) {
@@ -534,27 +281,160 @@ Each C atom forms 4 covalent bonds.</div>
             document.getElementById('btn-' + type).classList.add('active-btn');
             
             updateLegend(type);
-            
+            clearScene();
+
             if (type === 'diamond') buildDiamond();
             else if (type === 'graphite') buildGraphite();
             else if (type === 'quartz') buildQuartz();
             resetToOriginal();
         }
 
+        function clearScene() {
+            while(currentGroup.children.length > 0){ currentGroup.remove(currentGroup.children[0]); }
+        }
+
+        function resetToOriginal() {
+            const def = ORIENTATIONS[currentType];
+            currentGroup.rotation.x = def.x;
+            currentGroup.rotation.y = def.y;
+            currentGroup.position.y = 0; // Centered vertically
+        }
+
+        function buildDiamond() {
+            const config = structures.diamond;
+            const atoms = getDiamondAtoms(isFocusMode);
+            atoms.forEach(pos => currentGroup.add(createAtom(pos, config.color)));
+            for (let i = 0; i < atoms.length; i++) {
+                for (let j = i + 1; j < atoms.length; j++) {
+                    if (atoms[i].distanceTo(atoms[j]) < 1.8) currentGroup.add(createBond(atoms[i], atoms[j], config.bondColor));
+                }
+            }
+            camera.position.z = isFocusMode ? 12 : 18;
+        }
+
+        function buildGraphite() {
+            const config = structures.graphite;
+            let atoms = [];
+            if (isFocusMode) {
+                const coords = [[-0.8,-3.1,-3.4],[-0.1,-1.8,-3.4],[-0.8,-0.6,-3.4],[-3.0,-1.8,-3.4],[-2.2,-3.1,-3.4],[-2.2,-0.6,-3.4],[-3.0,0.6,-3.4],[-4.4,0.6,-3.4],[-5.1,-0.6,-3.4],[-4.4,-1.8,-3.4],[-0.1,-1.8,3.4],[-0.8,-0.6,3.4],[-2.2,-0.6,3.4],[-3.0,0.6,3.4],[-4.4,0.6,3.4],[-5.1,-0.6,3.4],[-4.4,-1.8,3.4],[-3.0,-1.8,3.4],[-2.2,-3.1,3.4],[-0.8,-3.1,3.4],[-0.1,0.6,-3.4],[-0.8,1.8,-3.4],[-2.2,1.8,-3.4],[-0.1,0.6,3.4],[-0.8,1.8,3.4],[-2.2,1.8,3.4]];
+                atoms = coords.map(c => new THREE.Vector3(c[0], c[1], c[2]));
+            } else {
+                const a = 1.42;
+                for (let layer = 0; layer < 3; layer++) {
+                    const z = (layer - 1) * 3.35;
+                    const shiftX = (layer % 2 !== 0) ? a : 0;
+                    for (let i = -1; i <= 1; i++) {
+                        for (let j = -1; j <= 1; j++) {
+                            const xBase = i * 3 * a;
+                            const yBase = j * Math.sqrt(3) * a;
+                            [[xBase + shiftX, yBase], [xBase + a + shiftX, yBase], [xBase + 1.5 * a + shiftX, yBase + 0.5 * Math.sqrt(3) * a], [xBase + 2.5 * a + shiftX, yBase + 0.5 * Math.sqrt(3) * a]].forEach(p => atoms.push(new THREE.Vector3(p[0], p[1], z)));
+                        }
+                    }
+                }
+            }
+            const centroid = new THREE.Vector3();
+            atoms.forEach(at => centroid.add(at));
+            centroid.divideScalar(atoms.length || 1);
+            const centered = atoms.map(at => at.sub(centroid));
+            centered.forEach(pos => currentGroup.add(createAtom(pos, config.color, ATOM_SCALE * 0.9)));
+            for (let i = 0; i < centered.length; i++) {
+                for (let j = i + 1; j < centered.length; j++) {
+                    const dz = Math.abs(centered[i].z - centered[j].z);
+                    const planarDist = Math.sqrt(Math.pow(centered[i].x - centered[j].x, 2) + Math.pow(centered[i].y - centered[j].y, 2));
+                    if (dz < 0.2 && centered[i].distanceTo(centered[j]) < 1.6) currentGroup.add(createBond(centered[i], centered[j], config.bondColor));
+                    else if (dz > 3.0 && planarDist < 1.0) currentGroup.add(createBond(centered[i], centered[j], config.vdwColor, true));
+                }
+            }
+            camera.position.z = isFocusMode ? 14 : 20;
+        }
+
+        function buildQuartz() {
+            const config = structures.quartz;
+            const siAtoms = getDiamondAtoms(isFocusMode);
+            siAtoms.forEach(pos => currentGroup.add(createAtom(pos, config.siColor, QUARTZ_ATOM_SCALE * 1.3)));
+            for (let i = 0; i < siAtoms.length; i++) {
+                for (let j = i + 1; j < siAtoms.length; j++) {
+                    if (siAtoms[i].distanceTo(siAtoms[j]) < 1.8) {
+                        const pO = new THREE.Vector3().addVectors(siAtoms[i], siAtoms[j]).multiplyScalar(0.5);
+                        currentGroup.add(createAtom(pO, config.oColor, QUARTZ_ATOM_SCALE * 0.8));
+                        currentGroup.add(createBond(siAtoms[i], pO, config.bondColor));
+                        currentGroup.add(createBond(siAtoms[j], pO, config.bondColor));
+                    }
+                }
+            }
+            camera.position.z = isFocusMode ? 12 : 18;
+        }
+
+        function getDiamondAtoms(focus) {
+            let atoms = [];
+            if (focus) {
+                atoms = [[-4,-4,-4],[-3,-3,-3],[-4,-2,-2],[-2,-2,-4],[-1,-3,-1],[0,-2,-2],[0,-4,0],[-2,-2,0],[0,0,-4],[-1,-1,-3],[-2,0,-2],[-3,-1,-1],[-4,0,0],[-2,-4,-2]].map(c => new THREE.Vector3(c[0], c[1], c[2]));
+            } else {
+                const unit = [[0,0,0],[2,2,0],[2,0,2],[0,2,2],[1,1,1],[3,3,1],[3,1,3],[1,3,3]];
+                for (let i = -1; i <= 0; i++) for (let j = -1; j <= 0; j++) for (let k = -1; k <= 0; k++) unit.forEach(p => atoms.push(new THREE.Vector3(i*4+p[0], j*4+p[1], k*4+p[2])));
+            }
+            const centroid = new THREE.Vector3();
+            atoms.forEach(a => centroid.add(a));
+            centroid.divideScalar(atoms.length || 1);
+            return atoms.map(a => a.sub(centroid));
+        }
+
+        function onMouseDown(e) { isDragging = true; previousMouse = { x: e.clientX, y: e.clientY }; }
+        function onMouseUp() { isDragging = false; }
+        function onMouseMove(e) {
+            if (isDragging) {
+                currentGroup.rotation.y += (e.clientX - previousMouse.x) * 0.01;
+                currentGroup.rotation.x += (e.clientY - previousMouse.y) * 0.01;
+                previousMouse = { x: e.clientX, y: e.clientY };
+            }
+        }
+        function onWheel(e) {
+            camera.position.z = Math.max(5, Math.min(80, camera.position.z + e.deltaY * 0.02));
+            e.preventDefault();
+        }
+
+        function onTouchStart(e) {
+            if (e.touches.length === 1) {
+                isDragging = true;
+                previousMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            } else if (e.touches.length === 2) {
+                isDragging = false;
+                initialPinchDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+            }
+            e.preventDefault();
+        }
+        function onTouchEnd() { isDragging = false; initialPinchDistance = null; }
+        function onTouchMove(e) {
+            if (e.touches.length === 1 && isDragging) {
+                currentGroup.rotation.y += (e.touches[0].clientX - previousMouse.x) * 0.01;
+                currentGroup.rotation.x += (e.touches[0].clientY - previousMouse.y) * 0.01;
+                previousMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+                e.preventDefault();
+            } else if (e.touches.length === 2 && initialPinchDistance !== null) {
+                const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+                camera.position.z = Math.max(5, Math.min(80, camera.position.z - (dist - initialPinchDistance) * 0.05));
+                initialPinchDistance = dist;
+                e.preventDefault();
+            }
+        }
+
+        function onWindowResize() {
+            const container = document.getElementById('canvas-container');
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            resetToOriginal();
+        }
+
         function toggleFocus() {
             isFocusMode = !isFocusMode;
-            const btn = document.getElementById('btn-focus');
-            btn.classList.toggle('bg-green-600', isFocusMode);
-            btn.classList.toggle('bg-amber-600', !isFocusMode);
-            btn.innerText = `Focus Mode: ${isFocusMode ? 'ON' : 'OFF'}`;
-            switchStructure(currentType); 
+            document.getElementById('btn-focus').innerText = `Focus Mode: ${isFocusMode ? 'ON' : 'OFF'}`;
+            document.getElementById('btn-focus').classList.toggle('bg-green-600', isFocusMode);
+            document.getElementById('btn-focus').classList.toggle('bg-amber-600', !isFocusMode);
+            switchStructure(currentType);
         }
 
-        function animate() {
-            requestAnimationFrame(animate);
-            renderer.render(scene, camera);
-        }
-
+        function animate() { requestAnimationFrame(animate); renderer.render(scene, camera); }
         window.onload = init;
     </script>
 </body>
