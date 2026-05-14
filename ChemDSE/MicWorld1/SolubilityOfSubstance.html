@@ -200,11 +200,21 @@
 
                 if (this.isFree) {
                     if (this.type === 'solvent' && this.assignedIon) {
+                        // If assigned ion is somehow removed or reset, detach solvent
+                        if (!particles.includes(this.assignedIon)) {
+                            this.assignedIon = null;
+                            this.shellIndex = -1;
+                            return;
+                        }
+                        
                         this.offsetAngle = (this.shellIndex / 8) * Math.PI * 2;
                         const targetX = this.assignedIon.x + Math.cos(this.offsetAngle) * this.offsetDist;
                         const targetY = this.assignedIon.y + Math.sin(this.offsetAngle) * this.offsetDist;
-                        this.x = targetX;
-                        this.y = targetY;
+                        
+                        // Smooth movement toward hydration shell target
+                        this.x += (targetX - this.x) * 0.1;
+                        this.y += (targetY - this.y) * 0.1;
+
                         const angleToIon = Math.atan2(this.assignedIon.y - this.y, this.assignedIon.x - this.x);
                         const targetAngle = (this.assignedIon.charge > 0) ? angleToIon : angleToIon + Math.PI;
                         let diff = targetAngle - this.angle;
@@ -220,12 +230,12 @@
 
                     if (this.type === 'solvent' && currentSolvent === 'water' && !this.assignedIon) {
                         for (let p of particles) {
-                            if (p.isFree && p.type === 'ion' && p.shellCount < 8) {
+                            if (p.isFree && p.type === 'ion' && (p.shellCount || 0) < 8) {
                                 const d = Math.hypot(this.x - p.x, this.y - p.y);
                                 if (d < 35) {
                                     this.assignedIon = p;
-                                    this.shellIndex = p.shellCount;
-                                    p.shellCount++;
+                                    this.shellIndex = p.shellCount || 0;
+                                    p.shellCount = (p.shellCount || 0) + 1;
                                     break;
                                 }
                             }
@@ -330,7 +340,12 @@
             updateLegend();
         }
 
-        function resize() { canvas.width = canvas.parentElement.clientWidth; canvas.height = 400; initSolute(); }
+        function resize() { 
+            // Updating canvas width/height without re-initializing the solute block
+            // and maintaining relative positions.
+            canvas.width = canvas.parentElement.clientWidth; 
+            canvas.height = 400; 
+        }
 
         function initSolvent() {
             solventParticles = [];
@@ -352,8 +367,11 @@
         }
 
         function resetSim() {
-            isSimulating = false; if (animationFrame) cancelAnimationFrame(animationFrame);
-            initSolute(); solventParticles = []; dissolutionTimer = 0;
+            isSimulating = false; 
+            if (animationFrame) cancelAnimationFrame(animationFrame);
+            solventParticles = []; 
+            dissolutionTimer = 0;
+            initSolute(); // Only re-init solute on explicit reset or tab change
             statusOverlay.textContent = 'Initial State';
             statusOverlay.className = "absolute top-4 left-4 bg-black/70 text-white px-3 py-1 rounded-full text-sm font-medium";
             analysisText.innerHTML = '<span class="italic">Block initialized. Select a solvent and click \'Add Solvent\' to start simulation.</span>';
@@ -369,7 +387,8 @@
             document.getElementById('ionicOptions').classList.toggle('hidden', tab !== 'ionic');
             document.getElementById('molecularOptions').classList.toggle('hidden', tab !== 'molecular');
             currentSpecific = (tab === 'ionic') ? 'NaCl' : (tab === 'molecular' ? 'Iodine' : 'default');
-            updateSpecificButtonStyles(); resetSim();
+            updateSpecificButtonStyles(); 
+            resetSim();
         }
 
         function setSolvent(solvent) {
@@ -449,7 +468,11 @@
         }
 
         window.addEventListener('resize', resize);
-        resize(); setTab('metallic'); draw();
+        
+        // Initial Startup Sequence
+        resize(); 
+        setTab('metallic'); 
+        draw();
     </script>
 </body>
 </html>
