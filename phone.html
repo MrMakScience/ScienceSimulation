@@ -2,600 +2,682 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Isotopes & Atomic Mass Simulator</title>
-    <!-- Tailwind CSS for styling -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Metal Reactions in Water Simulation</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- React and ReactDOM -->
-    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    <!-- Babel for JSX transformation -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        @keyframes spin-slow {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
+        body {
+            background-color: #0f172a;
+            color: #f8fafc;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            touch-action: pan-y;
+            overflow-x: hidden;
         }
-        @keyframes orbit {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
+
+        #canvas-container {
+            position: relative;
+            width: 100%;
+            height: 40vh;
+            min-height: 300px;
+            background: #cbd5e1; 
+            border-bottom: 8px solid #1e293b;
+            overflow: hidden;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            padding-bottom: 10px;
+            touch-action: pan-y;
         }
-        @keyframes shake {
-            0% { transform: translate(1px, 1px) rotate(0deg); }
-            10% { transform: translate(-1px, -2px) rotate(-1deg); }
-            20% { transform: translate(-3px, 0px) rotate(1deg); }
-            30% { transform: translate(3px, 2px) rotate(0deg); }
-            40% { transform: translate(1px, -1px) rotate(1deg); }
-            50% { transform: translate(-1px, 2px) rotate(-1deg); }
-            60% { transform: translate(-3px, 1px) rotate(0deg); }
-            70% { transform: translate(3px, 1px) rotate(-1deg); }
-            80% { transform: translate(-1px, -1px) rotate(1deg); }
-            90% { transform: translate(1px, 2px) rotate(0deg); }
-            100% { transform: translate(1px, -2px) rotate(-1deg); }
+
+        /* Language Toggle Button */
+        #lang-toggle {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            z-index: 100;
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 14px;
+            font-weight: bold;
+            backdrop-filter: blur(4px);
+            transition: all 0.2s;
         }
-        .animate-spin-slow {
-            animation: spin-slow 12s linear infinite;
+        #lang-toggle:hover {
+            background: rgba(51, 65, 85, 0.9);
         }
-        .electron-orbit {
-            animation: orbit linear infinite;
+
+        .trough {
+            position: relative;
+            width: 80%; 
+            max-width: 600px;
+            height: 65%; 
+            background: transparent;
+            border: 4px solid rgba(255, 255, 255, 0.6);
+            border-top: none;
+            border-bottom-left-radius: 12px;
+            border-bottom-right-radius: 12px;
+            z-index: 10;
         }
-        .animate-shake {
-            animation: shake 0.3s infinite;
+
+        #water-body {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 70%; 
+            background: linear-gradient(180deg, rgba(56, 189, 248, 0.4) 0%, rgba(3, 105, 161, 0.6) 100%);
+            z-index: -1;
+            border-bottom-left-radius: 8px;
+            border-bottom-right-radius: 8px;
+        }
+
+        .water-surface {
+            position: absolute;
+            bottom: 70%;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+            z-index: 15;
+            pointer-events: none;
+            transform: translateY(50%);
+        }
+
+        .control-panel {
+            padding: 20px;
+            background: #1e293b;
+            min-height: 60vh;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .metal-btn {
+            transition: all 0.2s;
+            letter-spacing: 1px;
+            font-weight: bold;
+            flex: 1 1 140px;
+        }
+
+        #observation-box {
+            background: #0f172a;
+            border-left: 4px solid #38bdf8;
+            padding: 15px;
+            border-radius: 4px;
+            min-height: 150px;
+            font-family: monospace;
+        }
+
+        .particle {
+            position: absolute;
+            pointer-events: none;
+            border-radius: 50%;
+        }
+
+        .bubble {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        #h2-setup {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 120px;
+            height: 220px;
+            display: none;
+            z-index: 18;
+            pointer-events: none;
+        }
+
+        #funnel {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.15);
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            clip-path: polygon(0% 100%, 100% 100%, 65% 20%, 35% 20%);
+        }
+
+        #test-tube {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 30px;
+            height: 160px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            border-top-left-radius: 15px;
+            border-top-right-radius: 15px;
+            overflow: hidden;
+        }
+
+        #tube-water {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(56, 189, 248, 0.3);
+            transition: height 0.1s linear;
+        }
+
+        #litmus-paper {
+            position: absolute;
+            width: 40px;
+            height: 120px;
+            background: #f87171;
+            border: 1px solid #b91c1c;
+            cursor: grab;
+            z-index: 50; 
+            display: none;
+            user-select: none;
+            box-shadow: 2px 2px 10px rgba(0,0,0,0.3);
+            overflow: hidden;
+            touch-action: none; 
+        }
+
+        #litmus-wet-part {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 0%;
+            background: #ef4444;
+            transition: background 0.5s ease;
+        }
+
+        #litmus-paper.turned-blue #litmus-wet-part {
+            background: #3b82f6;
+        }
+
+        @media (min-width: 768px) {
+            #canvas-container { height: 50vh; }
+            .trough { width: 50%; }
         }
     </style>
 </head>
 <body>
-    <div id="root"></div>
 
-    <script type="text/babel">
-        const { useState, useEffect, useMemo } = React;
+    <div id="canvas-container">
+        <!-- Language Switcher -->
+        <button id="lang-toggle" onclick="toggleLanguage()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            <span id="lang-text">繁體中文</span>
+        </button>
 
-        // Robust Inline SVG Icons
-        const MinusIcon = ({ size = 16, className = "" }) => (
-            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M5 12h14"/></svg>
-        );
+        <div class="trough" id="main-trough">
+            <div id="water-body"></div>
+            <div class="water-surface" id="surface-line"></div>
+            
+            <div id="h2-setup">
+                <div id="test-tube">
+                    <div id="tube-water"></div>
+                </div>
+                <div id="funnel"></div>
+            </div>
+            
+            <div id="simulation-area" class="absolute inset-0 overflow-visible pointer-events-none"></div>
+        </div>
 
-        const PlusIcon = ({ size = 16, className = "" }) => (
-            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M5 12h14m-7-7v14"/></svg>
-        );
+        <div id="litmus-paper" style="left: 20px; top: 20px;">
+            <div id="litmus-wet-part"></div>
+        </div>
+    </div>
 
-        const Icon = ({ name, size = 16, className = "" }) => {
-            const [path, setPath] = useState("");
-            useEffect(() => {
-                if (window.lucide) {
-                    const iconData = window.lucide.icons[name];
-                    if (iconData) {
-                        const tempDiv = document.createElement('div');
-                        tempDiv.innerHTML = window.lucide.createIcons({ icons: { [name]: iconData } });
-                        setPath(tempDiv.querySelector('svg').innerHTML);
-                    }
-                }
-            }, [name]);
-            if (name === 'plus') return <PlusIcon size={size} className={className} />;
-            if (name === 'minus') return <MinusIcon size={size} className={className} />;
-            return (
-                <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} dangerouslySetInnerHTML={{ __html: path }} />
-            );
-        };
+    <div class="control-panel">
+        <div class="flex flex-col gap-6">
+            <div class="flex flex-wrap justify-center gap-3">
+                <button onclick="startReaction('sodium')" class="metal-btn bg-yellow-600 hover:bg-yellow-500 text-white py-4 px-6 rounded-xl shadow-lg active:scale-95" data-t="btn-na">Sodium (Na)</button>
+                <button onclick="startReaction('potassium')" class="metal-btn bg-purple-600 hover:bg-purple-500 text-white py-4 px-6 rounded-xl shadow-lg active:scale-95" data-t="btn-k">Potassium (K)</button>
+                <button onclick="startReaction('calcium')" class="metal-btn bg-gray-400 hover:bg-gray-300 text-slate-900 py-4 px-6 rounded-xl shadow-lg active:scale-95" data-t="btn-ca">Calcium (Ca)</button>
+                <button onclick="resetSim()" class="metal-btn bg-red-800 hover:bg-red-700 text-white py-4 px-6 rounded-xl shadow-lg active:scale-95" data-t="btn-reset">Reset</button>
+            </div>
+
+            <div class="flex flex-wrap justify-center items-center gap-8 border-t border-slate-700 pt-6">
+                <label class="flex items-center cursor-pointer group">
+                    <input type="checkbox" value="" class="sr-only peer" id="litmus-toggle" onchange="toggleLitmus()">
+                    <div class="relative w-14 h-7 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-red-500"></div>
+                    <span class="ms-3 text-lg font-bold text-slate-300 group-active:text-white" data-t="label-litmus">Red Litmus Paper</span>
+                </label>
+
+                <div id="setup-toggle-container" class="opacity-30 pointer-events-none transition-all">
+                    <label class="flex items-center cursor-pointer group">
+                        <input type="checkbox" value="" class="sr-only peer" id="setup-toggle" onchange="toggleSetup()">
+                        <div class="relative w-14 h-7 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-blue-500"></div>
+                        <span class="ms-3 text-lg font-bold text-slate-300 group-active:text-white" data-t="label-h2">H<sub>2</sub> collection set-up</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div id="observation-box">
+            <h3 class="text-sky-400 font-bold mb-2" data-t="title-obs">Observations:</h3>
+            <ul id="observation-list" class="text-sm list-disc list-inside space-y-1">
+                <li data-t="default-obs">Select a metal to begin.</li>
+            </ul>
+            <div id="equation-container" class="mt-4 flex flex-col items-center gap-1 border-t border-slate-800 pt-3">
+                <div id="chemical-equation" class="text-lg font-bold italic text-sky-200"></div>
+                <div id="word-equation" class="text-xs text-sky-400 opacity-80 uppercase tracking-widest"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const simArea = document.getElementById('simulation-area');
+        const obsList = document.getElementById('observation-list');
+        const chemicalEqDiv = document.getElementById('chemical-equation');
+        const wordEqDiv = document.getElementById('word-equation');
+        const troughElement = document.getElementById('main-trough');
+        const waterBody = document.getElementById('water-body');
+        const litmusPaper = document.getElementById('litmus-paper');
+        const litmusWetPart = document.getElementById('litmus-wet-part');
+        const h2Setup = document.getElementById('h2-setup');
+        const tubeWater = document.getElementById('tube-water');
+        const setupToggleCont = document.getElementById('setup-toggle-container');
+        const setupToggle = document.getElementById('setup-toggle');
+        const langText = document.getElementById('lang-text');
+        
+        let audioCtx = null;
+        let reactionInterval = null;
+        let activeMetal = null;
+        let isSolutionAlkaline = false;
+        let gasVolumeInTube = 100;
+        let currentLang = 'en';
 
         const TRANSLATIONS = {
             en: {
-                title: "Isotopes & Atomic Mass",
-                subtitle: "Explore relationship between nuclear stability and isotopic abundance",
-                chooseElement: "Choose Element",
-                activeElement: "Active Element",
-                modifyNucleus: "Modify Nucleus",
-                protons: "Protons",
-                neutrons: "Neutrons",
-                electrons: "Electrons",
-                stable: "Stable",
-                unstable: "Unstable / Radioactive",
-                isotopicData: "Isotopic Data",
-                abundance: "Abundance in Nature",
-                current: "Current",
-                decayNote: "Due to its poor stability, it is not existing in nature as it will undergo radioactive decay and transform to other elements.",
-                atomicNum: "Atomic Number (Z)",
-                massNum: "Mass Number (A)",
-                naturalIsotopes: "Natural Isotopes",
-                relAtomicMass: "Relative Atomic Mass (Aᵣ)",
-                result: "Result",
-                massNote: "* Strictly speaking, mass number should not be used to calculate Aᵣ as it omits mass of electrons and the slight difference between mass of protons and neutrons.",
-                whatIsIsotope: "What is an Isotope?",
-                isotopeDesc: "They are atoms with the same number of protons but different numbers of neutrons. They share chemical properties but differ in mass.",
-                nuclearStability: "Nuclear Stability",
-                stabilityDesc: "The balance between the strong nuclear force and electrostatic repulsion between protonsdetermines if an isotope is stable or decays.",
-                relMassFooter: "Relative Atomic Mass",
-                relMassDesc: "Calculated as the weighted average of all naturally occurring isotopes. This is the value found on the periodic table.",
-                elements: {
-                    Hydrogen: "Hydrogen", Helium: "Helium", Lithium: "Lithium", Beryllium: "Beryllium",
-                    Boron: "Boron", Carbon: "Carbon", Nitrogen: "Nitrogen", Oxygen: "Oxygen",
-                    Fluorine: "Fluorine", Neon: "Neon"
-                }
+                toggle: '繁體中文',
+                'btn-na': 'Sodium (Na)',
+                'btn-k': 'Potassium (K)',
+                'btn-ca': 'Calcium (Ca)',
+                'btn-reset': 'Reset',
+                'label-litmus': 'Red Litmus Paper',
+                'label-h2': 'H2 collection set-up',
+                'title-obs': 'Observations:',
+                'default-obs': 'Select a metal to begin.'
             },
             zh: {
-                title: "同位素與原子質量",
-                subtitle: "探索核穩定性與同位素豐度的關係",
-                chooseElement: "選擇元素",
-                activeElement: "當前元素",
-                modifyNucleus: "修改原子核",
-                protons: "質子",
-                neutrons: "中子",
-                electrons: "電子",
-                stable: "穩定",
-                unstable: "不穩定 / 具放射性",
-                isotopicData: "同位素數據",
-                abundance: "自然豐度",
-                current: "當前",
-                decayNote: "由於其穩定性較差，它在自然界中並不存在，因為它會發生放射性衰變並轉化為其他元素。",
-                atomicNum: "原子序數 (Z)",
-                massNum: "質量數 (A)",
-                naturalIsotopes: "天然同位素",
-                relAtomicMass: "相對原子質量 (Aᵣ)",
-                result: "結果",
-                massNote: "* 嚴格來說，我們不應使用質量數來計算 Aᵣ，因為它忽略了電子的質量以及質子和中子質量的微小差異。",
-                whatIsIsotope: "什麼是同位素？",
-                isotopeDesc: "它們是具有相同質子數但中子數不同的原子。它們具有相同的化學性質，但質量不同。",
-                nuclearStability: "核穩定性",
-                stabilityDesc: "強核力與質子的靜電排斥力之間的平衡決定了同位素是穩定還是會發生衰變。",
-                relMassFooter: "相對原子質量",
-                relMassDesc: "計算方法為所有天然存在同位素的加權平均值。這是週期表上顯示的數值。",
-                elements: {
-                    Hydrogen: "氫", Helium: "氦", Lithium: "鋰", Beryllium: "鈹",
-                    Boron: "硼", Carbon: "碳", Nitrogen: "氮", Oxygen: "氧",
-                    Fluorine: "氟", Neon: "氖"
-                }
+                toggle: 'English',
+                'btn-na': '鈉 (Na)',
+                'btn-k': '鉀 (K)',
+                'btn-ca': '鈣 (Ca)',
+                'btn-reset': '重設',
+                'label-litmus': '紅色石蕊試紙',
+                'label-h2': '氫氣收集裝置',
+                'title-obs': '實驗觀察：',
+                'default-obs': '請選擇一種金屬開始。'
             }
         };
 
-        const ELEMENTS = [
-            { z: 1, symbol: 'H', name: 'Hydrogen', isotopes: [
-                { n: 0, mass: 1.0078, abundance: 99.98, stable: true },
-                { n: 1, mass: 2.0141, abundance: 0.02, stable: true },
-                { n: 2, mass: 3.0160, abundance: 0.00, stable: false }
-            ]},
-            { z: 2, symbol: 'He', name: 'Helium', isotopes: [
-                { n: 1, mass: 3.0160, abundance: 0.0001, stable: true },
-                { n: 2, mass: 4.0026, abundance: 99.9999, stable: true }
-            ]},
-            { z: 3, symbol: 'Li', name: 'Lithium', isotopes: [
-                { n: 3, mass: 6.0151, abundance: 7.59, stable: true },
-                { n: 4, mass: 7.0160, abundance: 92.41, stable: true }
-            ]},
-            { z: 4, symbol: 'Be', name: 'Beryllium', isotopes: [
-                { n: 5, mass: 9.0122, abundance: 100, stable: true }
-            ]},
-            { z: 5, symbol: 'B', name: 'Boron', isotopes: [
-                { n: 5, mass: 10.0129, abundance: 19.9, stable: true },
-                { n: 6, mass: 11.0093, abundance: 80.1, stable: true }
-            ]},
-            { z: 6, symbol: 'C', name: 'Carbon', isotopes: [
-                { n: 6, mass: 12.0000, abundance: 98.93, stable: true },
-                { n: 7, mass: 13.0034, abundance: 1.07, stable: true },
-                { n: 8, mass: 14.0032, abundance: 0.00, stable: false }
-            ]},
-            { z: 7, symbol: 'N', name: 'Nitrogen', isotopes: [
-                { n: 7, mass: 14.0031, abundance: 99.63, stable: true },
-                { n: 8, mass: 15.0001, abundance: 0.37, stable: true }
-            ]},
-            { z: 8, symbol: 'O', name: 'Oxygen', isotopes: [
-                { n: 8, mass: 15.9949, abundance: 99.757, stable: true },
-                { n: 9, mass: 16.9991, abundance: 0.038, stable: true },
-                { n: 10, mass: 17.9992, abundance: 0.205, stable: true }
-            ]},
-            { z: 9, symbol: 'F', name: 'Fluorine', isotopes: [
-                { n: 10, mass: 18.9984, abundance: 100, stable: true }
-            ]},
-            { z: 10, symbol: 'Ne', name: 'Neon', isotopes: [
-                { n: 10, mass: 19.9924, abundance: 90.48, stable: true },
-                { n: 11, mass: 20.9938, abundance: 0.27, stable: true },
-                { n: 12, mass: 21.9914, abundance: 9.25, stable: true }
-            ]}
-        ];
-
-        const App = () => {
-            const [selectedZ, setSelectedZ] = useState(1);
-            const [neutrons, setNeutrons] = useState(0);
-            const [lang, setLang] = useState('en');
-
-            const t = TRANSLATIONS[lang];
-            const element = useMemo(() => ELEMENTS.find(e => e.z === selectedZ), [selectedZ]);
-            
-            const firstStableNeutrons = useMemo(() => {
-                const stableIsotopes = element.isotopes.filter(iso => iso.stable);
-                if (stableIsotopes.length > 0) {
-                    return Math.min(...stableIsotopes.map(iso => iso.n));
-                }
-                return element.isotopes[0].n;
-            }, [element]);
-
-            const maxNeutrons = useMemo(() => firstStableNeutrons + 5, [firstStableNeutrons]);
-
-            const defaultNeutrons = useMemo(() => {
-                const mostAbundant = [...element.isotopes].sort((a, b) => b.abundance - a.abundance)[0];
-                return mostAbundant.n;
-            }, [element]);
-
-            const currentIsotope = useMemo(() => {
-                return element.isotopes.find(i => i.n === neutrons) || {
-                    n: neutrons,
-                    mass: (element.z + neutrons),
-                    abundance: 0,
-                    stable: false,
-                    isSynthetic: true
-                };
-            }, [element, neutrons]);
-
-            const relativeAtomicMass = useMemo(() => {
-                return element.isotopes.reduce((acc, iso) => {
-                    const massNumber = element.z + iso.n;
-                    return acc + (massNumber * (iso.abundance / 100));
-                }, 0);
-            }, [element]);
-
-            useEffect(() => {
-                setNeutrons(defaultNeutrons);
-            }, [selectedZ, defaultNeutrons]);
-
-            const nucleons = useMemo(() => {
-                const particles = [];
-                const total = element.z + neutrons;
-                const phi = (Math.sqrt(5) + 1) / 2;
-                const angleIncrement = 2 * Math.PI * phi;
-                
-                for (let i = 0; i < total; i++) {
-                    const isProton = i < element.z;
-                    const radius = 5 * Math.sqrt(i + 1); 
-                    const angle = i * angleIncrement;
-                    const x = Math.cos(angle) * radius;
-                    const y = Math.sin(angle) * radius;
-                    const depthScale = 0.85 + (Math.sin(i * 123.456) * 0.15); 
-                    const zIndex = Math.floor(depthScale * 100);
-
-                    particles.push({
-                        id: `${isProton ? 'p' : 'n'}-${i}`,
-                        type: isProton ? 'proton' : 'neutron',
-                        x, y, scale: depthScale, zIndex
-                    });
-                }
-                return particles.sort((a, b) => a.zIndex - b.zIndex);
-            }, [element.z, neutrons]);
-
-            const electronShells = useMemo(() => {
-                const count = element.z;
-                const shells = [];
-                const capacities = [2, 8]; 
-                let remaining = count;
-                for (let i = 0; i < capacities.length && remaining > 0; i++) {
-                    const inShell = Math.min(remaining, capacities[i]);
-                    shells.push({ level: i + 1, count: inShell });
-                    remaining -= inShell;
-                }
-                return shells;
-            }, [element.z]);
-
-            return (
-                <div className="min-h-screen bg-slate-50 text-slate-900 font-sans p-4 md:p-8">
-                    <div className="max-w-6xl mx-auto">
-                        
-                        <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-                            <div className="flex flex-col gap-2">
-                                <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-                                    <Icon name="atom" size={32} className="text-indigo-600" />
-                                    {t.title}
-                                </h1>
-                                <p className="text-slate-500 mt-1">{t.subtitle}</p>
-                            </div>
-                            <button 
-                                onClick={() => setLang(lang === 'en' ? 'zh' : 'en')}
-                                className="w-fit flex items-center gap-2 px-4 py-2 bg-white text-indigo-700 border border-slate-200 rounded-xl hover:bg-indigo-50 hover:border-indigo-200 transition-all text-sm font-bold shadow-sm"
-                            >
-                                <span className="text-lg">🌐</span>
-                                {lang === 'en' ? '繁體中文' : 'English'}
-                            </button>
-                        </header>
-
-                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                            
-                            <div className="lg:col-span-4 space-y-6">
-                                <section className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                                    <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-                                        <Icon name="database" size={16} /> {t.chooseElement}
-                                    </h3>
-                                    <div className="grid grid-cols-5 gap-2">
-                                        {ELEMENTS.map(el => (
-                                            <button
-                                                key={el.z}
-                                                onClick={() => setSelectedZ(el.z)}
-                                                className={`h-14 rounded-xl flex flex-col items-center justify-center transition-all border-2 ${
-                                                    selectedZ === el.z 
-                                                    ? 'bg-indigo-600 border-indigo-600 text-white shadow-md' 
-                                                    : 'bg-white border-slate-100 text-slate-600 hover:border-indigo-200'
-                                                }`}
-                                            >
-                                                <span className="text-[10px] opacity-80">{el.z}</span>
-                                                <span className="font-bold text-lg leading-tight">{el.symbol}</span>
-                                            </button>
-                                        ))}
-                                    </div>
-                                    <div className="mt-4 p-3 bg-indigo-50 rounded-xl flex items-center justify-center">
-                                        <div className="text-center">
-                                            <p className="text-xs text-indigo-400 font-medium uppercase">{t.activeElement}</p>
-                                            <p className="font-bold text-indigo-900 text-lg">{t.elements[element.name]}</p>
-                                        </div>
-                                    </div>
-                                </section>
-
-                                <section className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                                    <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-                                        <Icon name="activity" size={16} /> {t.modifyNucleus}
-                                    </h3>
-                                    <div className="space-y-4">
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-slate-600 font-medium flex items-center gap-2">
-                                                <span className="w-3 h-3 rounded-full bg-red-500"></span> {t.protons}
-                                            </span>
-                                            <div className="flex items-center gap-3">
-                                                <span className="w-8 text-center font-bold text-lg">{element.z}</span>
-                                                <div className="flex gap-1">
-                                                    <button disabled className="p-2 bg-slate-100 text-slate-400 rounded-lg cursor-not-allowed">
-                                                        <MinusIcon />
-                                                    </button>
-                                                    <button disabled className="p-2 bg-slate-100 text-slate-400 rounded-lg cursor-not-allowed">
-                                                        <PlusIcon />
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-slate-600 font-medium flex items-center gap-2">
-                                                <span className="w-3 h-3 rounded-full bg-slate-400"></span> {t.neutrons}
-                                            </span>
-                                            <div className="flex items-center gap-3">
-                                                <span className="w-8 text-center font-bold text-lg">{neutrons}</span>
-                                                <div className="flex gap-1">
-                                                    <button 
-                                                        onClick={() => setNeutrons(Math.max(0, neutrons - 1))}
-                                                        disabled={neutrons <= 0}
-                                                        className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                                                    >
-                                                        <MinusIcon />
-                                                    </button>
-                                                    <button 
-                                                        onClick={() => setNeutrons(neutrons + 1)}
-                                                        disabled={neutrons >= maxNeutrons}
-                                                        className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                                                    >
-                                                        <PlusIcon />
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div className="flex items-center justify-between opacity-80">
-                                            <span className="text-slate-600 font-medium flex items-center gap-2">
-                                                <span className="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_4px_cyan]"></span> {t.electrons}
-                                            </span>
-                                            <div className="flex items-center gap-3">
-                                                <span className="w-8 text-center font-bold text-lg">{element.z}</span>
-                                                <div className="flex gap-1">
-                                                    <button disabled className="p-2 bg-slate-50 text-slate-300 rounded-lg cursor-not-allowed opacity-50">
-                                                        <MinusIcon />
-                                                    </button>
-                                                    <button disabled className="p-2 bg-slate-50 text-slate-300 rounded-lg cursor-not-allowed opacity-50">
-                                                        <PlusIcon />
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </section>
-                            </div>
-
-                            <div className="lg:col-span-5 space-y-6">
-                                <section className="bg-slate-900 rounded-3xl h-[480px] relative overflow-hidden shadow-2xl flex items-center justify-center border-4 border-white">
-                                    <div className={`absolute top-6 left-6 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest flex items-center gap-2 z-50 transition-all duration-500 transform ${
-                                        currentIsotope.stable 
-                                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' 
-                                        : 'bg-rose-500/20 text-rose-400 border border-rose-500/30 animate-pulse'
-                                    }`}>
-                                        <Icon name="activity" size={14} />
-                                        {currentIsotope.stable ? t.stable : t.unstable}
-                                    </div>
-
-                                    <div className="relative w-full h-full flex items-center justify-center">
-                                        
-                                        {electronShells.map((shell, sIdx) => {
-                                            const radius = 95 + (sIdx * 65);
-                                            return (
-                                                <div key={`shell-${shell.level}`} className="absolute border border-cyan-400/20 rounded-full pointer-events-none shadow-[inset_0_0_15px_rgba(34,211,238,0.05)]" style={{ width: radius * 2, height: radius * 2 }}>
-                                                    <div className="absolute inset-0 electron-orbit" style={{ animationDuration: `${(sIdx + 1) * 8}s` }}>
-                                                        {[...Array(shell.count)].map((_, eIdx) => {
-                                                            const angle = (eIdx / shell.count) * 2 * Math.PI;
-                                                            return (
-                                                                <div 
-                                                                    key={`e-${shell.level}-${eIdx}`} 
-                                                                    className="absolute w-1.5 h-1.5 bg-white rounded-full shadow-[0_0_8px_cyan,0_0_2px_white]"
-                                                                    style={{ 
-                                                                        left: '50%', 
-                                                                        top: '50%', 
-                                                                        transform: `translate(-50%, -50%) translate(${Math.cos(angle) * radius}px, ${Math.sin(angle) * radius}px)` 
-                                                                    }}
-                                                                >
-                                                                    <div className="absolute inset-0 animate-ping bg-cyan-400 rounded-full opacity-40"></div>
-                                                                </div>
-                                                            );
-                                                        })}
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
-
-                                        <div 
-                                            className={`relative transition-transform duration-200 ${!currentIsotope.stable ? 'animate-shake' : ''}`}
-                                        >
-                                            {nucleons.map((n) => (
-                                                <div 
-                                                    key={n.id} 
-                                                    className={`w-4 h-4 rounded-full absolute border transition-all duration-500 ${
-                                                        n.type === 'proton' 
-                                                        ? 'bg-red-500 border-red-600 shadow-[inset_-1px_-1px_2px_rgba(0,0,0,0.3)]' 
-                                                        : 'bg-slate-300 border-slate-400 shadow-[inset_-1px_-1px_2px_rgba(0,0,0,0.2)]'
-                                                    }`}
-                                                    style={{
-                                                        transform: `translate(-50%, -50%) translate(${n.x}px, ${n.y}px) scale(${n.scale})`,
-                                                        zIndex: n.zIndex
-                                                    }}
-                                                >
-                                                     <div className="absolute top-0.5 left-0.5 w-1 h-1 rounded-full bg-white opacity-40 blur-[0.5px]"></div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    <div className="absolute bottom-8 left-0 right-0 text-center z-[100]">
-                                        <div className="inline-flex items-center gap-3 bg-white/10 backdrop-blur-md px-6 py-3 rounded-2xl border border-white/10">
-                                           <div className="text-left leading-none">
-                                              <div className="text-white text-[10px] opacity-60 font-bold">{element.z + neutrons}</div>
-                                              <div className="text-white text-3xl font-black">{element.symbol}</div>
-                                              <div className="text-white text-[10px] opacity-60 font-bold">{element.z}</div>
-                                           </div>
-                                           <div className="w-[1px] h-10 bg-white/20 mx-2"></div>
-                                           <div className="text-left leading-tight">
-                                              <div className="text-white font-bold">{t.elements[element.name]}</div>
-                                           </div>
-                                        </div>
-                                    </div>
-                                </section>
-                            </div>
-
-                            <div className="lg:col-span-3 space-y-6">
-                                <section className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 h-full overflow-y-auto">
-                                    <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-6 flex items-center gap-2">
-                                        <Icon name="scale" size={16} /> {t.isotopicData}
-                                    </h3>
-                                    
-                                    <div className="space-y-6">
-                                        <div>
-                                           <p className="text-xs font-bold text-slate-400 uppercase mb-2">{t.abundance}</p>
-                                           <div className="relative pt-1">
-                                              <div className="flex mb-2 items-center justify-between">
-                                                <div>
-                                                  <span className="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-indigo-600 bg-indigo-200">
-                                                    {t.current}
-                                                  </span>
-                                                </div>
-                                                <div className="text-right">
-                                                  <span className="text-xs font-semibold inline-block text-indigo-600">
-                                                    {currentIsotope.abundance}%
-                                                  </span>
-                                                </div>
-                                              </div>
-                                              <div className="overflow-hidden h-2 mb-4 text-xs flex rounded bg-indigo-100">
-                                                <div style={{ width: `${currentIsotope.abundance}%` }} className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-indigo-500 transition-all duration-700"></div>
-                                              </div>
-                                              
-                                              {!currentIsotope.stable && (
-                                                <div className="mt-2 p-2 bg-rose-50 border-l-2 border-rose-400 rounded-r-lg">
-                                                    <p className="text-[10px] leading-snug text-rose-700 italic">
-                                                        {t.decayNote}
-                                                    </p>
-                                                </div>
-                                              )}
-                                           </div>
-                                        </div>
-
-                                        <div className="p-4 bg-slate-50 rounded-xl space-y-3">
-                                          <div className="flex justify-between items-center text-xs text-slate-500">
-                                            <span>{t.atomicNum}</span>
-                                            <span className="font-bold text-slate-700">{element.z}</span>
-                                          </div>
-                                          <div className="flex justify-between items-center text-xs text-slate-500">
-                                            <span>{t.massNum}</span>
-                                            <span className="font-bold text-slate-700">{element.z + neutrons}</span>
-                                          </div>
-                                        </div>
-
-                                        <div className="border-t border-slate-50 pt-4">
-                                          <h4 className="text-xs font-bold text-slate-400 uppercase mb-3">{t.naturalIsotopes}</h4>
-                                          <div className="space-y-2">
-                                            {element.isotopes.map((iso, idx) => (
-                                              <div 
-                                                key={idx}
-                                                className={`p-2 rounded-lg flex items-center justify-between text-sm transition-colors ${iso.n === neutrons ? 'bg-indigo-50 text-indigo-700 border border-indigo-100' : 'text-slate-500'}`}
-                                              >
-                                                <span className="font-medium">{element.symbol}-{element.z + iso.n}</span>
-                                                <span className="text-xs opacity-70">{iso.abundance}%</span>
-                                              </div>
-                                            ))}
-                                          </div>
-                                        </div>
-
-                                        <div className="border-t border-slate-50 pt-4">
-                                            <h4 className="text-xs font-bold text-slate-400 uppercase mb-3 flex items-center gap-1">
-                                                <Icon name="calculator" size={12}/> {t.relAtomicMass}
-                                            </h4>
-                                            <div className="bg-indigo-50 p-3 rounded-xl">
-                                                <div className="text-[10px] text-slate-500 font-mono space-y-1 mb-2">
-                                                    {element.isotopes.filter(i => i.abundance > 0).map((iso, i) => (
-                                                        <div key={i}>
-                                                            ({element.z + iso.n} × {iso.abundance}%) {i < element.isotopes.filter(i => i.abundance > 0).length - 1 ? '+' : ''}
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                                <div className="flex justify-between items-baseline mb-2">
-                                                    <span className="text-xs font-semibold text-indigo-700">{t.result}:</span>
-                                                    <span className="text-lg font-black text-indigo-900">{relativeAtomicMass.toFixed(2)}</span>
-                                                </div>
-                                                <p className="text-[9px] leading-tight text-slate-400 italic">
-                                                    {t.massNote}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </section>
-                            </div>
-                        </div>
-
-                        {/* Footer Info Cards */}
-                        <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div className="flex gap-4 p-5 bg-white rounded-2xl border border-slate-100">
-                                <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center shrink-0">
-                                    <Icon name="info" size={20} />
-                                </div>
-                                <div>
-                                    <h4 className="font-bold text-slate-800">{t.whatIsIsotope}</h4>
-                                    <p className="text-xs text-slate-500 mt-1">{t.isotopeDesc}</p>
-                                </div>
-                            </div>
-                            <div className="flex gap-4 p-5 bg-white rounded-2xl border border-slate-100">
-                                <div className="w-10 h-10 bg-amber-100 text-amber-600 rounded-lg flex items-center justify-center shrink-0">
-                                    <Icon name="activity" size={20} />
-                                </div>
-                                <div>
-                                    <h4 className="font-bold text-slate-800">{t.nuclearStability}</h4>
-                                    <p className="text-xs text-slate-500 mt-1">{t.stabilityDesc}</p>
-                                </div>
-                            </div>
-                            <div className="flex gap-4 p-5 bg-white rounded-2xl border border-slate-100">
-                                <div className="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-lg flex items-center justify-center shrink-0">
-                                    <Icon name="weight" size={20} />
-                                </div>
-                                <div>
-                                    <h4 className="font-bold text-slate-800">{t.relMassFooter}</h4>
-                                    <p className="text-xs text-slate-500 mt-1">{t.relMassDesc}</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            );
+        const DATA = {
+            sodium: {
+                en: {
+                    equation: "2Na(s) + 2H₂O(l) → 2NaOH(aq) + H₂(g)",
+                    wordEquation: "Sodium + Water → Sodium hydroxide + Hydrogen",
+                    observations: ["Na melts to form a silvery ball.", "Hissing sound is generated.", "Na moves rapidly on water surface.", "Na burns with golden yellow flame.", "Solution turns red litmus blue."]
+                },
+                zh: {
+                    equation: "2Na(s) + 2H₂O(l) → 2NaOH(aq) + H₂(g)",
+                    wordEquation: "鈉 + 水 → 氫氧化鈉 + 氫",
+                    observations: ["鈉熔化成一個銀色的小球。", "產生嘶嘶聲。", "鈉在水面上快速移動。", "鈉燃燒時發出金黃色火焰。", "溶液令紅色石蕊試紙變藍。"]
+                },
+                color: "#cbd5e1", flameColor: "rgba(255, 215, 0, 0.9)",
+                behavior: "float", shrinkSpeed: 0.08, moveSpeed: 4, bubbleProb: 0.5, hissPitch: 1400, hissVol: 0.03
+            },
+            potassium: {
+                en: {
+                    equation: "2K(s) + 2H₂O(l) → 2KOH(aq) + H₂(g)",
+                    wordEquation: "Potassium + Water → Potassium hydroxide + Hydrogen",
+                    observations: ["K melts to form a silvery ball.", "Hissing sound is generated.", "K moves rapidly on water surface.", "K burns with lilac flame.", "Solution turns red litmus blue."]
+                },
+                zh: {
+                    equation: "2K(s) + 2H₂O(l) → 2KOH(aq) + H₂(g)",
+                    wordEquation: "鉀 + 水 → 氫氧化鉀 + 氫",
+                    observations: ["鉀熔化成一個銀色的小球。", "產生嘶嘶聲。", "鉀在水面上快速移動。", "鉀燃燒時發出淡紫色火焰。", "溶液令紅色石蕊試紙變藍。"]
+                },
+                color: "#cbd5e1", flameColor: "rgba(230, 190, 255, 0.9)",
+                behavior: "float", shrinkSpeed: 0.22, moveSpeed: 8, bubbleProb: 0.95, hissPitch: 2200, hissVol: 0.12
+            },
+            calcium: {
+                en: {
+                    equation: "Ca(s) + 2H₂O(l) → Ca(OH)₂(aq) + H₂(g)",
+                    wordEquation: "Calcium + Water → Calcium hydroxide + Hydrogen",
+                    observations: ["Ca sinks and reacts steadily.", "Colourless gas bubbles are evolved.", "Solution turns red litmus blue."]
+                },
+                zh: {
+                    equation: "Ca(s) + 2H₂O(l) → Ca(OH)₂(aq) + H₂(g)",
+                    wordEquation: "鈣 + 水 → 氫氧化鈣 + 氫",
+                    observations: ["鈣沉入水底並穩定反應。", "產生無色氣泡。", "溶液令紅色石蕊試紙變藍。"]
+                },
+                color: "#94a3b8", flameColor: "transparent",
+                behavior: "sink", shrinkSpeed: 0.07, moveSpeed: 0, bubbleProb: 1.0, hissPitch: 0, hissVol: 0
+            }
         };
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
+        function toggleLanguage() {
+            currentLang = currentLang === 'en' ? 'zh' : 'en';
+            
+            // Update the button text to show the OTHER language choice
+            langText.innerText = TRANSLATIONS[currentLang].toggle;
+
+            // Update all elements with [data-t]
+            document.querySelectorAll('[data-t]').forEach(el => {
+                const key = el.getAttribute('data-t');
+                const text = TRANSLATIONS[currentLang][key];
+                if (text) {
+                    // Check if the text contains H2 and needs subscripting
+                    if (text.includes('H2')) {
+                        el.innerHTML = text.replace(/H2/g, 'H<sub>2</sub>');
+                    } else {
+                        el.innerText = text;
+                    }
+                }
+            });
+
+            // Update observation box and equations if a reaction is active or in default state
+            if (activeMetal) {
+                const metalData = DATA[activeMetal][currentLang];
+                obsList.innerHTML = '';
+                metalData.observations.forEach(t => {
+                    const li = document.createElement('li');
+                    li.innerText = t;
+                    obsList.appendChild(li);
+                });
+                chemicalEqDiv.innerHTML = metalData.equation;
+                wordEqDiv.innerHTML = metalData.wordEquation;
+            } else {
+                obsList.innerHTML = `<li data-t="default-obs">${TRANSLATIONS[currentLang]['default-obs']}</li>`;
+            }
+        }
+
+        let isDragging = false;
+        let dragOffset = { x: 0, y: 0 };
+
+        function startDrag(clientX, clientY) {
+            isDragging = true;
+            const rect = litmusPaper.getBoundingClientRect();
+            dragOffset.x = clientX - rect.left;
+            dragOffset.y = clientY - rect.top;
+        }
+
+        function handleDrag(clientX, clientY) {
+            if (!isDragging) return;
+            const containerRect = document.getElementById('canvas-container').getBoundingClientRect();
+            litmusPaper.style.left = (clientX - containerRect.left - dragOffset.x) + 'px';
+            litmusPaper.style.top = (clientY - containerRect.top - dragOffset.y) + 'px';
+            checkLitmusSubmersion();
+        }
+
+        litmusPaper.addEventListener('mousedown', e => startDrag(e.clientX, e.clientY));
+        window.addEventListener('mousemove', e => handleDrag(e.clientX, e.clientY));
+        window.addEventListener('mouseup', () => isDragging = false);
+
+        litmusPaper.addEventListener('touchstart', e => {
+            const touch = e.touches[0];
+            startDrag(touch.clientX, touch.clientY);
+            e.stopPropagation();
+        }, { passive: false });
+
+        window.addEventListener('touchmove', e => {
+            if (!isDragging) return;
+            const touch = e.touches[0];
+            handleDrag(touch.clientX, touch.clientY);
+            e.preventDefault();
+        }, { passive: false });
+
+        window.addEventListener('touchend', () => isDragging = false);
+
+        function checkLitmusSubmersion() {
+            const paperRect = litmusPaper.getBoundingClientRect();
+            const waterRect = waterBody.getBoundingClientRect();
+            const troughRect = troughElement.getBoundingClientRect();
+            const withinX = paperRect.right > troughRect.left && paperRect.left < troughRect.right;
+            if (withinX && paperRect.bottom > waterRect.top) {
+                const overlap = Math.min(paperRect.bottom, waterRect.bottom) - waterRect.top;
+                const pct = Math.max(0, Math.min(100, (overlap / paperRect.height) * 100));
+                if (pct > (parseFloat(litmusWetPart.style.height) || 0)) litmusWetPart.style.height = pct + '%';
+                if (isSolutionAlkaline) litmusPaper.classList.add('turned-blue');
+            }
+        }
+
+        function toggleLitmus() {
+            litmusPaper.style.display = document.getElementById('litmus-toggle').checked ? 'block' : 'none';
+        }
+
+        function toggleSetup() {
+            h2Setup.style.display = setupToggle.checked ? 'block' : 'none';
+        }
+
+        function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+
+        function playExplosion(x, y, color) {
+            if (!audioCtx) return;
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.frequency.setValueAtTime(150, now);
+            osc.frequency.exponentialRampToValueAtTime(40, now + 0.3);
+            gain.gain.setValueAtTime(1.5, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); osc.stop(now + 0.5);
+            
+            for(let i=0; i<30; i++) {
+                const spark = document.createElement('div');
+                spark.className = 'particle';
+                const s = Math.random() * 8 + 2;
+                spark.style.width = s + 'px'; spark.style.height = s + 'px';
+                spark.style.backgroundColor = i % 2 ? color : '#fff';
+                spark.style.left = x + 'px'; spark.style.top = y + 'px';
+                simArea.appendChild(spark);
+                const ang = Math.random() * Math.PI * 2;
+                const d = Math.random() * 150 + 50;
+                const start = Date.now();
+                const anim = () => {
+                    const p = (Date.now() - start) / 1000;
+                    if(p >= 1) { spark.remove(); return; }
+                    spark.style.left = (x + Math.cos(ang) * d * p) + 'px';
+                    spark.style.top = (y + Math.sin(ang) * d * p + (p * p * 300)) + 'px';
+                    spark.style.opacity = 1 - p;
+                    requestAnimationFrame(anim);
+                };
+                requestAnimationFrame(anim);
+            }
+        }
+
+        function playHiss(active, type) {
+            if (!audioCtx || !active || (type && DATA[type].hissPitch === 0)) {
+                if (this.hissNode) {
+                    this.hissNode.gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+                    this.hissNode = null;
+                }
+                return;
+            }
+            if (this.hissNode) return;
+            const bufferSize = audioCtx.sampleRate * 2;
+            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+            const noise = audioCtx.createBufferSource();
+            noise.buffer = buffer; noise.loop = true;
+            const filter = audioCtx.createBiquadFilter();
+            filter.type = 'highpass'; filter.frequency.value = DATA[type].hissPitch;
+            const gain = audioCtx.createGain(); gain.gain.value = DATA[type].hissVol;
+            noise.connect(filter); filter.connect(gain); gain.connect(audioCtx.destination);
+            noise.start();
+            this.hissNode = { noise, gain };
+        }
+
+        function createBubble(x, y) {
+            const bubble = document.createElement('div');
+            bubble.className = 'bubble';
+            const size = Math.random() * 5 + 2;
+            bubble.style.width = size + 'px'; bubble.style.height = size + 'px';
+            bubble.style.left = x + 'px'; bubble.style.bottom = (troughElement.offsetHeight - y) + 'px';
+            simArea.appendChild(bubble);
+
+            const start = Date.now();
+            const duration = 1200;
+            const surfaceBottomPct = 70;
+
+            const anim = () => {
+                const p = (Date.now() - start) / duration;
+                if (p >= 1) { bubble.remove(); return; }
+                let curBottomPx = (troughElement.offsetHeight - y) + (p * 200);
+                let curBottomPct = (curBottomPx / troughElement.offsetHeight) * 100;
+                
+                if (setupToggle.checked && activeMetal === 'calcium') {
+                    const tubeHeight = 160; 
+                    const setupHeight = 220;
+                    if (curBottomPx > (setupHeight - tubeHeight) && Math.abs(x - troughElement.offsetWidth/2) < 15) {
+                        gasVolumeInTube = Math.max(0, gasVolumeInTube - 0.2);
+                        tubeWater.style.height = gasVolumeInTube + '%';
+                        bubble.remove(); return;
+                    }
+                }
+                if (curBottomPct >= surfaceBottomPct) { bubble.remove(); return; }
+                bubble.style.bottom = curBottomPx + 'px';
+                bubble.style.opacity = 1 - p;
+                requestAnimationFrame(anim);
+            };
+            requestAnimationFrame(anim);
+        }
+
+        function createFlame(x, y, color, scale = 1) {
+            const flame = document.createElement('div');
+            flame.className = 'particle';
+            const size = (Math.random() * 20 + 10) * scale;
+            flame.style.width = size + 'px'; flame.style.height = size + 'px';
+            flame.style.left = (x - size/2) + 'px'; flame.style.top = (y - size/2) + 'px';
+            flame.style.backgroundColor = color; flame.style.filter = 'blur(5px)';
+            simArea.appendChild(flame);
+            const start = Date.now();
+            const anim = () => {
+                const p = (Date.now() - start) / 250;
+                if (p >= 1) { flame.remove(); return; }
+                flame.style.transform = `translateY(${-p * 30}px) scale(${1-p})`;
+                flame.style.opacity = 1 - p;
+                requestAnimationFrame(anim);
+            };
+            requestAnimationFrame(anim);
+        }
+
+        function resetSim() {
+            clearInterval(reactionInterval);
+            simArea.innerHTML = '';
+            obsList.innerHTML = `<li data-t="default-obs">${TRANSLATIONS[currentLang]['default-obs']}</li>`;
+            chemicalEqDiv.innerHTML = ''; wordEqDiv.innerHTML = '';
+            playHiss(false);
+            activeMetal = null;
+            isSolutionAlkaline = false;
+            litmusPaper.classList.remove('turned-blue');
+            litmusWetPart.style.height = '0%';
+            setupToggleCont.style.opacity = "0.3";
+            setupToggleCont.style.pointerEvents = "none";
+            setupToggle.checked = false;
+            h2Setup.style.display = 'none';
+            gasVolumeInTube = 100;
+            tubeWater.style.height = '100%';
+        }
+
+        function startReaction(type) {
+            initAudio();
+            resetSim();
+            activeMetal = type;
+            const metal = DATA[type];
+            const metalLang = metal[currentLang];
+
+            if (type === 'calcium') {
+                setupToggleCont.style.opacity = "1";
+                setupToggleCont.style.pointerEvents = "auto";
+            }
+            obsList.innerHTML = '';
+            metalLang.observations.forEach(t => {
+                const li = document.createElement('li');
+                li.innerText = t;
+                obsList.appendChild(li);
+            });
+            chemicalEqDiv.innerHTML = metalLang.equation;
+            wordEqDiv.innerHTML = metalLang.wordEquation;
+
+            const el = document.createElement('div');
+            el.id = 'metal-piece';
+            el.className = 'absolute z-30 shadow-md border border-white/20 transition-[border-radius] duration-1000';
+            let size = 30;
+            let posX = troughElement.offsetWidth / 2 - size/2;
+            let posY = -50; 
+            const surfaceTopPct = 30;
+            const surfaceY = (troughElement.offsetHeight * surfaceTopPct) / 100;
+            const floorY = troughElement.offsetHeight - 4;
+            el.style.width = size + 'px'; el.style.height = size + 'px';
+            el.style.backgroundColor = metal.color;
+            el.style.left = posX + 'px'; el.style.top = posY + 'px';
+            simArea.appendChild(el);
+
+            let reacting = false;
+            let angle = Math.random() * Math.PI * 2;
+            let melted = false;
+            let grounded = false;
+
+            reactionInterval = setInterval(() => {
+                if (!reacting) {
+                    let target = metal.behavior === 'float' ? surfaceY - (size/2) : surfaceY;
+                    if (posY < target) posY += 8;
+                    else { posY = target; reacting = true; isSolutionAlkaline = true; playHiss(true, type); }
+                } else {
+                    size -= metal.shrinkSpeed;
+                    if (!melted && type !== 'calcium' && size < 28) {
+                        melted = true;
+                        el.style.borderRadius = '50%';
+                        el.style.boxShadow = 'inset -3px -3px 8px rgba(0,0,0,0.5), 0 0 10px rgba(255,255,255,0.7)';
+                    }
+                    if (type === 'potassium' && size <= 12) {
+                        playExplosion(posX + size/2, posY + size/2, metal.flameColor);
+                        clearInterval(reactionInterval); el.remove(); playHiss(false); return;
+                    }
+                    if (size <= 4) { clearInterval(reactionInterval); el.remove(); playHiss(false); return; }
+
+                    if (metal.behavior === 'float') {
+                        posY = surfaceY - (size * 0.7);
+                        posX += Math.cos(angle) * metal.moveSpeed;
+                        if (Math.random() > 0.9) angle = Math.random() * Math.PI * 2;
+                        const L = 10;
+                        const R = troughElement.offsetWidth - size - 10;
+                        if (posX < L || posX > R) angle += Math.PI;
+                        posX = Math.max(L, Math.min(R, posX));
+                        createFlame(posX + size/2, posY + size/2, metal.flameColor, type === 'potassium' ? 1.5 : 1);
+                        if (Math.random() < metal.bubbleProb) createBubble(posX + size/2, posY + size);
+                    } else {
+                        if (!grounded) {
+                            if (posY < floorY - size) posY += 6;
+                            else { posY = floorY - size; grounded = true; }
+                        } else posY = floorY - size;
+                        if (Math.random() < metal.bubbleProb) createBubble(posX + Math.random() * size, posY);
+                    }
+                }
+                el.style.width = size + 'px'; el.style.height = size + 'px';
+                el.style.left = posX + 'px'; el.style.top = posY + 'px';
+                checkLitmusSubmersion();
+            }, 40);
+        }
     </script>
 </body>
 </html>

@@ -80,6 +80,75 @@
             );
         };
 
+        const TRANSLATIONS = {
+            en: {
+                title: "Isotopes & Atomic Mass",
+                subtitle: "Explore nuclear stability and isotopic abundance",
+                chooseElement: "Choose Element",
+                activeElement: "Active Element",
+                modifyNucleus: "Modify Nucleus",
+                protons: "Protons",
+                neutrons: "Neutrons",
+                electrons: "Electrons",
+                stable: "Stable",
+                unstable: "Unstable / Radioactive",
+                isotopicData: "Isotopic Data",
+                abundance: "Abundance in Nature",
+                current: "Current",
+                decayNote: "Due to its poor stability, it is not existing in nature as it will undergo radioactive decay and transform to other elements.",
+                atomicNum: "Atomic Number (Z)",
+                massNum: "Mass Number (A)",
+                naturalIsotopes: "Natural Isotopes",
+                relAtomicMass: "Relative Atomic Mass (Aᵣ)",
+                result: "Result",
+                massNote: "* Strictly speaking, mass number should not be used to calculate Aᵣ as it omits mass of electrons and the slight difference between mass of protons and neutrons.",
+                whatIsIsotope: "What is an Isotope?",
+                isotopeDesc: "Atoms with the same number of protons but different numbers of neutrons. They share chemical properties but differ in mass.",
+                nuclearStability: "Nuclear Stability",
+                stabilityDesc: "The balance between the strong nuclear force and electrostatic repulsion determines if an isotope is stable or decays.",
+                relMassFooter: "Relative Atomic Mass",
+                relMassDesc: "Calculated as the weighted average of all naturally occurring isotopes. This is the value found on the periodic table.",
+                elements: {
+                    Hydrogen: "Hydrogen", Helium: "Helium", Lithium: "Lithium", Beryllium: "Beryllium",
+                    Boron: "Boron", Carbon: "Carbon", Nitrogen: "Nitrogen", Oxygen: "Oxygen",
+                    Fluorine: "Fluorine", Neon: "Neon"
+                }
+            },
+            zh: {
+                title: "同位素與原子質量",
+                subtitle: "探索核穩定性與同位素豐度",
+                chooseElement: "選擇元素",
+                activeElement: "當前元素",
+                modifyNucleus: "修改原子核",
+                protons: "質子",
+                neutrons: "中子",
+                electrons: "電子",
+                stable: "穩定",
+                unstable: "不穩定 / 具放射性",
+                isotopicData: "同位素數據",
+                abundance: "自然豐度",
+                current: "當前",
+                decayNote: "由於其穩定性較差，它在自然界中並不存在，因為它會發生放射性衰變並轉化為其他元素。",
+                atomicNum: "原子序數 (Z)",
+                massNum: "質量數 (A)",
+                naturalIsotopes: "天然同位素",
+                relAtomicMass: "相對原子質量 (Aᵣ)",
+                result: "結果",
+                massNote: "* 嚴格來說，不應使用質量數來計算 Aᵣ，因為它忽略了電子的質量以及質子和中子質量的微小差異。",
+                whatIsIsotope: "什麼是同位素？",
+                isotopeDesc: "具有相同質子數但中子數不同的原子。它們具有相同的化學性質，但質量不同。",
+                nuclearStability: "核穩定性",
+                stabilityDesc: "強核力與靜電排斥力之間的平衡決定了同位素是穩定還是會發生衰變。",
+                relMassFooter: "相對原子質量",
+                relMassDesc: "計算為所有天然存在同位素的加權平均值。這是週期表上顯示的數值。",
+                elements: {
+                    Hydrogen: "氫", Helium: "氦", Lithium: "鋰", Beryllium: "鈹",
+                    Boron: "硼", Carbon: "碳", Nitrogen: "氮", Oxygen: "氧",
+                    Fluorine: "氟", Neon: "氖"
+                }
+            }
+        };
+
         const ELEMENTS = [
             { z: 1, symbol: 'H', name: 'Hydrogen', isotopes: [
                 { n: 0, mass: 1.0078, abundance: 99.98, stable: true },
@@ -128,8 +197,9 @@
         const App = () => {
             const [selectedZ, setSelectedZ] = useState(1);
             const [neutrons, setNeutrons] = useState(0);
-            const [showStable, setShowStable] = useState(true);
+            const [lang, setLang] = useState('en');
 
+            const t = TRANSLATIONS[lang];
             const element = useMemo(() => ELEMENTS.find(e => e.z === selectedZ), [selectedZ]);
             
             const firstStableNeutrons = useMemo(() => {
@@ -164,12 +234,6 @@
                 }, 0);
             }, [element]);
 
-            const reset = () => {
-                setSelectedZ(1);
-                const mostAbundant = [...ELEMENTS[0].isotopes].sort((a, b) => b.abundance - a.abundance)[0];
-                setNeutrons(mostAbundant.n);
-            };
-
             useEffect(() => {
                 setNeutrons(defaultNeutrons);
             }, [selectedZ, defaultNeutrons]);
@@ -182,7 +246,6 @@
                 
                 for (let i = 0; i < total; i++) {
                     const isProton = i < element.z;
-                    // Smaller radius increment for tighter nucleus (stressing scale difference)
                     const radius = 5 * Math.sqrt(i + 1); 
                     const angle = i * angleIncrement;
                     const x = Math.cos(angle) * radius;
@@ -214,22 +277,25 @@
 
             return (
                 <div className="min-h-screen bg-slate-50 text-slate-900 font-sans p-4 md:p-8">
-                    <div className="max-w-6xl mx-auto">
+                    <div className="max-w-6xl mx-auto relative">
                         
-                        <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-                            <div>
-                                <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-                                    <Icon name="atom" size={32} className="text-indigo-600" />
-                                    Isotopes & Atomic Mass
-                                </h1>
-                                <p className="text-slate-500 mt-1">Explore nuclear stability and isotopic abundance</p>
-                            </div>
+                        {/* Language Button Moved Above the Topic */}
+                        <div className="flex justify-end mb-4">
                             <button 
-                                onClick={reset}
-                                className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors shadow-sm text-sm font-medium"
+                                onClick={() => setLang(lang === 'en' ? 'zh' : 'en')}
+                                className="flex items-center gap-2 px-4 py-2 bg-white text-indigo-700 border border-slate-200 rounded-xl hover:bg-indigo-50 hover:border-indigo-200 transition-all text-sm font-bold shadow-sm"
                             >
-                                <Icon name="rotate-ccw" size={16} /> Reset Simulation
+                                <span className="text-lg">🌐</span>
+                                {lang === 'en' ? '繁體中文' : 'English'}
                             </button>
+                        </div>
+
+                        <header className="flex flex-col gap-2 mb-8">
+                            <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+                                <Icon name="atom" size={32} className="text-indigo-600" />
+                                {t.title}
+                            </h1>
+                            <p className="text-slate-500 mt-1">{t.subtitle}</p>
                         </header>
 
                         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -237,7 +303,7 @@
                             <div className="lg:col-span-4 space-y-6">
                                 <section className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
                                     <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-                                        <Icon name="database" size={16} /> Choose Element
+                                        <Icon name="database" size={16} /> {t.chooseElement}
                                     </h3>
                                     <div className="grid grid-cols-5 gap-2">
                                         {ELEMENTS.map(el => (
@@ -257,20 +323,20 @@
                                     </div>
                                     <div className="mt-4 p-3 bg-indigo-50 rounded-xl flex items-center justify-center">
                                         <div className="text-center">
-                                            <p className="text-xs text-indigo-400 font-medium uppercase">Active Element</p>
-                                            <p className="font-bold text-indigo-900 text-lg">{element.name}</p>
+                                            <p className="text-xs text-indigo-400 font-medium uppercase">{t.activeElement}</p>
+                                            <p className="font-bold text-indigo-900 text-lg">{t.elements[element.name]}</p>
                                         </div>
                                     </div>
                                 </section>
 
                                 <section className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
                                     <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-                                        <Icon name="activity" size={16} /> Modify Nucleus
+                                        <Icon name="activity" size={16} /> {t.modifyNucleus}
                                     </h3>
                                     <div className="space-y-4">
                                         <div className="flex items-center justify-between">
                                             <span className="text-slate-600 font-medium flex items-center gap-2">
-                                                <span className="w-3 h-3 rounded-full bg-red-500"></span> Protons
+                                                <span className="w-3 h-3 rounded-full bg-red-500"></span> {t.protons}
                                             </span>
                                             <div className="flex items-center gap-3">
                                                 <span className="w-8 text-center font-bold text-lg">{element.z}</span>
@@ -287,7 +353,7 @@
 
                                         <div className="flex items-center justify-between">
                                             <span className="text-slate-600 font-medium flex items-center gap-2">
-                                                <span className="w-3 h-3 rounded-full bg-slate-400"></span> Neutrons
+                                                <span className="w-3 h-3 rounded-full bg-slate-400"></span> {t.neutrons}
                                             </span>
                                             <div className="flex items-center gap-3">
                                                 <span className="w-8 text-center font-bold text-lg">{neutrons}</span>
@@ -310,10 +376,9 @@
                                             </div>
                                         </div>
 
-                                        {/* Added key for Electrons */}
                                         <div className="flex items-center justify-between opacity-80">
                                             <span className="text-slate-600 font-medium flex items-center gap-2">
-                                                <span className="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_4px_cyan]"></span> Electrons
+                                                <span className="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_4px_cyan]"></span> {t.electrons}
                                             </span>
                                             <div className="flex items-center gap-3">
                                                 <span className="w-8 text-center font-bold text-lg">{element.z}</span>
@@ -328,41 +393,22 @@
                                             </div>
                                         </div>
                                     </div>
-
-                                    <div className="mt-6 pt-6 border-t border-slate-50">
-                                         <label className="flex items-center gap-3 cursor-pointer group">
-                                            <div className="relative">
-                                                <input 
-                                                    type="checkbox" 
-                                                    className="sr-only" 
-                                                    checked={showStable}
-                                                    onChange={() => setShowStable(!showStable)}
-                                                />
-                                                <div className={`block w-10 h-6 rounded-full transition-colors ${showStable ? 'bg-indigo-600' : 'bg-slate-200'}`}></div>
-                                                <div className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${showStable ? 'translate-x-4' : 'translate-x-0'}`}></div>
-                                            </div>
-                                            <span className="text-sm font-medium text-slate-700 group-hover:text-indigo-600 transition-colors">Show Stability Indicator</span>
-                                         </label>
-                                    </div>
                                 </section>
                             </div>
 
                             <div className="lg:col-span-5 space-y-6">
                                 <section className="bg-slate-900 rounded-3xl h-[480px] relative overflow-hidden shadow-2xl flex items-center justify-center border-4 border-white">
-                                    {showStable && (
-                                        <div className={`absolute top-6 left-6 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest flex items-center gap-2 z-50 transition-all duration-500 transform ${
-                                            currentIsotope.stable 
-                                            ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' 
-                                            : 'bg-rose-500/20 text-rose-400 border border-rose-500/30 animate-pulse'
-                                        }`}>
-                                            <Icon name="activity" size={14} />
-                                            {currentIsotope.stable ? 'Stable' : 'Unstable / Radioactive'}
-                                        </div>
-                                    )}
+                                    <div className={`absolute top-6 left-6 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest flex items-center gap-2 z-50 transition-all duration-500 transform ${
+                                        currentIsotope.stable 
+                                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' 
+                                        : 'bg-rose-500/20 text-rose-400 border border-rose-500/30 animate-pulse'
+                                    }`}>
+                                        <Icon name="activity" size={14} />
+                                        {currentIsotope.stable ? t.stable : t.unstable}
+                                    </div>
 
                                     <div className="relative w-full h-full flex items-center justify-center">
                                         
-                                        {/* Electron Orbits - Larger radius to stress scale difference */}
                                         {electronShells.map((shell, sIdx) => {
                                             const radius = 95 + (sIdx * 65);
                                             return (
@@ -389,9 +435,8 @@
                                             );
                                         })}
 
-                                        {/* Nucleus - Smaller particles and tighter cluster */}
                                         <div 
-                                            className={`relative transition-transform duration-200 ${(!currentIsotope.stable && showStable) ? 'animate-shake' : ''}`}
+                                            className={`relative transition-transform duration-200 ${!currentIsotope.stable ? 'animate-shake' : ''}`}
                                         >
                                             {nucleons.map((n) => (
                                                 <div 
@@ -421,7 +466,7 @@
                                            </div>
                                            <div className="w-[1px] h-10 bg-white/20 mx-2"></div>
                                            <div className="text-left leading-tight">
-                                              <div className="text-white font-bold">{element.name}</div>
+                                              <div className="text-white font-bold">{t.elements[element.name]}</div>
                                            </div>
                                         </div>
                                     </div>
@@ -431,17 +476,17 @@
                             <div className="lg:col-span-3 space-y-6">
                                 <section className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 h-full overflow-y-auto">
                                     <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-6 flex items-center gap-2">
-                                        <Icon name="scale" size={16} /> Isotopic Data
+                                        <Icon name="scale" size={16} /> {t.isotopicData}
                                     </h3>
                                     
                                     <div className="space-y-6">
                                         <div>
-                                           <p className="text-xs font-bold text-slate-400 uppercase mb-2">Abundance in Nature</p>
+                                           <p className="text-xs font-bold text-slate-400 uppercase mb-2">{t.abundance}</p>
                                            <div className="relative pt-1">
                                               <div className="flex mb-2 items-center justify-between">
                                                 <div>
                                                   <span className="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-indigo-600 bg-indigo-200">
-                                                    Current
+                                                    {t.current}
                                                   </span>
                                                 </div>
                                                 <div className="text-right">
@@ -457,7 +502,7 @@
                                               {!currentIsotope.stable && (
                                                 <div className="mt-2 p-2 bg-rose-50 border-l-2 border-rose-400 rounded-r-lg">
                                                     <p className="text-[10px] leading-snug text-rose-700 italic">
-                                                        Due to its poor stability, it is not existing in nature as it will undergo radioactive decay and transform to other elements.
+                                                        {t.decayNote}
                                                     </p>
                                                 </div>
                                               )}
@@ -466,17 +511,17 @@
 
                                         <div className="p-4 bg-slate-50 rounded-xl space-y-3">
                                           <div className="flex justify-between items-center text-xs text-slate-500">
-                                            <span>Atomic Number (Z)</span>
+                                            <span>{t.atomicNum}</span>
                                             <span className="font-bold text-slate-700">{element.z}</span>
                                           </div>
                                           <div className="flex justify-between items-center text-xs text-slate-500">
-                                            <span>Mass Number (A)</span>
+                                            <span>{t.massNum}</span>
                                             <span className="font-bold text-slate-700">{element.z + neutrons}</span>
                                           </div>
                                         </div>
 
                                         <div className="border-t border-slate-50 pt-4">
-                                          <h4 className="text-xs font-bold text-slate-400 uppercase mb-3">Natural Isotopes</h4>
+                                          <h4 className="text-xs font-bold text-slate-400 uppercase mb-3">{t.naturalIsotopes}</h4>
                                           <div className="space-y-2">
                                             {element.isotopes.map((iso, idx) => (
                                               <div 
@@ -492,7 +537,7 @@
 
                                         <div className="border-t border-slate-50 pt-4">
                                             <h4 className="text-xs font-bold text-slate-400 uppercase mb-3 flex items-center gap-1">
-                                                <Icon name="calculator" size={12}/> Relative Atomic Mass (Aᵣ)
+                                                <Icon name="calculator" size={12}/> {t.relAtomicMass}
                                             </h4>
                                             <div className="bg-indigo-50 p-3 rounded-xl">
                                                 <div className="text-[10px] text-slate-500 font-mono space-y-1 mb-2">
@@ -503,11 +548,11 @@
                                                     ))}
                                                 </div>
                                                 <div className="flex justify-between items-baseline mb-2">
-                                                    <span className="text-xs font-semibold text-indigo-700">Result:</span>
+                                                    <span className="text-xs font-semibold text-indigo-700">{t.result}:</span>
                                                     <span className="text-lg font-black text-indigo-900">{relativeAtomicMass.toFixed(2)}</span>
                                                 </div>
                                                 <p className="text-[9px] leading-tight text-slate-400 italic">
-                                                    * Strictly speaking, mass number should not be used to calculate Aᵣ as it omits mass of electrons and the slight difference between mass of protons and neutrons.
+                                                    {t.massNote}
                                                 </p>
                                             </div>
                                         </div>
@@ -523,8 +568,8 @@
                                     <Icon name="info" size={20} />
                                 </div>
                                 <div>
-                                    <h4 className="font-bold text-slate-800">What is an Isotope?</h4>
-                                    <p className="text-xs text-slate-500 mt-1">Atoms with the same number of protons but different numbers of neutrons. They share chemical properties but differ in mass.</p>
+                                    <h4 className="font-bold text-slate-800">{t.whatIsIsotope}</h4>
+                                    <p className="text-xs text-slate-500 mt-1">{t.isotopeDesc}</p>
                                 </div>
                             </div>
                             <div className="flex gap-4 p-5 bg-white rounded-2xl border border-slate-100">
@@ -532,8 +577,8 @@
                                     <Icon name="activity" size={20} />
                                 </div>
                                 <div>
-                                    <h4 className="font-bold text-slate-800">Nuclear Stability</h4>
-                                    <p className="text-xs text-slate-500 mt-1">The balance between the strong nuclear force and electrostatic repulsion determines if an isotope is stable or decays.</p>
+                                    <h4 className="font-bold text-slate-800">{t.nuclearStability}</h4>
+                                    <p className="text-xs text-slate-500 mt-1">{t.stabilityDesc}</p>
                                 </div>
                             </div>
                             <div className="flex gap-4 p-5 bg-white rounded-2xl border border-slate-100">
@@ -541,8 +586,8 @@
                                     <Icon name="weight" size={20} />
                                 </div>
                                 <div>
-                                    <h4 className="font-bold text-slate-800">Relative Atomic Mass</h4>
-                                    <p className="text-xs text-slate-500 mt-1">Calculated as the weighted average of all naturally occurring isotopes. This is the value found on the periodic table.</p>
+                                    <h4 className="font-bold text-slate-800">{t.relMassFooter}</h4>
+                                    <p className="text-xs text-slate-500 mt-1">{t.relMassDesc}</p>
                                 </div>
                             </div>
                         </div>

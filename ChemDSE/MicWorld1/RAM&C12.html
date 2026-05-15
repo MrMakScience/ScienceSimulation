@@ -23,16 +23,24 @@
     </style>
 </head>
 <body class="p-4 md:p-8">
-    <div class="max-w-6xl mx-auto">
-        <header class="mb-8 text-center">
-            <h1 class="text-3xl font-bold text-slate-800">Understanding Relative Isotopic Mass</h1>
-            <p class="text-slate-600 mt-2 italic">The Reference Standard: <sup>12</sup>C = 12.0000...</p>
+    <div class="max-w-6xl mx-auto relative">
+        <!-- Language Toggle Button - Adjusted Position to avoid blocking title -->
+        <div class="absolute -top-2 right-0 z-20">
+            <button id="lang-toggle" class="flex items-center gap-2 bg-white border border-slate-200 px-3 py-1.5 rounded-lg shadow-sm hover:bg-slate-50 transition-colors text-slate-600 font-medium text-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                <span id="lang-label">繁體中文</span>
+            </button>
+        </div>
+
+        <header class="mb-8 text-center pt-6">
+            <h1 id="main-title" class="text-3xl font-bold text-slate-800 px-16">Understanding Relative Isotopic Mass</h1>
+            <p id="sub-title" class="text-slate-600 mt-2 italic">The Reference Standard: <sup>12</sup>C = 12.0000...</p>
         </header>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <!-- Sidebar: Element Selection -->
             <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                <h2 class="text-xl font-semibold mb-4 text-slate-700">Select an Element</h2>
+                <h2 id="sidebar-title" class="text-xl font-semibold mb-4 text-slate-700">Select an Element</h2>
                 <div class="space-y-2 max-h-[600px] overflow-y-auto pr-2" id="element-list">
                     <!-- Elements populated by JS -->
                 </div>
@@ -43,53 +51,43 @@
                 <!-- Part 1: The Relative Balance -->
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
                     <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-xl font-semibold text-slate-700">1. Relative Mass Measurement</h2>
-                        <span class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">Standard: Carbon-12</span>
+                        <h2 id="part1-title" class="text-xl font-semibold text-slate-700">1. Relative Mass Measurement</h2>
+                        <span id="standard-badge" class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">Standard: Carbon-12</span>
                     </div>
                     
                     <div class="relative h-80 w-full flex flex-col items-center justify-start border-b border-slate-100 pt-8 pb-4">
                         <!-- Balance Visual -->
                         <div id="balance-container" class="relative w-full max-w-md h-40 flex flex-col items-center">
-                            <!-- Pivot -->
                             <div class="absolute bottom-0 w-8 h-20 bg-slate-400 rounded-t-lg z-0"></div>
-                            
-                            <!-- Arm -->
                             <div id="balance-arm" class="balance-arm absolute bottom-20 w-full h-2 bg-slate-700 rounded-full flex items-center justify-between px-2">
-                                <!-- Left Pan -->
                                 <div id="left-pan" class="pan absolute -left-4 -top-2 w-24 h-24 flex flex-col items-center">
                                     <div class="w-20 h-2 bg-slate-600 rounded-full mb-2"></div>
-                                    <div id="left-content" class="text-xs font-bold flex flex-wrap justify-center content-center w-16 h-16 bg-slate-100 rounded-full border-2 border-slate-300 shadow-inner">
-                                        <!-- C12 atoms go here -->
-                                    </div>
-                                    <p class="mt-1 text-[10px] text-slate-500 font-bold uppercase tracking-tighter">Standard (C-12)</p>
+                                    <div id="left-content" class="text-xs font-bold flex flex-wrap justify-center content-center w-16 h-16 bg-slate-100 rounded-full border-2 border-slate-300 shadow-inner"></div>
+                                    <p id="left-label-text" class="mt-1 text-[10px] text-slate-500 font-bold tracking-tighter">Standard (C-12)</p>
                                 </div>
-                                
-                                <!-- Right Pan -->
                                 <div id="right-pan" class="pan absolute -right-4 -top-2 w-24 h-24 flex flex-col items-center">
                                     <div class="w-20 h-2 bg-slate-600 rounded-full mb-2"></div>
-                                    <div id="right-content" class="text-xs font-bold flex items-center justify-center w-16 h-16 bg-blue-50 rounded-full border-2 border-blue-300 shadow-inner">
-                                        <!-- Selected Isotope goes here -->
-                                    </div>
-                                    <p id="right-label" class="mt-1 text-[10px] text-slate-500 font-bold uppercase tracking-tighter">Isotope</p>
+                                    <div id="right-content" class="text-xs font-bold flex items-center justify-center w-16 h-16 bg-blue-50 rounded-full border-2 border-blue-300 shadow-inner"></div>
+                                    <p id="right-label" class="mt-1 text-[10px] text-slate-500 font-bold tracking-tighter"></p>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Calculation Section - Moved lower to avoid clashing -->
+                        <!-- Calculation Section -->
                         <div class="mt-16 flex gap-4 items-center bg-slate-50 p-4 rounded-xl border border-slate-100">
                             <div class="text-center">
-                                <label class="block text-[10px] uppercase font-bold text-slate-400 mb-1">Ratio vs <sup>12</sup>C</label>
+                                <label id="ratio-label" class="block text-[10px] uppercase font-bold text-slate-400 mb-1">Ratio vs <sup>12</sup>C</label>
                                 <div id="ratio-display" class="text-xl md:text-2xl font-mono font-bold text-slate-800">1 : 1.000</div>
                             </div>
                             <div class="text-slate-300 text-2xl">× 12.00 =</div>
                             <div class="text-center">
-                                <label class="block text-[10px] uppercase font-bold text-slate-400 mb-1">Rel. Isotopic Mass</label>
+                                <label id="rim-label" class="block text-[10px] uppercase font-bold text-slate-400 mb-1">Rel. Isotopic Mass</label>
                                 <div id="rim-display" class="text-xl md:text-2xl font-mono font-bold text-indigo-600">12.000</div>
                             </div>
                         </div>
                     </div>
                     
-                    <p class="mt-4 text-sm text-slate-500">
+                    <p id="part1-desc" class="mt-4 text-sm text-slate-500">
                         Isotopic mass is measured <b>relative</b> to Carbon-12. If an isotope is twice as heavy as Carbon-12, its ratio is 2, and its relative mass is 2 × 12 = 24.
                     </p>
                 </div>
@@ -97,35 +95,28 @@
                 <!-- Part 2: Isotope Distribution -->
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
-                        <h2 class="text-xl font-semibold text-slate-700">2. Natural Abundance & Atomic Mass</h2>
+                        <h2 id="part2-title" class="text-xl font-semibold text-slate-700">2. Natural Abundance & Atomic Mass</h2>
                         <div id="ram-badge" class="px-4 py-2 bg-emerald-100 text-emerald-800 rounded-xl font-bold">
                             Relative Atomic Mass (A<sub>r</sub>): --
                         </div>
                     </div>
 
-                    <!-- Calculation Box - UPDATED FOR MOBILE RESPONSIVENESS -->
                     <div class="mb-6 p-4 bg-slate-50 rounded-xl border border-slate-200">
-                        <div class="text-[10px] uppercase font-bold text-slate-400 mb-2 tracking-wider">Weighted Average Calculation</div>
-                        <div id="ram-calculation" class="font-mono text-xs md:text-sm text-slate-600 break-words leading-relaxed overflow-hidden">
-                            <!-- Calculation string populated by JS -->
-                        </div>
+                        <div id="calc-header" class="text-[10px] uppercase font-bold text-slate-400 mb-2 tracking-wider">Weighted Average Calculation</div>
+                        <div id="ram-calculation" class="font-mono text-xs md:text-sm text-slate-600 break-words leading-relaxed overflow-hidden"></div>
                     </div>
 
                     <div class="flex flex-col md:flex-row gap-6">
-                        <!-- Particle Diagram -->
                         <div class="w-full md:w-1/2 bg-slate-50 rounded-xl p-4 border border-dashed border-slate-300">
-                            <p class="text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wider text-center">Random Sample (100 Atoms)</p>
+                            <p id="diagram-label" class="text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wider text-center">Random Sample (100 Atoms)</p>
                             <svg id="particle-svg" viewBox="0 0 400 300" class="w-full h-auto drop-shadow-sm bg-white rounded-lg"></svg>
                         </div>
 
-                        <!-- Data Breakdown -->
                         <div class="w-full md:w-1/2 space-y-4">
-                            <h3 class="text-sm font-bold text-slate-600 uppercase tracking-wide">Isotopes in Sample:</h3>
-                            <div id="isotope-breakdown" class="space-y-2">
-                                <!-- Data rows go here -->
-                            </div>
+                            <h3 id="isotope-list-title" class="text-sm font-bold text-slate-600 uppercase tracking-wide">Isotopes in Sample:</h3>
+                            <div id="isotope-breakdown" class="space-y-2"></div>
                             <div class="pt-4 border-t border-slate-100">
-                                <p class="text-xs text-slate-500 leading-relaxed italic">
+                                <p id="ram-definition" class="text-xs text-slate-500 leading-relaxed italic">
                                     Relative Atomic Mass is the weighted average of the relative isotopic mass of all natural isotopes on the <sup>12</sup>C = 12.00 scale. It takes into account both the relative mass and the abundance of each isotope.
                                 </p>
                             </div>
@@ -137,55 +128,123 @@
     </div>
 
     <script>
+        const i18n = {
+            en: {
+                mainTitle: "Understanding Relative Isotopic Mass",
+                subTitle: "The Reference Standard: <sup>12</sup>C = 12.0000...",
+                sidebarTitle: "Select an Element",
+                part1Title: "1. Relative Mass Measurement",
+                standardBadge: "Standard: Carbon-12",
+                leftLabel: "Standard (C-12)",
+                ratioLabel: "Ratio vs <sup>12</sup>C",
+                rimLabel: "Rel. Isotopic Mass",
+                part1Desc: "Isotopic mass is measured <b>relative</b> to Carbon-12. If an isotope is twice as heavy as Carbon-12, its ratio is 2, and its relative mass is 2 × 12 = 24.",
+                part2Title: "2. Natural Abundance & Atomic Mass",
+                ramPrefix: "Relative Atomic Mass (A<sub>r</sub>):",
+                calcHeader: "Weighted Average Calculation",
+                diagramLabel: "Random Sample (100 Atoms)",
+                isotopeListTitle: "Isotopes in Sample:",
+                ramDefinition: "Relative Atomic Mass is the weighted average of the relative isotopic mass of all natural isotopes on the <sup>12</sup>C = 12.00 scale. It takes into account both the relative mass and the abundance of each isotope.",
+                isotopesCount: "isotopes",
+                toggle: "繁體中文"
+            },
+            zh: {
+                mainTitle: "理解相對同位素質量",
+                subTitle: "參考標準：<sup>12</sup>C = 12.0000...",
+                sidebarTitle: "選擇元素",
+                part1Title: "1. 相對質量測量",
+                standardBadge: "標準：碳-12",
+                leftLabel: "標準 (C-12)",
+                ratioLabel: "與 <sup>12</sup>C 的比例",
+                rimLabel: "相對同位素質量",
+                part1Desc: "同位素質量是相對於碳-12測量的。如果一個同位素的重量是碳-12的兩倍，其比例為2，則其相對質量為 2 × 12 = 24。",
+                part2Title: "2. 天然豐度與原子量",
+                ramPrefix: "相對原子質量 (A<sub>r</sub>):",
+                calcHeader: "加權平均計算",
+                diagramLabel: "隨機樣本 (100顆原子)",
+                isotopeListTitle: "樣本中的同位素：",
+                ramDefinition: "相對原子質量是所有天然同位素在 <sup>12</sup>C = 12.00 標度上相對同位素質量的加權平均值。它同時考慮了每種同位素的相對質量及其豐度。",
+                isotopesCount: "個同位素",
+                toggle: "English"
+            }
+        };
+
         const elements = [
-            { name: "Hydrogen", symbol: "H", isotopes: [
+            { name: { en: "Hydrogen", zh: "氫" }, symbol: "H", isotopes: [
                 { mass: 1.0078, abundance: 99.98, color: "#bfdbfe", label: "H-1" },
                 { mass: 2.0141, abundance: 0.02, color: "#1d4ed8", label: "H-2" }
             ]},
-            { name: "Helium", symbol: "He", isotopes: [
+            { name: { en: "Helium", zh: "氦" }, symbol: "He", isotopes: [
                 { mass: 3.0160, abundance: 0.0001, color: "#fef3c7", label: "He-3" },
                 { mass: 4.0026, abundance: 99.9999, color: "#b45309", label: "He-4" }
             ]},
-            { name: "Lithium", symbol: "Li", isotopes: [
+            { name: { en: "Lithium", zh: "鋰" }, symbol: "Li", isotopes: [
                 { mass: 6.0151, abundance: 7.5, color: "#fee2e2", label: "Li-6" },
                 { mass: 7.0160, abundance: 92.5, color: "#b91c1c", label: "Li-7" }
             ]},
-            { name: "Carbon", symbol: "C", isotopes: [
+            { name: { en: "Carbon", zh: "碳" }, symbol: "C", isotopes: [
                 { mass: 12.0000, abundance: 98.93, color: "#cbd5e1", label: "C-12" },
                 { mass: 13.0033, abundance: 1.07, color: "#1e293b", label: "C-13" }
             ]},
-            { name: "Oxygen", symbol: "O", isotopes: [
+            { name: { en: "Oxygen", zh: "氧" }, symbol: "O", isotopes: [
                 { mass: 15.9949, abundance: 99.76, color: "#dcfce7", label: "O-16" },
                 { mass: 16.9991, abundance: 0.04, color: "#22c55e", label: "O-17" },
                 { mass: 17.9991, abundance: 0.20, color: "#14532d", label: "O-18" }
             ]},
-            { name: "Neon", symbol: "Ne", isotopes: [
+            { name: { en: "Neon", zh: "氖" }, symbol: "Ne", isotopes: [
                 { mass: 19.9924, abundance: 90.48, color: "#fce7f3", label: "Ne-20" },
                 { mass: 20.9938, abundance: 0.27, color: "#ec4899", label: "Ne-21" },
                 { mass: 21.9913, abundance: 9.25, color: "#831843", label: "Ne-22" }
             ]},
-            { name: "Magnesium", symbol: "Mg", isotopes: [
+            { name: { en: "Magnesium", zh: "鎂" }, symbol: "Mg", isotopes: [
                 { mass: 23.9850, abundance: 78.99, color: "#ede9fe", label: "Mg-24" },
                 { mass: 24.9858, abundance: 10.00, color: "#8b5cf6", label: "Mg-25" },
                 { mass: 25.9825, abundance: 11.01, color: "#4c1d95", label: "Mg-26" }
             ]},
-            { name: "Chlorine", symbol: "Cl", isotopes: [
+            { name: { en: "Chlorine", zh: "氯" }, symbol: "Cl", isotopes: [
                 { mass: 34.9688, abundance: 75.76, color: "#ecfccb", label: "Cl-35" },
                 { mass: 36.9659, abundance: 24.24, color: "#3f6212", label: "Cl-37" }
             ]},
-            { name: "Argon", symbol: "Ar", isotopes: [
+            { name: { en: "Argon", zh: "氬" }, symbol: "Ar", isotopes: [
                 { mass: 35.9675, abundance: 0.33, color: "#cffafe", label: "Ar-36" },
                 { mass: 37.9627, abundance: 0.06, color: "#06b6d4", label: "Ar-38" },
                 { mass: 39.9623, abundance: 99.61, color: "#164e63", label: "Ar-40" }
             ]}
         ];
 
+        let lang = 'en';
         let currentElement = elements[3];
         let currentIsotope = elements[3].isotopes[0];
 
         function init() {
+            document.getElementById('lang-toggle').onclick = () => {
+                lang = lang === 'en' ? 'zh' : 'en';
+                updateLanguageUI();
+                renderElementList();
+                updateSimulation();
+            };
+            updateLanguageUI();
             renderElementList();
             updateSimulation();
+        }
+
+        function updateLanguageUI() {
+            const t = i18n[lang];
+            document.getElementById('lang-label').innerText = t.toggle;
+            document.getElementById('main-title').innerText = t.mainTitle;
+            document.getElementById('sub-title').innerHTML = t.subTitle;
+            document.getElementById('sidebar-title').innerText = t.sidebarTitle;
+            document.getElementById('part1-title').innerText = t.part1Title;
+            document.getElementById('standard-badge').innerText = t.standardBadge;
+            document.getElementById('left-label-text').innerText = t.leftLabel;
+            document.getElementById('ratio-label').innerHTML = t.ratioLabel;
+            document.getElementById('rim-label').innerText = t.rimLabel;
+            document.getElementById('part1-desc').innerHTML = t.part1Desc;
+            document.getElementById('part2-title').innerText = t.part2Title;
+            document.getElementById('calc-header').innerText = t.calcHeader;
+            document.getElementById('diagram-label').innerText = t.diagramLabel;
+            document.getElementById('isotope-list-title').innerText = t.isotopeListTitle;
+            document.getElementById('ram-definition').innerHTML = t.ramDefinition;
         }
 
         function renderElementList() {
@@ -196,10 +255,10 @@
                 btn.className = `w-full text-left p-3 rounded-xl border flex justify-between items-center transition-all ${el.symbol === currentElement.symbol ? 'bg-indigo-50 border-indigo-300 shadow-sm' : 'hover:bg-slate-50 border-transparent'}`;
                 btn.innerHTML = `
                     <div class="flex items-center gap-3">
-                        <span class="w-8 h-8 flex items-center justify-center ${el.symbol === currentElement.symbol ? 'bg-indigo-600' : 'bg-slate-800'} text-white rounded font-bold text-sm transition-colors normal-case">${el.symbol}</span>
-                        <span class="font-semibold text-slate-700">${el.name}</span>
+                        <span class="w-8 h-8 flex items-center justify-center ${el.symbol === currentElement.symbol ? 'bg-indigo-600' : 'bg-slate-800'} text-white rounded font-bold text-sm transition-colors">${el.symbol}</span>
+                        <span class="font-semibold text-slate-700">${el.name[lang]}</span>
                     </div>
-                    <span class="text-xs text-slate-400">${el.isotopes.length} isotopes</span>
+                    <span class="text-xs text-slate-400">${el.isotopes.length} ${i18n[lang].isotopesCount}</span>
                 `;
                 btn.onclick = () => {
                     currentElement = el;
@@ -225,7 +284,6 @@
             
             const labelEl = document.getElementById('right-label');
             labelEl.innerText = currentIsotope.label;
-            labelEl.classList.add('normal-case');
 
             const diff = currentIsotope.mass - 12;
             const angle = Math.max(-12, Math.min(12, diff * 1.2));
@@ -236,7 +294,7 @@
 
             const rightContent = document.getElementById('right-content');
             rightContent.style.backgroundColor = currentIsotope.color;
-            rightContent.innerHTML = `<span class="${isDark(currentIsotope.color) ? 'text-white' : 'text-slate-800'} text-[10px] md:text-xs font-bold normal-case">${currentIsotope.label}</span>`;
+            rightContent.innerHTML = `<span class="${isDark(currentIsotope.color) ? 'text-white' : 'text-slate-800'} text-[10px] md:text-xs font-bold">${currentIsotope.label}</span>`;
             
             const leftContent = document.getElementById('left-content');
             leftContent.innerHTML = `<span class="text-slate-600 text-[10px] md:text-xs font-bold">C-12</span>`;
@@ -262,8 +320,6 @@
             currentElement.isotopes.forEach(iso => {
                 const contribution = (iso.mass * iso.abundance / 100);
                 ram += contribution;
-                
-                // Add to calculation string - simplified slightly for wrapping
                 calcParts.push(`(${iso.mass.toFixed(3)}&times;${iso.abundance.toFixed(2)}%)`);
 
                 const isActive = iso.label === currentIsotope.label;
@@ -277,7 +333,7 @@
                 row.innerHTML = `
                     <div class="flex items-center gap-2">
                         <div class="w-4 h-4 rounded-full border border-slate-200" style="background: ${iso.color}"></div>
-                        <span class="font-bold text-sm text-slate-700 normal-case">${iso.label}</span>
+                        <span class="font-bold text-sm text-slate-700">${iso.label}</span>
                     </div>
                     <div class="text-[10px] text-right">
                         <div class="font-mono font-bold">${iso.mass.toFixed(4)} u</div>
@@ -287,9 +343,8 @@
                 breakdown.appendChild(row);
             });
 
-            document.getElementById('ram-badge').innerHTML = `Relative Atomic Mass (A<sub>r</sub>): ${ram.toFixed(4)}`;
+            document.getElementById('ram-badge').innerHTML = `${i18n[lang].ramPrefix} ${ram.toFixed(4)}`;
             
-            // Build the calculation display with flex-wrap friendly spacing
             calcDisplay.innerHTML = `
                 <span class="text-indigo-600 font-bold inline-block mr-1">A<sub>r</sub></span> = 
                 <span class="inline-flex flex-wrap gap-x-1 items-center">
@@ -323,7 +378,6 @@
             atoms.forEach((iso, index) => {
                 const col = index % 10;
                 const row = Math.floor(index / 10);
-                
                 const x = marginX + (col * spacingX) + (Math.random() * 5);
                 const y = marginY + (row * spacingY) + (Math.random() * 5);
 
@@ -339,7 +393,6 @@
                 const title = document.createElementNS("http://www.w3.org/2000/svg", "title");
                 title.textContent = iso.label + " (" + iso.mass + " u)";
                 circle.appendChild(title);
-                
                 svg.appendChild(circle);
             });
         }
