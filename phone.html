@@ -3,505 +3,599 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mr. Daniel Mak Science Simulation</title>
+    <title>Isotopes & Atomic Mass Simulator</title>
+    <!-- Tailwind CSS for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- React and ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <!-- Babel for JSX transformation -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f8fafc;
+        @keyframes spin-slow {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
         }
-        .topic-section {
-            scroll-margin-top: 5rem;
+        @keyframes orbit {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
         }
-        .card-img-container {
-            aspect-ratio: 16 / 9;
-            overflow: hidden;
+        @keyframes shake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            10% { transform: translate(-1px, -2px) rotate(-1deg); }
+            20% { transform: translate(-3px, 0px) rotate(1deg); }
+            30% { transform: translate(3px, 2px) rotate(0deg); }
+            40% { transform: translate(1px, -1px) rotate(1deg); }
+            50% { transform: translate(-1px, 2px) rotate(-1deg); }
+            60% { transform: translate(-3px, 1px) rotate(0deg); }
+            70% { transform: translate(3px, 1px) rotate(-1deg); }
+            80% { transform: translate(-1px, -1px) rotate(1deg); }
+            90% { transform: translate(1px, 2px) rotate(0deg); }
+            100% { transform: translate(1px, -2px) rotate(-1deg); }
         }
-        .card-img {
-            transition: transform 0.3s ease;
+        .animate-spin-slow {
+            animation: spin-slow 12s linear infinite;
         }
-        .sim-card:hover .card-img {
-            transform: scale(1.05);
+        .electron-orbit {
+            animation: orbit linear infinite;
         }
-        /* Translation Logic */
-        [lang="zh"] { display: none; }
-        body.lang-zh [lang="en"] { display: none; }
-        body.lang-zh [lang="zh"] { display: block; }
-        body.lang-zh .inline-zh { display: inline; }
-        .inline-zh { display: none; }
-        body.lang-zh .inline-en { display: none; }
+        .animate-shake {
+            animation: shake 0.3s infinite;
+        }
     </style>
 </head>
-<body class="text-slate-900">
+<body>
+    <div id="root"></div>
 
-    <!-- Header Section -->
-    <header class="bg-indigo-700 text-white py-12 px-6 shadow-lg relative">
-        <div class="max-w-6xl mx-auto">
-            <!-- Language Toggle at the top -->
-            <div class="flex justify-end mb-4">
-                <button onclick="document.body.classList.toggle('lang-zh')" class="bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 px-3 py-1.5 rounded-md text-sm font-medium transition flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-                    <span class="inline-en">繁體中文</span>
-                    <span class="inline-zh">English</span>
-                </button>
-            </div>
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
 
-            <h1 class="text-4xl md:text-5xl font-bold mb-4 pr-10">
-                <span lang="en">Interactive Simulation for Microscopic World I</span>
-                <span lang="zh">微觀世界 I 互動模擬站</span>
-            </h1>
-            <p class="text-indigo-100 text-lg max-w-2xl mb-6">
-                <span lang="en">Explore concepts in Chemistry through interactive visualizations and games. Select a topic below to get started.</span>
-                <span lang="zh">透過可視化的互動和遊戲去探索化學概念。請在下方選擇主題開始學習。</span>
-            </p>
-            <div class="inline-block bg-white/20 backdrop-blur-sm border border-white/30 rounded-lg px-4 py-2">
-                <p class="text-white font-semibold">
-                    <span lang="en">💡 Suggest using iPad/ Computer for the best experience. For phone user, please use the simulation at vertical view.</span>
-                    <span lang="zh">💡 建議使用 iPad 或電腦以獲得最佳體驗。手機用戶請在垂直模式下使用不同的模擬器。記得要轉換語言作中文。</span>
-                </p>
-            </div>
-        </div>
-    </header>
+        // Robust Inline SVG Icons
+        const MinusIcon = ({ size = 16, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M5 12h14"/></svg>
+        );
 
-    <!-- Navigation -->
-    <nav class="sticky top-0 bg-white border-b border-slate-200 z-20 shadow-sm overflow-x-auto">
-        <div class="max-w-6xl mx-auto px-6 py-4 flex space-x-6 whitespace-nowrap">
-            <a href="#Atomic Structure" class="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition">
-                <span lang="en">Atomic Structure</span><span lang="zh">原子結構</span>
-            </a>
-            <a href="#The Periodic Table" class="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition">
-                <span lang="en">Periodic Table</span><span lang="zh">元素週期表</span>
-            </a>
-            <a href="#Metallic Bonding and Ionic Bonding" class="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition">
-                <span lang="en">Ionic Bonding</span><span lang="zh">金屬鍵與離子鍵</span>
-            </a>
-            <a href="#Covalent bonding" class="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition">
-                <span lang="en">Covalent Bonding</span><span lang="zh">共價鍵</span>
-            </a>
-            <a href="#Structures and properties of substances" class="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition">
-                <span lang="en">Structures & Properties</span><span lang="zh">物質的結構與性質</span>
-            </a>
-        </div>
-    </nav>
+        const PlusIcon = ({ size = 16, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M5 12h14m-7-7v14"/></svg>
+        );
 
-    <main class="max-w-6xl mx-auto px-6 py-12">
-        
-        <!-- Topic: Atomic Structure -->
-        <section id="Atomic Structure" class="topic-section mb-16">
-            <h2 class="text-2xl font-bold border-l-4 border-indigo-600 pl-4 mb-8">
-                <span lang="en">Atomic Structure</span><span lang="zh">原子結構</span>
-            </h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
-                    <div class="card-img-container bg-slate-200">
-                        <img src="https://imgur.com/gJOKCGH.png" alt="Isotope Stability" class="card-img w-full h-full object-cover">
-                    </div>
-                    <div class="p-6 flex-grow flex flex-col">
-                        <h3 class="font-bold text-lg mb-2">
-                            <span lang="en">Stability of Isotopes & relative abundance</span>
-                            <span lang="zh">同位素的穩定性與相對豐度</span>
-                        </h3>
-                        <p class="text-slate-600 text-sm mb-4 flex-grow">
-                            <span lang="en">Study the structure of the atom! You can also change the number of neutrons in the atom's nucleus to understand why different isotopes have different abundance.</span>
-                            <span lang="zh">你可以在此研究原子的微觀結構。你亦可以改變原子核中的中子數量，以理解為何不同同位素具有不同的豐度。</span>
-                        </p>
-                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/IsotopeStability" target="_blank" class="inline-block bg-indigo-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-indigo-700 transition">
-                            <span lang="en">Launch Simulation</span><span lang="zh">開始模擬</span>
-                        </a>
-                    </div>
-                </div>
-                <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
-                    <div class="card-img-container bg-slate-200">
-                        <img src="https://imgur.com/fJKeEAp.png" alt="C-12 scale" class="card-img w-full h-full object-cover">
-                    </div>
-                    <div class="p-6 flex-grow flex flex-col">
-                        <h3 class="font-bold text-lg mb-2">
-                            <span lang="en">C-12 scale and R.A.M.</span>
-                            <span lang="zh">碳-12 標度與相對原子質量 (R.A.M.)</span>
-                        </h3>
-                        <p class="text-slate-600 text-sm mb-4 flex-grow">
-                            <span lang="en">Understand the meaning of C-12 scale and visualize nature's element sample in particle view.</span>
-                            <span lang="zh">了解 碳-12 標度的含義，並以微觀視角觀察自然界中的元素樣本。</span>
-                        </p>
-                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/RAM&C12" target="_blank" class="inline-block bg-indigo-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-indigo-700 transition">
-                            <span lang="en">Launch Simulation</span><span lang="zh">開始模擬</span>
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </section>
+        const Icon = ({ name, size = 16, className = "" }) => {
+            const [path, setPath] = useState("");
+            useEffect(() => {
+                if (window.lucide) {
+                    const iconData = window.lucide.icons[name];
+                    if (iconData) {
+                        const tempDiv = document.createElement('div');
+                        tempDiv.innerHTML = window.lucide.createIcons({ icons: { [name]: iconData } });
+                        setPath(tempDiv.querySelector('svg').innerHTML);
+                    }
+                }
+            }, [name]);
+            if (name === 'plus') return <PlusIcon size={size} className={className} />;
+            if (name === 'minus') return <MinusIcon size={size} className={className} />;
+            return (
+                <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} dangerouslySetInnerHTML={{ __html: path }} />
+            );
+        };
 
-        <!-- Topic: The Periodic Table -->
-        <section id="The Periodic Table" class="topic-section mb-16">
-            <h2 class="text-2xl font-bold border-l-4 border-emerald-600 pl-4 mb-8">
-                <span lang="en">The Periodic Table</span><span lang="zh">元素週期表</span>
-            </h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
-                    <div class="card-img-container bg-slate-200">
-                        <img src="https://imgur.com/9dBaLig.png" alt="Atomic reactivity" class="card-img w-full h-full object-cover">
-                    </div>
-                    <div class="p-6 flex-grow flex flex-col">
-                        <h3 class="font-bold text-lg mb-2">
-                            <span lang="en">Atomic structure and reactivity</span>
-                            <span lang="zh">原子結構與反應性</span>
-                        </h3>
-                        <p class="text-slate-600 text-sm mb-4 flex-grow">
-                            <span lang="en">Compare the structure of different atoms and see how does it relates to reactivity.</span>
-                            <span lang="zh">比較不同原子的結構，並觀察其與反應性的關係。</span>
-                        </p>
-                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/ReactivityOfAtoms" target="_blank" class="inline-block bg-emerald-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-emerald-700 transition">
-                            <span lang="en">Launch Simulation</span><span lang="zh">開始模擬</span>
-                        </a>
-                    </div>
-                </div>
-                <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
-                    <div class="card-img-container bg-slate-200">
-                        <img src="https://imgur.com/FCmQfjK.png" alt="Metal reaction" class="card-img w-full h-full object-cover">
-                    </div>
-                    <div class="p-6 flex-grow flex flex-col">
-                        <h3 class="font-bold text-lg mb-2">
-                            <span lang="en">Reaction of metals in water</span>
-                            <span lang="zh">金屬在水中的反應</span>
-                        </h3>
-                        <p class="text-slate-600 text-sm mb-4 flex-grow">
-                            <span lang="en">Conduct the explosive experiment in your device! Turn on the sound!</span>
-                            <span lang="zh">你可以在電子設備中進行爆炸性實驗！請開啟聲音去獲得更好的體驗。</span>
-                        </p>
-                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/MetalReaction" target="_blank" class="inline-block bg-emerald-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-emerald-700 transition">
-                            <span lang="en">Launch Simulation</span><span lang="zh">開始模擬</span>
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </section>
+        const TRANSLATIONS = {
+            en: {
+                title: "Isotopes & Atomic Mass",
+                subtitle: "Explore relationship between nuclear stability and isotopic abundance",
+                chooseElement: "Choose Element",
+                activeElement: "Active Element",
+                modifyNucleus: "Modify Nucleus",
+                protons: "Protons",
+                neutrons: "Neutrons",
+                electrons: "Electrons",
+                stable: "Stable",
+                unstable: "Unstable / Radioactive",
+                isotopicData: "Isotopic Data",
+                abundance: "Abundance in Nature",
+                current: "Current",
+                decayNote: "Due to its poor stability, it is not existing in nature as it will undergo radioactive decay and transform to other elements.",
+                atomicNum: "Atomic Number (Z)",
+                massNum: "Mass Number (A)",
+                naturalIsotopes: "Natural Isotopes",
+                relAtomicMass: "Relative Atomic Mass (Aᵣ)",
+                result: "Result",
+                massNote: "* Strictly speaking, mass number should not be used to calculate Aᵣ as it omits mass of electrons and the slight difference between mass of protons and neutrons.",
+                whatIsIsotope: "What is an Isotope?",
+                isotopeDesc: "They are atoms with the same number of protons but different numbers of neutrons. They share chemical properties but differ in mass.",
+                nuclearStability: "Nuclear Stability",
+                stabilityDesc: "The balance between the strong nuclear force and electrostatic repulsion between protonsdetermines if an isotope is stable or decays.",
+                relMassFooter: "Relative Atomic Mass",
+                relMassDesc: "Calculated as the weighted average of all naturally occurring isotopes. This is the value found on the periodic table.",
+                elements: {
+                    Hydrogen: "Hydrogen", Helium: "Helium", Lithium: "Lithium", Beryllium: "Beryllium",
+                    Boron: "Boron", Carbon: "Carbon", Nitrogen: "Nitrogen", Oxygen: "Oxygen",
+                    Fluorine: "Fluorine", Neon: "Neon"
+                }
+            },
+            zh: {
+                title: "同位素與原子質量",
+                subtitle: "探索核穩定性與同位素豐度的關係",
+                chooseElement: "選擇元素",
+                activeElement: "當前元素",
+                modifyNucleus: "修改原子核",
+                protons: "質子",
+                neutrons: "中子",
+                electrons: "電子",
+                stable: "穩定",
+                unstable: "不穩定 / 具放射性",
+                isotopicData: "同位素數據",
+                abundance: "自然豐度",
+                current: "當前",
+                decayNote: "由於其穩定性較差，它在自然界中並不存在，因為它會發生放射性衰變並轉化為其他元素。",
+                atomicNum: "原子序數 (Z)",
+                massNum: "質量數 (A)",
+                naturalIsotopes: "天然同位素",
+                relAtomicMass: "相對原子質量 (Aᵣ)",
+                result: "結果",
+                massNote: "* 嚴格來說，我們不應使用質量數來計算 Aᵣ，因為它忽略了電子的質量以及質子和中子質量的微小差異。",
+                whatIsIsotope: "什麼是同位素？",
+                isotopeDesc: "它們是具有相同質子數但中子數不同的原子。它們具有相同的化學性質，但質量不同。",
+                nuclearStability: "核穩定性",
+                stabilityDesc: "強核力與質子的靜電排斥力之間的平衡決定了同位素是穩定還是會發生衰變。",
+                relMassFooter: "相對原子質量",
+                relMassDesc: "計算方法為所有天然存在同位素的加權平均值。這是週期表上顯示的數值。",
+                elements: {
+                    Hydrogen: "氫", Helium: "氦", Lithium: "鋰", Beryllium: "鈹",
+                    Boron: "硼", Carbon: "碳", Nitrogen: "氮", Oxygen: "氧",
+                    Fluorine: "氟", Neon: "氖"
+                }
+            }
+        };
 
-        <!-- Topic: Metallic Bonding and Ionic Bonding -->
-        <section id="Metallic Bonding and Ionic Bonding" class="topic-section mb-16">
-            <h2 class="text-2xl font-bold border-l-4 border-amber-500 pl-4 mb-8">
-                <span lang="en">Metallic Bonding and Ionic Bonding</span>
-                <span lang="zh">金屬鍵與離子鍵</span>
-            </h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
-                    <div class="card-img-container bg-slate-200">
-                        <img src="https://imgur.com/vD1ZYFm.png" alt="Formation" class="card-img w-full h-full object-cover">
-                    </div>
-                    <div class="p-6 flex-grow flex flex-col">
-                        <h3 class="font-bold text-lg mb-2">
-                            <span lang="en">Formation of ionic compound</span>
-                            <span lang="zh">離子化合物的形成</span>
-                        </h3>
-                        <p class="text-slate-600 text-sm mb-4 flex-grow">
-                            <span lang="en">Visualize how atoms become stable by forming ions.</span>
-                            <span lang="zh">在此觀察原子如何透過形成離子來變得穩定。</span>
-                        </p>
-                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/IonicCompoundForms" target="_blank" class="inline-block bg-amber-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-amber-700 transition">
-                            <span lang="en">Launch Simulation</span><span lang="zh">開始模擬</span>
-                        </a>
-                    </div>
-                </div>
-                <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
-                    <div class="card-img-container bg-slate-200">
-                        <img src="https://imgur.com/jfG2fQg.png" alt="Diagram" class="card-img w-full h-full object-cover">
-                    </div>
-                    <div class="p-6 flex-grow flex flex-col">
-                        <h3 class="font-bold text-lg mb-2">
-                            <span lang="en">Electron diagram of ionic compound</span>
-                            <span lang="zh">離子化合物的電子圖</span>
-                        </h3>
-                        <p class="text-slate-600 text-sm mb-4 flex-grow">
-                            <span lang="en">Step-by-step guidance on drawing the electron diagram of ionic compound!</span>
-                            <span lang="zh">這裡可以逐步指導你繪製離子化合物的電子圖！</span>
-                        </p>
-                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/IonicElectronDiagram" target="_blank" class="inline-block bg-amber-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-amber-700 transition">
-                            <span lang="en">Launch Simulation</span><span lang="zh">開始模擬</span>
-                        </a>
-                    </div>
-                </div>
-                <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
-                    <div class="card-img-container bg-slate-200">
-                        <img src="https://imgur.com/PJiouzU.png" alt="Cross method" class="card-img w-full h-full object-cover">
-                    </div>
-                    <div class="p-6 flex-grow flex flex-col">
-                        <h3 class="font-bold text-lg mb-2">
-                            <span lang="en">Ionic formula - Cross method</span>
-                            <span lang="zh">離子化學式 - 交叉法</span>
-                        </h3>
-                        <p class="text-slate-600 text-sm mb-4 flex-grow">
-                            <span lang="en">Learn to build the chemical formula of Ionic compound with cross method.</span>
-                            <span lang="zh">學習使用交叉法建立離子化合物的化學式。</span>
-                        </p>
-                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/CrossMethod" target="_blank" class="inline-block bg-amber-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-amber-700 transition">
-                            <span lang="en">Launch Simulation</span><span lang="zh">開始模擬</span>
-                        </a>
-                    </div>
-                </div>
-                <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
-                    <div class="card-img-container bg-slate-200">
-                        <img src="https://imgur.com/2xVcyrq.png" alt="Ion Blaster" class="card-img w-full h-full object-cover">
-                    </div>
-                    <div class="p-6 flex-grow flex flex-col">
-                        <h3 class="font-bold text-lg mb-2">
-                            <span lang="en">Ionic compound game - Ion blaster</span>
-                            <span lang="zh">離子化合物遊戲 - 離子爆破員</span>
-                        </h3>
-                        <p class="text-slate-600 text-sm mb-4 flex-grow">
-                            <span lang="en">A mini game to practice identifying ions!</span>
-                            <span lang="zh">這是一個協助你識別離子的小遊戲！</span>
-                        </p>
-                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/IonBlaster" target="_blank" class="inline-block bg-amber-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-amber-700 transition">
-                            <span lang="en">Launch Simulation</span><span lang="zh">開始模擬</span>
-                        </a>
-                    </div>
-                </div>
-                <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
-                    <div class="card-img-container bg-slate-200">
-                        <img src="https://imgur.com/wEM8c5w.png" alt="Flame Test" class="card-img w-full h-full object-cover">
-                    </div>
-                    <div class="p-6 flex-grow flex flex-col">
-                        <h3 class="font-bold text-lg mb-2">
-                            <span lang="en">Flame test</span>
-                            <span lang="zh">焰色試驗</span>
-                        </h3>
-                        <p class="text-slate-600 text-sm mb-4 flex-grow">
-                            <span lang="en">Conduct flame test for different chemicals to find out the metal ions present.</span>
-                            <span lang="zh">對不同的化學物質進行焰色試驗，以找出其中存在的金屬離子。</span>
-                        </p>
-                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/FlameTest" target="_blank" class="inline-block bg-amber-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-amber-700 transition">
-                            <span lang="en">Launch Simulation</span><span lang="zh">開始模擬</span>
-                        </a>
-                    </div>
-                </div>
-                <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
-                    <div class="card-img-container bg-slate-200">
-                        <img src="https://imgur.com/C2B8xGX.png" alt="Migration of Ions" class="card-img w-full h-full object-cover">
-                    </div>
-                    <div class="p-6 flex-grow flex flex-col">
-                        <h3 class="font-bold text-lg mb-2">
-                            <span lang="en">Migration of ions</span>
-                            <span lang="zh">離子的遷移</span>
-                        </h3>
-                        <p class="text-slate-600 text-sm mb-4 flex-grow">
-                            <span lang="en">Visualize how ions move toward different electrodes under an electric field.</span>
-                            <span lang="zh">觀察離子在電場下如何移向不同電極。</span>
-                        </p>
-                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/IonMigration" target="_blank" class="inline-block bg-amber-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-amber-700 transition">
-                            <span lang="en">Launch Simulation</span><span lang="zh">開始模擬</span>
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </section>
+        const ELEMENTS = [
+            { z: 1, symbol: 'H', name: 'Hydrogen', isotopes: [
+                { n: 0, mass: 1.0078, abundance: 99.98, stable: true },
+                { n: 1, mass: 2.0141, abundance: 0.02, stable: true },
+                { n: 2, mass: 3.0160, abundance: 0.00, stable: false }
+            ]},
+            { z: 2, symbol: 'He', name: 'Helium', isotopes: [
+                { n: 1, mass: 3.0160, abundance: 0.0001, stable: true },
+                { n: 2, mass: 4.0026, abundance: 99.9999, stable: true }
+            ]},
+            { z: 3, symbol: 'Li', name: 'Lithium', isotopes: [
+                { n: 3, mass: 6.0151, abundance: 7.59, stable: true },
+                { n: 4, mass: 7.0160, abundance: 92.41, stable: true }
+            ]},
+            { z: 4, symbol: 'Be', name: 'Beryllium', isotopes: [
+                { n: 5, mass: 9.0122, abundance: 100, stable: true }
+            ]},
+            { z: 5, symbol: 'B', name: 'Boron', isotopes: [
+                { n: 5, mass: 10.0129, abundance: 19.9, stable: true },
+                { n: 6, mass: 11.0093, abundance: 80.1, stable: true }
+            ]},
+            { z: 6, symbol: 'C', name: 'Carbon', isotopes: [
+                { n: 6, mass: 12.0000, abundance: 98.93, stable: true },
+                { n: 7, mass: 13.0034, abundance: 1.07, stable: true },
+                { n: 8, mass: 14.0032, abundance: 0.00, stable: false }
+            ]},
+            { z: 7, symbol: 'N', name: 'Nitrogen', isotopes: [
+                { n: 7, mass: 14.0031, abundance: 99.63, stable: true },
+                { n: 8, mass: 15.0001, abundance: 0.37, stable: true }
+            ]},
+            { z: 8, symbol: 'O', name: 'Oxygen', isotopes: [
+                { n: 8, mass: 15.9949, abundance: 99.757, stable: true },
+                { n: 9, mass: 16.9991, abundance: 0.038, stable: true },
+                { n: 10, mass: 17.9992, abundance: 0.205, stable: true }
+            ]},
+            { z: 9, symbol: 'F', name: 'Fluorine', isotopes: [
+                { n: 10, mass: 18.9984, abundance: 100, stable: true }
+            ]},
+            { z: 10, symbol: 'Ne', name: 'Neon', isotopes: [
+                { n: 10, mass: 19.9924, abundance: 90.48, stable: true },
+                { n: 11, mass: 20.9938, abundance: 0.27, stable: true },
+                { n: 12, mass: 21.9914, abundance: 9.25, stable: true }
+            ]}
+        ];
 
-        <!-- Topic: Covalent bonding -->
-        <section id="Covalent bonding" class="topic-section mb-16">
-            <h2 class="text-2xl font-bold border-l-4 border-sky-500 pl-4 mb-8">
-                <span lang="en">Covalent Bond</span><span lang="zh">共價鍵</span>
-            </h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
-                    <div class="card-img-container bg-slate-200">
-                        <img src="https://imgur.com/oPCWL49.png" alt="Direction of Bonds" class="card-img w-full h-full object-cover">
-                    </div>
-                    <div class="p-6 flex-grow flex flex-col">
-                        <h3 class="font-bold text-lg mb-2">
-                            <span lang="en">Direction of Chemical Bonds</span>
-                            <span lang="zh">化學鍵的方向性</span>
-                        </h3>
-                        <p class="text-slate-600 text-sm mb-4 flex-grow">
-                            <span lang="en">Understand the direction of different types of bonds.</span>
-                            <span lang="zh">了解不同類型化學鍵的方向性。</span>
-                        </p>
-                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/DirectionOfBonds" target="_blank" class="inline-block bg-sky-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-sky-700 transition">
-                            <span lang="en">Launch Simulation</span><span lang="zh">開始模擬</span>
-                        </a>
-                    </div>
-                </div>
-                 <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
-                    <div class="card-img-container bg-slate-200">
-                        <img src="https://imgur.com/fEISJWV.png" alt="Formula of covalent compound" class="card-img w-full h-full object-cover">
-                    </div>
-                    <div class="p-6 flex-grow flex flex-col">
-                        <h3 class="font-bold text-lg mb-2">
-                            <span lang="en">Formula of covalent compound</span>
-                            <span lang="zh">共價化合物的化學式</span>
-                        </h3>
-                        <p class="text-slate-600 text-sm mb-4 flex-grow">
-                            <span lang="en">Learn how to build the formula of covalent compound!</span>
-                            <span lang="zh">在此學習如何建立共價化合物的化學式.</span>
-                        </p>
-                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/CovalentFormula" target="_blank" class="inline-block bg-sky-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-sky-700 transition">
-                            <span lang="en">Launch Simulation</span><span lang="zh">開始模擬</span>
-                        </a>
-                    </div>
-                </div>
-                <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
-                    <div class="card-img-container bg-slate-200">
-                        <img src="https://imgur.com/hncUJNl.png" alt="Covalent Diagram" class="card-img w-full h-full object-cover">
-                    </div>
-                    <div class="p-6 flex-grow flex flex-col">
-                        <h3 class="font-bold text-lg mb-2">
-                            <span lang="en">Electron diagram of covalent compound</span>
-                            <span lang="zh">共價化合物的電子圖</span>
-                        </h3>
-                        <p class="text-slate-600 text-sm mb-4 flex-grow">
-                            <span lang="en">Step-by-step guidance on drawing the electron diagram of covalent compound!</span>
-                            <span lang="zh">這裡會逐步指導你繪製共價化合物的電子圖！</span>
-                        </p>
-                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/CovalentElectronDiagram" target="_blank" class="inline-block bg-sky-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-sky-700 transition">
-                            <span lang="en">Launch Simulation</span><span lang="zh">開始模擬</span>
-                        </a>
-                    </div>
-                </div>
-                <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
-                    <div class="card-img-container bg-slate-200">
-                        <img src="https://imgur.com/5l5WjEq.png" alt="Dative Bond" class="card-img w-full h-full object-cover">
-                    </div>
-                    <div class="p-6 flex-grow flex flex-col">
-                        <h3 class="font-bold text-lg mb-2">
-                            <span lang="en">Dative covalent bond formation</span>
-                            <span lang="zh">配位共價鍵的形成</span>
-                        </h3>
-                        <p class="text-slate-600 text-sm mb-4 flex-grow">
-                            <span lang="en">Visualize how dative covalent bonds are formed between different chemicals.</span>
-                            <span lang="zh">觀察不同化學物質之間如何形成配位共價鍵。</span>
-                        </p>
-                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/DativeCovalent" target="_blank" class="inline-block bg-sky-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-sky-700 transition">
-                            <span lang="en">Launch Simulation</span><span lang="zh">開始模擬</span>
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </section>
+        const App = () => {
+            const [selectedZ, setSelectedZ] = useState(1);
+            const [neutrons, setNeutrons] = useState(0);
+            const [lang, setLang] = useState('en');
 
-        <!-- Topic: Structures and properties of substances -->
-        <section id="Structures and properties of substances" class="topic-section mb-16">
-            <h2 class="text-2xl font-bold border-l-4 border-rose-500 pl-4 mb-8">
-                <span lang="en">Structures and properties of substances</span>
-                <span lang="zh">物質的結構與性質</span>
-            </h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
-                    <div class="card-img-container bg-slate-200">
-                        <img src="https://imgur.com/Jmeqv2I.png" alt="Quiz" class="card-img w-full h-full object-cover">
-                    </div>
-                    <div class="p-6 flex-grow flex flex-col">
-                        <h3 class="font-bold text-lg mb-2">
-                            <span lang="en">Quiz of structure of substances</span>
-                            <span lang="zh">物質結構分類測驗</span>
-                        </h3>
-                        <p class="text-slate-600 text-sm mb-4 flex-grow">
-                            <span lang="en">Test your understanding about the structure of different substances.</span>
-                            <span lang="zh">測試你對不同物質結構的理解。</span>
-                        </p>
-                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/StructureQuiz" target="_blank" class="inline-block bg-rose-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-rose-700 transition">
-                            <span lang="en">Launch Simulation</span><span lang="zh">開始模擬</span>
-                        </a>
-                    </div>
-                </div>
-                <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
-                    <div class="card-img-container bg-slate-200">
-                        <img src="https://imgur.com/6ZBaHhF.png" alt="Metal Properties" class="card-img w-full h-full object-cover">
-                    </div>
-                    <div class="p-6 flex-grow flex flex-col">
-                        <h3 class="font-bold text-lg mb-2">
-                            <span lang="en">Physical Properties of Metal</span>
-                            <span lang="zh">金屬的物理性質</span>
-                        </h3>
-                        <p class="text-slate-600 text-sm mb-4 flex-grow">
-                            <span lang="en">Experiment on different properties of the metal.</span>
-                            <span lang="zh">在此實驗金屬的不同性質。</span>
-                        </p>
-                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/MetalPhysicalProperty" target="_blank" class="inline-block bg-rose-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-rose-700 transition">
-                            <span lang="en">Launch Simulation</span><span lang="zh">開始模擬</span>
-                        </a>
-                    </div>
-                </div>
-                <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
-                    <div class="card-img-container bg-slate-200">
-                        <img src="https://imgur.com/h5v05X2.png" alt="Brittleness" class="card-img w-full h-full object-cover">
-                    </div>
-                    <div class="p-6 flex-grow flex flex-col">
-                        <h3 class="font-bold text-lg mb-2">
-                            <span lang="en">Brittleness of Ionic Compound</span>
-                            <span lang="zh">離子化合物的易碎性</span>
-                        </h3>
-                        <p class="text-slate-600 text-sm mb-4 flex-grow">
-                            <span lang="en">Understand why ionic compound is brittle upon force.</span>
-                            <span lang="zh">在此了解為什麼離子化合物在受力時會碎裂。</span>
-                        </p>
-                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/IonicCompoundBrittle" target="_blank" class="inline-block bg-rose-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-rose-700 transition">
-                            <span lang="en">Launch Simulation</span><span lang="zh">開始模擬</span>
-                        </a>
-                    </div>
-                </div>
-                <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
-                    <div class="card-img-container bg-slate-200">
-                        <img src="https://imgur.com/F2VeIgf.png" alt="3D Structure" class="card-img w-full h-full object-cover">
-                    </div>
-                    <div class="p-6 flex-grow flex flex-col">
-                        <h3 class="font-bold text-lg mb-2">
-                            <span lang="en">3D model of CsCl and NaCl</span>
-                            <span lang="zh">CsCl 與 NaCl 的三維模型</span>
-                        </h3>
-                        <p class="text-slate-600 text-sm mb-4 flex-grow">
-                            <span lang="en">Examine the detail structure of Ionic compound.</span>
-                            <span lang="zh">你可以在這裡仔細觀察不同離子化合物的詳細結構。</span>
-                        </p>
-                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/IonicCompound3D" target="_blank" class="inline-block bg-rose-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-rose-700 transition">
-                            <span lang="en">Launch Simulation</span><span lang="zh">開始模擬</span>
-                        </a>
-                    </div>
-                </div>
-                <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
-                    <div class="card-img-container bg-slate-200">
-                        <img src="https://imgur.com/bklFofa.png" alt="Giant Covalent" class="card-img w-full h-full object-cover">
-                    </div>
-                    <div class="p-6 flex-grow flex flex-col">
-                        <h3 class="font-bold text-lg mb-2">
-                            <span lang="en">3D model of Giant Covalent Structure</span>
-                            <span lang="zh">巨型共價結構的三維模型</span>
-                        </h3>
-                        <p class="text-slate-600 text-sm mb-4 flex-grow">
-                            <span lang="en">Examine the detail structure of Covalent substances.</span>
-                            <span lang="zh">你可以在這裡仔細觀察共價物質的詳細結構。</span>
-                        </p>
-                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/GiantCovalent3D" target="_blank" class="inline-block bg-rose-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-rose-700 transition">
-                            <span lang="en">Launch Simulation</span><span lang="zh">開始模擬</span>
-                        </a>
-                    </div>
-                </div>
-                <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
-                    <div class="card-img-container bg-slate-200">
-                        <img src="https://imgur.com/l1Kt4qA.png" alt="Solubility" class="card-img w-full h-full object-cover">
-                    </div>
-                    <div class="p-6 flex-grow flex flex-col">
-                        <h3 class="font-bold text-lg mb-2">
-                            <span lang="en">Solubility of substances</span>
-                            <span lang="zh">物質的溶解度</span>
-                        </h3>
-                        <p class="text-slate-600 text-sm mb-4 flex-grow">
-                            <span lang="en">Visualize what does solubility means in particle view.</span>
-                            <span lang="zh">在此以微粒視角觀察溶解度的含義。</span>
-                        </p>
-                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/SolubilityOfSubstance" target="_blank" class="inline-block bg-rose-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-rose-700 transition">
-                            <span lang="en">Launch Simulation</span><span lang="zh">開始模擬</span>
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </section>
+            const t = TRANSLATIONS[lang];
+            const element = useMemo(() => ELEMENTS.find(e => e.z === selectedZ), [selectedZ]);
+            
+            const firstStableNeutrons = useMemo(() => {
+                const stableIsotopes = element.isotopes.filter(iso => iso.stable);
+                if (stableIsotopes.length > 0) {
+                    return Math.min(...stableIsotopes.map(iso => iso.n));
+                }
+                return element.isotopes[0].n;
+            }, [element]);
 
-    </main>
+            const maxNeutrons = useMemo(() => firstStableNeutrons + 5, [firstStableNeutrons]);
 
-    <footer class="bg-slate-900 text-slate-400 py-12 px-6 text-center">
-        <p>
-            <span lang="en">© 2026 Mr. Daniel Mak. Built for interactive learning.</span>
-            <span lang="zh">© 2026 Mr. Daniel Mak. 為互動學習而建。</span>
-        </p>
-    </footer>
+            const defaultNeutrons = useMemo(() => {
+                const mostAbundant = [...element.isotopes].sort((a, b) => b.abundance - a.abundance)[0];
+                return mostAbundant.n;
+            }, [element]);
 
+            const currentIsotope = useMemo(() => {
+                return element.isotopes.find(i => i.n === neutrons) || {
+                    n: neutrons,
+                    mass: (element.z + neutrons),
+                    abundance: 0,
+                    stable: false,
+                    isSynthetic: true
+                };
+            }, [element, neutrons]);
+
+            const relativeAtomicMass = useMemo(() => {
+                return element.isotopes.reduce((acc, iso) => {
+                    const massNumber = element.z + iso.n;
+                    return acc + (massNumber * (iso.abundance / 100));
+                }, 0);
+            }, [element]);
+
+            useEffect(() => {
+                setNeutrons(defaultNeutrons);
+            }, [selectedZ, defaultNeutrons]);
+
+            const nucleons = useMemo(() => {
+                const particles = [];
+                const total = element.z + neutrons;
+                const phi = (Math.sqrt(5) + 1) / 2;
+                const angleIncrement = 2 * Math.PI * phi;
+                
+                for (let i = 0; i < total; i++) {
+                    const isProton = i < element.z;
+                    const radius = 5 * Math.sqrt(i + 1); 
+                    const angle = i * angleIncrement;
+                    const x = Math.cos(angle) * radius;
+                    const y = Math.sin(angle) * radius;
+                    const depthScale = 0.85 + (Math.sin(i * 123.456) * 0.15); 
+                    const zIndex = Math.floor(depthScale * 100);
+
+                    particles.push({
+                        id: `${isProton ? 'p' : 'n'}-${i}`,
+                        type: isProton ? 'proton' : 'neutron',
+                        x, y, scale: depthScale, zIndex
+                    });
+                }
+                return particles.sort((a, b) => a.zIndex - b.zIndex);
+            }, [element.z, neutrons]);
+
+            const electronShells = useMemo(() => {
+                const count = element.z;
+                const shells = [];
+                const capacities = [2, 8]; 
+                let remaining = count;
+                for (let i = 0; i < capacities.length && remaining > 0; i++) {
+                    const inShell = Math.min(remaining, capacities[i]);
+                    shells.push({ level: i + 1, count: inShell });
+                    remaining -= inShell;
+                }
+                return shells;
+            }, [element.z]);
+
+            return (
+                <div className="min-h-screen bg-slate-50 text-slate-900 font-sans p-4 md:p-8">
+                    <div className="max-w-6xl mx-auto">
+                        
+                        <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+                            <div className="flex flex-col gap-2">
+                                <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+                                    <Icon name="atom" size={32} className="text-indigo-600" />
+                                    {t.title}
+                                </h1>
+                                <p className="text-slate-500 mt-1">{t.subtitle}</p>
+                            </div>
+                            <button 
+                                onClick={() => setLang(lang === 'en' ? 'zh' : 'en')}
+                                className="w-fit flex items-center gap-2 px-4 py-2 bg-white text-indigo-700 border border-slate-200 rounded-xl hover:bg-indigo-50 hover:border-indigo-200 transition-all text-sm font-bold shadow-sm"
+                            >
+                                <span className="text-lg">🌐</span>
+                                {lang === 'en' ? '繁體中文' : 'English'}
+                            </button>
+                        </header>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                            
+                            <div className="lg:col-span-4 space-y-6">
+                                <section className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                                    <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                        <Icon name="database" size={16} /> {t.chooseElement}
+                                    </h3>
+                                    <div className="grid grid-cols-5 gap-2">
+                                        {ELEMENTS.map(el => (
+                                            <button
+                                                key={el.z}
+                                                onClick={() => setSelectedZ(el.z)}
+                                                className={`h-14 rounded-xl flex flex-col items-center justify-center transition-all border-2 ${
+                                                    selectedZ === el.z 
+                                                    ? 'bg-indigo-600 border-indigo-600 text-white shadow-md' 
+                                                    : 'bg-white border-slate-100 text-slate-600 hover:border-indigo-200'
+                                                }`}
+                                            >
+                                                <span className="text-[10px] opacity-80">{el.z}</span>
+                                                <span className="font-bold text-lg leading-tight">{el.symbol}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <div className="mt-4 p-3 bg-indigo-50 rounded-xl flex items-center justify-center">
+                                        <div className="text-center">
+                                            <p className="text-xs text-indigo-400 font-medium uppercase">{t.activeElement}</p>
+                                            <p className="font-bold text-indigo-900 text-lg">{t.elements[element.name]}</p>
+                                        </div>
+                                    </div>
+                                </section>
+
+                                <section className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                                    <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                        <Icon name="activity" size={16} /> {t.modifyNucleus}
+                                    </h3>
+                                    <div className="space-y-4">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-slate-600 font-medium flex items-center gap-2">
+                                                <span className="w-3 h-3 rounded-full bg-red-500"></span> {t.protons}
+                                            </span>
+                                            <div className="flex items-center gap-3">
+                                                <span className="w-8 text-center font-bold text-lg">{element.z}</span>
+                                                <div className="flex gap-1">
+                                                    <button disabled className="p-2 bg-slate-100 text-slate-400 rounded-lg cursor-not-allowed">
+                                                        <MinusIcon />
+                                                    </button>
+                                                    <button disabled className="p-2 bg-slate-100 text-slate-400 rounded-lg cursor-not-allowed">
+                                                        <PlusIcon />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-slate-600 font-medium flex items-center gap-2">
+                                                <span className="w-3 h-3 rounded-full bg-slate-400"></span> {t.neutrons}
+                                            </span>
+                                            <div className="flex items-center gap-3">
+                                                <span className="w-8 text-center font-bold text-lg">{neutrons}</span>
+                                                <div className="flex gap-1">
+                                                    <button 
+                                                        onClick={() => setNeutrons(Math.max(0, neutrons - 1))}
+                                                        disabled={neutrons <= 0}
+                                                        className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                                                    >
+                                                        <MinusIcon />
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => setNeutrons(neutrons + 1)}
+                                                        disabled={neutrons >= maxNeutrons}
+                                                        className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                                                    >
+                                                        <PlusIcon />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex items-center justify-between opacity-80">
+                                            <span className="text-slate-600 font-medium flex items-center gap-2">
+                                                <span className="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_4px_cyan]"></span> {t.electrons}
+                                            </span>
+                                            <div className="flex items-center gap-3">
+                                                <span className="w-8 text-center font-bold text-lg">{element.z}</span>
+                                                <div className="flex gap-1">
+                                                    <button disabled className="p-2 bg-slate-50 text-slate-300 rounded-lg cursor-not-allowed opacity-50">
+                                                        <MinusIcon />
+                                                    </button>
+                                                    <button disabled className="p-2 bg-slate-50 text-slate-300 rounded-lg cursor-not-allowed opacity-50">
+                                                        <PlusIcon />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </section>
+                            </div>
+
+                            <div className="lg:col-span-5 space-y-6">
+                                <section className="bg-slate-900 rounded-3xl h-[480px] relative overflow-hidden shadow-2xl flex items-center justify-center border-4 border-white">
+                                    <div className={`absolute top-6 left-6 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest flex items-center gap-2 z-50 transition-all duration-500 transform ${
+                                        currentIsotope.stable 
+                                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' 
+                                        : 'bg-rose-500/20 text-rose-400 border border-rose-500/30 animate-pulse'
+                                    }`}>
+                                        <Icon name="activity" size={14} />
+                                        {currentIsotope.stable ? t.stable : t.unstable}
+                                    </div>
+
+                                    <div className="relative w-full h-full flex items-center justify-center">
+                                        
+                                        {electronShells.map((shell, sIdx) => {
+                                            const radius = 95 + (sIdx * 65);
+                                            return (
+                                                <div key={`shell-${shell.level}`} className="absolute border border-cyan-400/20 rounded-full pointer-events-none shadow-[inset_0_0_15px_rgba(34,211,238,0.05)]" style={{ width: radius * 2, height: radius * 2 }}>
+                                                    <div className="absolute inset-0 electron-orbit" style={{ animationDuration: `${(sIdx + 1) * 8}s` }}>
+                                                        {[...Array(shell.count)].map((_, eIdx) => {
+                                                            const angle = (eIdx / shell.count) * 2 * Math.PI;
+                                                            return (
+                                                                <div 
+                                                                    key={`e-${shell.level}-${eIdx}`} 
+                                                                    className="absolute w-1.5 h-1.5 bg-white rounded-full shadow-[0_0_8px_cyan,0_0_2px_white]"
+                                                                    style={{ 
+                                                                        left: '50%', 
+                                                                        top: '50%', 
+                                                                        transform: `translate(-50%, -50%) translate(${Math.cos(angle) * radius}px, ${Math.sin(angle) * radius}px)` 
+                                                                    }}
+                                                                >
+                                                                    <div className="absolute inset-0 animate-ping bg-cyan-400 rounded-full opacity-40"></div>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+
+                                        <div 
+                                            className={`relative transition-transform duration-200 ${!currentIsotope.stable ? 'animate-shake' : ''}`}
+                                        >
+                                            {nucleons.map((n) => (
+                                                <div 
+                                                    key={n.id} 
+                                                    className={`w-4 h-4 rounded-full absolute border transition-all duration-500 ${
+                                                        n.type === 'proton' 
+                                                        ? 'bg-red-500 border-red-600 shadow-[inset_-1px_-1px_2px_rgba(0,0,0,0.3)]' 
+                                                        : 'bg-slate-300 border-slate-400 shadow-[inset_-1px_-1px_2px_rgba(0,0,0,0.2)]'
+                                                    }`}
+                                                    style={{
+                                                        transform: `translate(-50%, -50%) translate(${n.x}px, ${n.y}px) scale(${n.scale})`,
+                                                        zIndex: n.zIndex
+                                                    }}
+                                                >
+                                                     <div className="absolute top-0.5 left-0.5 w-1 h-1 rounded-full bg-white opacity-40 blur-[0.5px]"></div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="absolute bottom-8 left-0 right-0 text-center z-[100]">
+                                        <div className="inline-flex items-center gap-3 bg-white/10 backdrop-blur-md px-6 py-3 rounded-2xl border border-white/10">
+                                           <div className="text-left leading-none">
+                                              <div className="text-white text-[10px] opacity-60 font-bold">{element.z + neutrons}</div>
+                                              <div className="text-white text-3xl font-black">{element.symbol}</div>
+                                              <div className="text-white text-[10px] opacity-60 font-bold">{element.z}</div>
+                                           </div>
+                                           <div className="w-[1px] h-10 bg-white/20 mx-2"></div>
+                                           <div className="text-left leading-tight">
+                                              <div className="text-white font-bold">{t.elements[element.name]}</div>
+                                           </div>
+                                        </div>
+                                    </div>
+                                </section>
+                            </div>
+
+                            <div className="lg:col-span-3 space-y-6">
+                                <section className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 h-full overflow-y-auto">
+                                    <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-6 flex items-center gap-2">
+                                        <Icon name="scale" size={16} /> {t.isotopicData}
+                                    </h3>
+                                    
+                                    <div className="space-y-6">
+                                        <div>
+                                           <p className="text-xs font-bold text-slate-400 uppercase mb-2">{t.abundance}</p>
+                                           <div className="relative pt-1">
+                                              <div className="flex mb-2 items-center justify-between">
+                                                <div>
+                                                  <span className="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-indigo-600 bg-indigo-200">
+                                                    {t.current}
+                                                  </span>
+                                                </div>
+                                                <div className="text-right">
+                                                  <span className="text-xs font-semibold inline-block text-indigo-600">
+                                                    {currentIsotope.abundance}%
+                                                  </span>
+                                                </div>
+                                              </div>
+                                              <div className="overflow-hidden h-2 mb-4 text-xs flex rounded bg-indigo-100">
+                                                <div style={{ width: `${currentIsotope.abundance}%` }} className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-indigo-500 transition-all duration-700"></div>
+                                              </div>
+                                              
+                                              {!currentIsotope.stable && (
+                                                <div className="mt-2 p-2 bg-rose-50 border-l-2 border-rose-400 rounded-r-lg">
+                                                    <p className="text-[10px] leading-snug text-rose-700 italic">
+                                                        {t.decayNote}
+                                                    </p>
+                                                </div>
+                                              )}
+                                           </div>
+                                        </div>
+
+                                        <div className="p-4 bg-slate-50 rounded-xl space-y-3">
+                                          <div className="flex justify-between items-center text-xs text-slate-500">
+                                            <span>{t.atomicNum}</span>
+                                            <span className="font-bold text-slate-700">{element.z}</span>
+                                          </div>
+                                          <div className="flex justify-between items-center text-xs text-slate-500">
+                                            <span>{t.massNum}</span>
+                                            <span className="font-bold text-slate-700">{element.z + neutrons}</span>
+                                          </div>
+                                        </div>
+
+                                        <div className="border-t border-slate-50 pt-4">
+                                          <h4 className="text-xs font-bold text-slate-400 uppercase mb-3">{t.naturalIsotopes}</h4>
+                                          <div className="space-y-2">
+                                            {element.isotopes.map((iso, idx) => (
+                                              <div 
+                                                key={idx}
+                                                className={`p-2 rounded-lg flex items-center justify-between text-sm transition-colors ${iso.n === neutrons ? 'bg-indigo-50 text-indigo-700 border border-indigo-100' : 'text-slate-500'}`}
+                                              >
+                                                <span className="font-medium">{element.symbol}-{element.z + iso.n}</span>
+                                                <span className="text-xs opacity-70">{iso.abundance}%</span>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        </div>
+
+                                        <div className="border-t border-slate-50 pt-4">
+                                            <h4 className="text-xs font-bold text-slate-400 uppercase mb-3 flex items-center gap-1">
+                                                <Icon name="calculator" size={12}/> {t.relAtomicMass}
+                                            </h4>
+                                            <div className="bg-indigo-50 p-3 rounded-xl">
+                                                <div className="text-[10px] text-slate-500 font-mono space-y-1 mb-2">
+                                                    {element.isotopes.filter(i => i.abundance > 0).map((iso, i) => (
+                                                        <div key={i}>
+                                                            ({element.z + iso.n} × {iso.abundance}%) {i < element.isotopes.filter(i => i.abundance > 0).length - 1 ? '+' : ''}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                                <div className="flex justify-between items-baseline mb-2">
+                                                    <span className="text-xs font-semibold text-indigo-700">{t.result}:</span>
+                                                    <span className="text-lg font-black text-indigo-900">{relativeAtomicMass.toFixed(2)}</span>
+                                                </div>
+                                                <p className="text-[9px] leading-tight text-slate-400 italic">
+                                                    {t.massNote}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </section>
+                            </div>
+                        </div>
+
+                        {/* Footer Info Cards */}
+                        <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div className="flex gap-4 p-5 bg-white rounded-2xl border border-slate-100">
+                                <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center shrink-0">
+                                    <Icon name="info" size={20} />
+                                </div>
+                                <div>
+                                    <h4 className="font-bold text-slate-800">{t.whatIsIsotope}</h4>
+                                    <p className="text-xs text-slate-500 mt-1">{t.isotopeDesc}</p>
+                                </div>
+                            </div>
+                            <div className="flex gap-4 p-5 bg-white rounded-2xl border border-slate-100">
+                                <div className="w-10 h-10 bg-amber-100 text-amber-600 rounded-lg flex items-center justify-center shrink-0">
+                                    <Icon name="activity" size={20} />
+                                </div>
+                                <div>
+                                    <h4 className="font-bold text-slate-800">{t.nuclearStability}</h4>
+                                    <p className="text-xs text-slate-500 mt-1">{t.stabilityDesc}</p>
+                                </div>
+                            </div>
+                            <div className="flex gap-4 p-5 bg-white rounded-2xl border border-slate-100">
+                                <div className="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-lg flex items-center justify-center shrink-0">
+                                    <Icon name="weight" size={20} />
+                                </div>
+                                <div>
+                                    <h4 className="font-bold text-slate-800">{t.relMassFooter}</h4>
+                                    <p className="text-xs text-slate-500 mt-1">{t.relMassDesc}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
 </body>
 </html>
