@@ -24,17 +24,42 @@
         .sim-card:hover .card-img {
             transform: scale(1.05);
         }
+        /* Translation Logic */
+        [lang="zh"] { display: none; }
+        body.lang-zh [lang="en"] { display: none; }
+        body.lang-zh [lang="zh"] { display: block; }
+        body.lang-zh .inline-zh { display: inline; }
+        .inline-zh { display: none; }
+        body.lang-zh .inline-en { display: none; }
     </style>
 </head>
 <body class="text-slate-900">
 
     <!-- Header Section -->
-    <header class="bg-indigo-700 text-white py-12 px-6 shadow-lg">
+    <header class="bg-indigo-700 text-white py-12 px-6 shadow-lg relative">
         <div class="max-w-6xl mx-auto">
-            <h1 class="text-4xl md:text-5xl font-bold mb-4">Interactive Simulation for Microscopic World I</h1>
-            <p class="text-indigo-100 text-lg max-w-2xl mb-6">Explore concepts in Chemistry through interactive visualizations and games. Select a topic below to get started.</p>
+            <!-- Language Toggle at the top -->
+            <div class="flex justify-end mb-4">
+                <button onclick="document.body.classList.toggle('lang-zh')" class="bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 px-3 py-1.5 rounded-md text-sm font-medium transition flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                    <span class="inline-en">繁體中文</span>
+                    <span class="inline-zh">English</span>
+                </button>
+            </div>
+
+            <h1 class="text-4xl md:text-5xl font-bold mb-4 pr-10">
+                <span lang="en">Interactive Simulation for Microscopic World I</span>
+                <span lang="zh">微觀世界 I 互動模擬站</span>
+            </h1>
+            <p class="text-indigo-100 text-lg max-w-2xl mb-6">
+                <span lang="en">Explore concepts in Chemistry through interactive visualizations and games. Select a topic below to get started.</span>
+                <span lang="zh">透過可視化的互動和遊戲去探索化學概念。請在下方選擇主題開始學習。</span>
+            </p>
             <div class="inline-block bg-white/20 backdrop-blur-sm border border-white/30 rounded-lg px-4 py-2">
-                <p class="text-white font-semibold">💡 Suggest using iPad/ Computer for the best experience. For phone user, please use the simulation at vertical view.</p>
+                <p class="text-white font-semibold">
+                    <span lang="en">💡 Suggest using iPad/ Computer for the best experience. For phone user, please use the simulation at vertical view.</span>
+                    <span lang="zh">💡 建議使用 iPad 或電腦以獲得最佳體驗。手機用戶請在垂直模式下使用不同的模擬器。記得要轉換語言作中文。</span>
+                </p>
             </div>
         </div>
     </header>
@@ -42,11 +67,21 @@
     <!-- Navigation -->
     <nav class="sticky top-0 bg-white border-b border-slate-200 z-20 shadow-sm overflow-x-auto">
         <div class="max-w-6xl mx-auto px-6 py-4 flex space-x-6 whitespace-nowrap">
-            <a href="#Atomic Structure" class="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition">Atomic Structure</a>
-            <a href="#The Periodic Table" class="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition">Periodic Table</a>
-            <a href="#Metallic Bonding and Ionic Bonding" class="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition">Ionic Bonding</a>
-            <a href="#Covalent bonding" class="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition">Covalent Bonding</a>
-            <a href="#Structures and properties of substances" class="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition">Structures & Properties</a>
+            <a href="#Atomic Structure" class="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition">
+                <span lang="en">Atomic Structure</span><span lang="zh">原子結構</span>
+            </a>
+            <a href="#The Periodic Table" class="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition">
+                <span lang="en">Periodic Table</span><span lang="zh">元素週期表</span>
+            </a>
+            <a href="#Metallic Bonding and Ionic Bonding" class="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition">
+                <span lang="en">Ionic Bonding</span><span lang="zh">金屬鍵與離子鍵</span>
+            </a>
+            <a href="#Covalent bonding" class="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition">
+                <span lang="en">Covalent Bonding</span><span lang="zh">共價鍵</span>
+            </a>
+            <a href="#Structures and properties of substances" class="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition">
+                <span lang="en">Structures & Properties</span><span lang="zh">物質的結構與性質</span>
+            </a>
         </div>
     </nav>
 
@@ -54,16 +89,26 @@
         
         <!-- Topic: Atomic Structure -->
         <section id="Atomic Structure" class="topic-section mb-16">
-            <h2 class="text-2xl font-bold border-l-4 border-indigo-600 pl-4 mb-8">Atomic Structure</h2>
+            <h2 class="text-2xl font-bold border-l-4 border-indigo-600 pl-4 mb-8">
+                <span lang="en">Atomic Structure</span><span lang="zh">原子結構</span>
+            </h2>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
                     <div class="card-img-container bg-slate-200">
                         <img src="https://imgur.com/gJOKCGH.png" alt="Isotope Stability" class="card-img w-full h-full object-cover">
                     </div>
                     <div class="p-6 flex-grow flex flex-col">
-                        <h3 class="font-bold text-lg mb-2">Stability of Isotopes & relative abundance</h3>
-                        <p class="text-slate-600 text-sm mb-4 flex-grow">Study the structure of the atom! You can also change the number of neutrons in the atom's nucleus to understand why different isotopes have different abundance.</p>
-                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/IsotopeStability" target="_blank" class="inline-block bg-indigo-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-indigo-700 transition">Launch Simulation</a>
+                        <h3 class="font-bold text-lg mb-2">
+                            <span lang="en">Stability of Isotopes & relative abundance</span>
+                            <span lang="zh">同位素的穩定性與相對豐度</span>
+                        </h3>
+                        <p class="text-slate-600 text-sm mb-4 flex-grow">
+                            <span lang="en">Study the structure of the atom! You can also change the number of neutrons in the atom's nucleus to understand why different isotopes have different abundance.</span>
+                            <span lang="zh">你可以在此研究原子的微觀結構。你亦可以改變原子核中的中子數量，以理解為何不同同位素具有不同的豐度。</span>
+                        </p>
+                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/IsotopeStability" target="_blank" class="inline-block bg-indigo-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-indigo-700 transition">
+                            <span lang="en">Launch Simulation</span><span lang="zh">開始模擬</span>
+                        </a>
                     </div>
                 </div>
                 <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
@@ -71,9 +116,17 @@
                         <img src="https://imgur.com/fJKeEAp.png" alt="C-12 scale" class="card-img w-full h-full object-cover">
                     </div>
                     <div class="p-6 flex-grow flex flex-col">
-                        <h3 class="font-bold text-lg mb-2">C-12 scale and R.A.M.</h3>
-                        <p class="text-slate-600 text-sm mb-4 flex-grow">Understand the meaning of C-12 scale and visualize nature's element sample in particle view.</p>
-                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/RAM&C12" target="_blank" class="inline-block bg-indigo-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-indigo-700 transition">Launch Simulation</a>
+                        <h3 class="font-bold text-lg mb-2">
+                            <span lang="en">C-12 scale and R.A.M.</span>
+                            <span lang="zh">碳-12 標度與相對原子質量 (R.A.M.)</span>
+                        </h3>
+                        <p class="text-slate-600 text-sm mb-4 flex-grow">
+                            <span lang="en">Understand the meaning of C-12 scale and visualize nature's element sample in particle view.</span>
+                            <span lang="zh">了解 碳-12 標度的含義，並以微觀視角觀察自然界中的元素樣本。</span>
+                        </p>
+                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/RAM&C12" target="_blank" class="inline-block bg-indigo-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-indigo-700 transition">
+                            <span lang="en">Launch Simulation</span><span lang="zh">開始模擬</span>
+                        </a>
                     </div>
                 </div>
             </div>
@@ -81,16 +134,26 @@
 
         <!-- Topic: The Periodic Table -->
         <section id="The Periodic Table" class="topic-section mb-16">
-            <h2 class="text-2xl font-bold border-l-4 border-emerald-600 pl-4 mb-8">The Periodic Table</h2>
+            <h2 class="text-2xl font-bold border-l-4 border-emerald-600 pl-4 mb-8">
+                <span lang="en">The Periodic Table</span><span lang="zh">元素週期表</span>
+            </h2>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
                     <div class="card-img-container bg-slate-200">
                         <img src="https://imgur.com/9dBaLig.png" alt="Atomic reactivity" class="card-img w-full h-full object-cover">
                     </div>
                     <div class="p-6 flex-grow flex flex-col">
-                        <h3 class="font-bold text-lg mb-2">Atomic structure and reactivity</h3>
-                        <p class="text-slate-600 text-sm mb-4 flex-grow">Compare the structure of different atoms and see how does it relates to reactivity.</p>
-                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/ReactivityOfAtoms" target="_blank" class="inline-block bg-emerald-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-emerald-700 transition">Launch Simulation</a>
+                        <h3 class="font-bold text-lg mb-2">
+                            <span lang="en">Atomic structure and reactivity</span>
+                            <span lang="zh">原子結構與反應性</span>
+                        </h3>
+                        <p class="text-slate-600 text-sm mb-4 flex-grow">
+                            <span lang="en">Compare the structure of different atoms and see how does it relates to reactivity.</span>
+                            <span lang="zh">比較不同原子的結構，並觀察其與反應性的關係。</span>
+                        </p>
+                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/ReactivityOfAtoms" target="_blank" class="inline-block bg-emerald-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-emerald-700 transition">
+                            <span lang="en">Launch Simulation</span><span lang="zh">開始模擬</span>
+                        </a>
                     </div>
                 </div>
                 <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
@@ -98,9 +161,17 @@
                         <img src="https://imgur.com/FCmQfjK.png" alt="Metal reaction" class="card-img w-full h-full object-cover">
                     </div>
                     <div class="p-6 flex-grow flex flex-col">
-                        <h3 class="font-bold text-lg mb-2">Reaction of metals in water</h3>
-                        <p class="text-slate-600 text-sm mb-4 flex-grow">Conduct the explosive experiment in your computer! Turn on the sound!</p>
-                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/MetalReaction" target="_blank" class="inline-block bg-emerald-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-emerald-700 transition">Launch Simulation</a>
+                        <h3 class="font-bold text-lg mb-2">
+                            <span lang="en">Reaction of metals in water</span>
+                            <span lang="zh">金屬在水中的反應</span>
+                        </h3>
+                        <p class="text-slate-600 text-sm mb-4 flex-grow">
+                            <span lang="en">Conduct the explosive experiment in your device! Turn on the sound!</span>
+                            <span lang="zh">你可以在電子設備中進行爆炸性實驗！請開啟聲音去獲得更好的體驗。</span>
+                        </p>
+                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/MetalReaction" target="_blank" class="inline-block bg-emerald-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-emerald-700 transition">
+                            <span lang="en">Launch Simulation</span><span lang="zh">開始模擬</span>
+                        </a>
                     </div>
                 </div>
             </div>
@@ -108,16 +179,27 @@
 
         <!-- Topic: Metallic Bonding and Ionic Bonding -->
         <section id="Metallic Bonding and Ionic Bonding" class="topic-section mb-16">
-            <h2 class="text-2xl font-bold border-l-4 border-amber-500 pl-4 mb-8">Metallic Bonding and Ionic Bonding</h2>
+            <h2 class="text-2xl font-bold border-l-4 border-amber-500 pl-4 mb-8">
+                <span lang="en">Metallic Bonding and Ionic Bonding</span>
+                <span lang="zh">金屬鍵與離子鍵</span>
+            </h2>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
                     <div class="card-img-container bg-slate-200">
                         <img src="https://imgur.com/vD1ZYFm.png" alt="Formation" class="card-img w-full h-full object-cover">
                     </div>
                     <div class="p-6 flex-grow flex flex-col">
-                        <h3 class="font-bold text-lg mb-2">Formation of ionic compound</h3>
-                        <p class="text-slate-600 text-sm mb-4 flex-grow">Visualize how atoms become stable by forming ions.</p>
-                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/IonicCompoundForms" target="_blank" class="inline-block bg-amber-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-amber-700 transition">Launch Simulation</a>
+                        <h3 class="font-bold text-lg mb-2">
+                            <span lang="en">Formation of ionic compound</span>
+                            <span lang="zh">離子化合物的形成</span>
+                        </h3>
+                        <p class="text-slate-600 text-sm mb-4 flex-grow">
+                            <span lang="en">Visualize how atoms become stable by forming ions.</span>
+                            <span lang="zh">在此觀察原子如何透過形成離子來變得穩定。</span>
+                        </p>
+                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/IonicCompoundForms" target="_blank" class="inline-block bg-amber-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-amber-700 transition">
+                            <span lang="en">Launch Simulation</span><span lang="zh">開始模擬</span>
+                        </a>
                     </div>
                 </div>
                 <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
@@ -125,9 +207,17 @@
                         <img src="https://imgur.com/jfG2fQg.png" alt="Diagram" class="card-img w-full h-full object-cover">
                     </div>
                     <div class="p-6 flex-grow flex flex-col">
-                        <h3 class="font-bold text-lg mb-2">Electron diagram of ionic compound</h3>
-                        <p class="text-slate-600 text-sm mb-4 flex-grow">Step-by-step guidance on drawing the electron diagram of ionic compound!</p>
-                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/IonicElectronDiagram" target="_blank" class="inline-block bg-amber-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-amber-700 transition">Launch Simulation</a>
+                        <h3 class="font-bold text-lg mb-2">
+                            <span lang="en">Electron diagram of ionic compound</span>
+                            <span lang="zh">離子化合物的電子圖</span>
+                        </h3>
+                        <p class="text-slate-600 text-sm mb-4 flex-grow">
+                            <span lang="en">Step-by-step guidance on drawing the electron diagram of ionic compound!</span>
+                            <span lang="zh">這裡可以逐步指導你繪製離子化合物的電子圖！</span>
+                        </p>
+                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/IonicElectronDiagram" target="_blank" class="inline-block bg-amber-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-amber-700 transition">
+                            <span lang="en">Launch Simulation</span><span lang="zh">開始模擬</span>
+                        </a>
                     </div>
                 </div>
                 <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
@@ -135,9 +225,17 @@
                         <img src="https://imgur.com/PJiouzU.png" alt="Cross method" class="card-img w-full h-full object-cover">
                     </div>
                     <div class="p-6 flex-grow flex flex-col">
-                        <h3 class="font-bold text-lg mb-2">Ionic formula - Cross method</h3>
-                        <p class="text-slate-600 text-sm mb-4 flex-grow">Learn to build the chemical formula of Ionic compound with cross method.</p>
-                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/CrossMethod" target="_blank" class="inline-block bg-amber-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-amber-700 transition">Launch Simulation</a>
+                        <h3 class="font-bold text-lg mb-2">
+                            <span lang="en">Ionic formula - Cross method</span>
+                            <span lang="zh">離子化學式 - 交叉法</span>
+                        </h3>
+                        <p class="text-slate-600 text-sm mb-4 flex-grow">
+                            <span lang="en">Learn to build the chemical formula of Ionic compound with cross method.</span>
+                            <span lang="zh">學習使用交叉法建立離子化合物的化學式。</span>
+                        </p>
+                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/CrossMethod" target="_blank" class="inline-block bg-amber-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-amber-700 transition">
+                            <span lang="en">Launch Simulation</span><span lang="zh">開始模擬</span>
+                        </a>
                     </div>
                 </div>
                 <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
@@ -145,9 +243,17 @@
                         <img src="https://imgur.com/2xVcyrq.png" alt="Ion Blaster" class="card-img w-full h-full object-cover">
                     </div>
                     <div class="p-6 flex-grow flex flex-col">
-                        <h3 class="font-bold text-lg mb-2">Ionic compound game - Ion blaster</h3>
-                        <p class="text-slate-600 text-sm mb-4 flex-grow">A mini game to practice identifying ions!</p>
-                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/IonBlaster" target="_blank" class="inline-block bg-amber-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-amber-700 transition">Launch Simulation</a>
+                        <h3 class="font-bold text-lg mb-2">
+                            <span lang="en">Ionic compound game - Ion blaster</span>
+                            <span lang="zh">離子化合物遊戲 - 離子爆破員</span>
+                        </h3>
+                        <p class="text-slate-600 text-sm mb-4 flex-grow">
+                            <span lang="en">A mini game to practice identifying ions!</span>
+                            <span lang="zh">這是一個協助你識別離子的小遊戲！</span>
+                        </p>
+                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/IonBlaster" target="_blank" class="inline-block bg-amber-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-amber-700 transition">
+                            <span lang="en">Launch Simulation</span><span lang="zh">開始模擬</span>
+                        </a>
                     </div>
                 </div>
                 <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
@@ -155,9 +261,17 @@
                         <img src="https://imgur.com/wEM8c5w.png" alt="Flame Test" class="card-img w-full h-full object-cover">
                     </div>
                     <div class="p-6 flex-grow flex flex-col">
-                        <h3 class="font-bold text-lg mb-2">Flame test</h3>
-                        <p class="text-slate-600 text-sm mb-4 flex-grow">Conduct flame test for different chemicals to find out the metal ions present.</p>
-                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/FlameTest" target="_blank" class="inline-block bg-amber-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-amber-700 transition">Launch Simulation</a>
+                        <h3 class="font-bold text-lg mb-2">
+                            <span lang="en">Flame test</span>
+                            <span lang="zh">焰色試驗</span>
+                        </h3>
+                        <p class="text-slate-600 text-sm mb-4 flex-grow">
+                            <span lang="en">Conduct flame test for different chemicals to find out the metal ions present.</span>
+                            <span lang="zh">對不同的化學物質進行焰色試驗，以找出其中存在的金屬離子。</span>
+                        </p>
+                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/FlameTest" target="_blank" class="inline-block bg-amber-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-amber-700 transition">
+                            <span lang="en">Launch Simulation</span><span lang="zh">開始模擬</span>
+                        </a>
                     </div>
                 </div>
                 <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
@@ -165,9 +279,17 @@
                         <img src="https://imgur.com/C2B8xGX.png" alt="Migration of Ions" class="card-img w-full h-full object-cover">
                     </div>
                     <div class="p-6 flex-grow flex flex-col">
-                        <h3 class="font-bold text-lg mb-2">Migration of ions</h3>
-                        <p class="text-slate-600 text-sm mb-4 flex-grow">Visualize how ions move toward electrodes under an electric field.</p>
-                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/IonMigration" target="_blank" class="inline-block bg-amber-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-amber-700 transition">Launch Simulation</a>
+                        <h3 class="font-bold text-lg mb-2">
+                            <span lang="en">Migration of ions</span>
+                            <span lang="zh">離子的遷移</span>
+                        </h3>
+                        <p class="text-slate-600 text-sm mb-4 flex-grow">
+                            <span lang="en">Visualize how ions move toward different electrodes under an electric field.</span>
+                            <span lang="zh">觀察離子在電場下如何移向不同電極。</span>
+                        </p>
+                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/IonMigration" target="_blank" class="inline-block bg-amber-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-amber-700 transition">
+                            <span lang="en">Launch Simulation</span><span lang="zh">開始模擬</span>
+                        </a>
                     </div>
                 </div>
             </div>
@@ -175,16 +297,26 @@
 
         <!-- Topic: Covalent bonding -->
         <section id="Covalent bonding" class="topic-section mb-16">
-            <h2 class="text-2xl font-bold border-l-4 border-sky-500 pl-4 mb-8">Covalent Bond</h2>
+            <h2 class="text-2xl font-bold border-l-4 border-sky-500 pl-4 mb-8">
+                <span lang="en">Covalent Bond</span><span lang="zh">共價鍵</span>
+            </h2>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
                     <div class="card-img-container bg-slate-200">
                         <img src="https://imgur.com/oPCWL49.png" alt="Direction of Bonds" class="card-img w-full h-full object-cover">
                     </div>
                     <div class="p-6 flex-grow flex flex-col">
-                        <h3 class="font-bold text-lg mb-2">Direction of Bonds</h3>
-                        <p class="text-slate-600 text-sm mb-4 flex-grow">Understand the direction of different types of bonds.</p>
-                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/DirectionOfBonds" target="_blank" class="inline-block bg-sky-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-sky-700 transition">Launch Simulation</a>
+                        <h3 class="font-bold text-lg mb-2">
+                            <span lang="en">Direction of Chemical Bonds</span>
+                            <span lang="zh">化學鍵的方向性</span>
+                        </h3>
+                        <p class="text-slate-600 text-sm mb-4 flex-grow">
+                            <span lang="en">Understand the direction of different types of bonds.</span>
+                            <span lang="zh">了解不同類型化學鍵的方向性。</span>
+                        </p>
+                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/DirectionOfBonds" target="_blank" class="inline-block bg-sky-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-sky-700 transition">
+                            <span lang="en">Launch Simulation</span><span lang="zh">開始模擬</span>
+                        </a>
                     </div>
                 </div>
                  <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
@@ -192,9 +324,17 @@
                         <img src="https://imgur.com/fEISJWV.png" alt="Formula of covalent compound" class="card-img w-full h-full object-cover">
                     </div>
                     <div class="p-6 flex-grow flex flex-col">
-                        <h3 class="font-bold text-lg mb-2">Formula of covalent compound</h3>
-                        <p class="text-slate-600 text-sm mb-4 flex-grow">Learn how to build the formula of covalent compound!</p>
-                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/CovalentFormula" target="_blank" class="inline-block bg-sky-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-sky-700 transition">Launch Simulation</a>
+                        <h3 class="font-bold text-lg mb-2">
+                            <span lang="en">Formula of covalent compound</span>
+                            <span lang="zh">共價化合物的化學式</span>
+                        </h3>
+                        <p class="text-slate-600 text-sm mb-4 flex-grow">
+                            <span lang="en">Learn how to build the formula of covalent compound!</span>
+                            <span lang="zh">在此學習如何建立共價化合物的化學式.</span>
+                        </p>
+                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/CovalentFormula" target="_blank" class="inline-block bg-sky-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-sky-700 transition">
+                            <span lang="en">Launch Simulation</span><span lang="zh">開始模擬</span>
+                        </a>
                     </div>
                 </div>
                 <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
@@ -202,9 +342,17 @@
                         <img src="https://imgur.com/hncUJNl.png" alt="Covalent Diagram" class="card-img w-full h-full object-cover">
                     </div>
                     <div class="p-6 flex-grow flex flex-col">
-                        <h3 class="font-bold text-lg mb-2">Electron diagram of covalent compound</h3>
-                        <p class="text-slate-600 text-sm mb-4 flex-grow">Step-by-step guidance on drawing the electron diagram of covalent compound!</p>
-                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/CovalentElectronDiagram" target="_blank" class="inline-block bg-sky-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-sky-700 transition">Launch Simulation</a>
+                        <h3 class="font-bold text-lg mb-2">
+                            <span lang="en">Electron diagram of covalent compound</span>
+                            <span lang="zh">共價化合物的電子圖</span>
+                        </h3>
+                        <p class="text-slate-600 text-sm mb-4 flex-grow">
+                            <span lang="en">Step-by-step guidance on drawing the electron diagram of covalent compound!</span>
+                            <span lang="zh">這裡會逐步指導你繪製共價化合物的電子圖！</span>
+                        </p>
+                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/CovalentElectronDiagram" target="_blank" class="inline-block bg-sky-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-sky-700 transition">
+                            <span lang="en">Launch Simulation</span><span lang="zh">開始模擬</span>
+                        </a>
                     </div>
                 </div>
                 <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
@@ -212,9 +360,17 @@
                         <img src="https://imgur.com/5l5WjEq.png" alt="Dative Bond" class="card-img w-full h-full object-cover">
                     </div>
                     <div class="p-6 flex-grow flex flex-col">
-                        <h3 class="font-bold text-lg mb-2">Dative covalent bond formation</h3>
-                        <p class="text-slate-600 text-sm mb-4 flex-grow">Visualize how dative covalent bonds are formed between different chemicals.</p>
-                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/DativeCovalent" target="_blank" class="inline-block bg-sky-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-sky-700 transition">Launch Simulation</a>
+                        <h3 class="font-bold text-lg mb-2">
+                            <span lang="en">Dative covalent bond formation</span>
+                            <span lang="zh">配位共價鍵的形成</span>
+                        </h3>
+                        <p class="text-slate-600 text-sm mb-4 flex-grow">
+                            <span lang="en">Visualize how dative covalent bonds are formed between different chemicals.</span>
+                            <span lang="zh">觀察不同化學物質之間如何形成配位共價鍵。</span>
+                        </p>
+                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/DativeCovalent" target="_blank" class="inline-block bg-sky-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-sky-700 transition">
+                            <span lang="en">Launch Simulation</span><span lang="zh">開始模擬</span>
+                        </a>
                     </div>
                 </div>
             </div>
@@ -222,16 +378,27 @@
 
         <!-- Topic: Structures and properties of substances -->
         <section id="Structures and properties of substances" class="topic-section mb-16">
-            <h2 class="text-2xl font-bold border-l-4 border-rose-500 pl-4 mb-8">Structures and properties of substances</h2>
+            <h2 class="text-2xl font-bold border-l-4 border-rose-500 pl-4 mb-8">
+                <span lang="en">Structures and properties of substances</span>
+                <span lang="zh">物質的結構與性質</span>
+            </h2>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
                     <div class="card-img-container bg-slate-200">
                         <img src="https://imgur.com/Jmeqv2I.png" alt="Quiz" class="card-img w-full h-full object-cover">
                     </div>
                     <div class="p-6 flex-grow flex flex-col">
-                        <h3 class="font-bold text-lg mb-2">Quiz of structure of substances</h3>
-                        <p class="text-slate-600 text-sm mb-4 flex-grow">Test your understanding about the structure of different substances.</p>
-                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/StructureQuiz" target="_blank" class="inline-block bg-rose-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-rose-700 transition">Launch Simulation</a>
+                        <h3 class="font-bold text-lg mb-2">
+                            <span lang="en">Quiz of structure of substances</span>
+                            <span lang="zh">物質結構分類測驗</span>
+                        </h3>
+                        <p class="text-slate-600 text-sm mb-4 flex-grow">
+                            <span lang="en">Test your understanding about the structure of different substances.</span>
+                            <span lang="zh">測試你對不同物質結構的理解。</span>
+                        </p>
+                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/StructureQuiz" target="_blank" class="inline-block bg-rose-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-rose-700 transition">
+                            <span lang="en">Launch Simulation</span><span lang="zh">開始模擬</span>
+                        </a>
                     </div>
                 </div>
                 <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
@@ -239,9 +406,17 @@
                         <img src="https://imgur.com/6ZBaHhF.png" alt="Metal Properties" class="card-img w-full h-full object-cover">
                     </div>
                     <div class="p-6 flex-grow flex flex-col">
-                        <h3 class="font-bold text-lg mb-2">Physical Properties of Metal</h3>
-                        <p class="text-slate-600 text-sm mb-4 flex-grow">Experiment on different properties of the metal.</p>
-                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/MetalPhysicalProperty" target="_blank" class="inline-block bg-rose-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-rose-700 transition">Launch Simulation</a>
+                        <h3 class="font-bold text-lg mb-2">
+                            <span lang="en">Physical Properties of Metal</span>
+                            <span lang="zh">金屬的物理性質</span>
+                        </h3>
+                        <p class="text-slate-600 text-sm mb-4 flex-grow">
+                            <span lang="en">Experiment on different properties of the metal.</span>
+                            <span lang="zh">在此實驗金屬的不同性質。</span>
+                        </p>
+                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/MetalPhysicalProperty" target="_blank" class="inline-block bg-rose-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-rose-700 transition">
+                            <span lang="en">Launch Simulation</span><span lang="zh">開始模擬</span>
+                        </a>
                     </div>
                 </div>
                 <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
@@ -249,9 +424,17 @@
                         <img src="https://imgur.com/h5v05X2.png" alt="Brittleness" class="card-img w-full h-full object-cover">
                     </div>
                     <div class="p-6 flex-grow flex flex-col">
-                        <h3 class="font-bold text-lg mb-2">Brittleness of Ionic Compound</h3>
-                        <p class="text-slate-600 text-sm mb-4 flex-grow">Understand why ionic compound is brittle upon force.</p>
-                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/IonicCompoundBrittle" target="_blank" class="inline-block bg-rose-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-rose-700 transition">Launch Simulation</a>
+                        <h3 class="font-bold text-lg mb-2">
+                            <span lang="en">Brittleness of Ionic Compound</span>
+                            <span lang="zh">離子化合物的易碎性</span>
+                        </h3>
+                        <p class="text-slate-600 text-sm mb-4 flex-grow">
+                            <span lang="en">Understand why ionic compound is brittle upon force.</span>
+                            <span lang="zh">在此了解為什麼離子化合物在受力時會碎裂。</span>
+                        </p>
+                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/IonicCompoundBrittle" target="_blank" class="inline-block bg-rose-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-rose-700 transition">
+                            <span lang="en">Launch Simulation</span><span lang="zh">開始模擬</span>
+                        </a>
                     </div>
                 </div>
                 <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
@@ -259,9 +442,17 @@
                         <img src="https://imgur.com/F2VeIgf.png" alt="3D Structure" class="card-img w-full h-full object-cover">
                     </div>
                     <div class="p-6 flex-grow flex flex-col">
-                        <h3 class="font-bold text-lg mb-2">3D structure of CsCl and NaCl</h3>
-                        <p class="text-slate-600 text-sm mb-4 flex-grow">Examine the detail structure of Ionic compound.</p>
-                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/IonicCompound3D" target="_blank" class="inline-block bg-rose-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-rose-700 transition">Launch Simulation</a>
+                        <h3 class="font-bold text-lg mb-2">
+                            <span lang="en">3D model of CsCl and NaCl</span>
+                            <span lang="zh">CsCl 與 NaCl 的三維模型</span>
+                        </h3>
+                        <p class="text-slate-600 text-sm mb-4 flex-grow">
+                            <span lang="en">Examine the detail structure of Ionic compound.</span>
+                            <span lang="zh">你可以在這裡仔細觀察不同離子化合物的詳細結構。</span>
+                        </p>
+                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/IonicCompound3D" target="_blank" class="inline-block bg-rose-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-rose-700 transition">
+                            <span lang="en">Launch Simulation</span><span lang="zh">開始模擬</span>
+                        </a>
                     </div>
                 </div>
                 <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
@@ -269,9 +460,17 @@
                         <img src="https://imgur.com/bklFofa.png" alt="Giant Covalent" class="card-img w-full h-full object-cover">
                     </div>
                     <div class="p-6 flex-grow flex flex-col">
-                        <h3 class="font-bold text-lg mb-2">3D structure of Giant Covalent Structure</h3>
-                        <p class="text-slate-600 text-sm mb-4 flex-grow">Examine the detail structure of Covalent compound.</p>
-                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/GiantCovalent3D" target="_blank" class="inline-block bg-rose-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-rose-700 transition">Launch Simulation</a>
+                        <h3 class="font-bold text-lg mb-2">
+                            <span lang="en">3D model of Giant Covalent Structure</span>
+                            <span lang="zh">巨型共價結構的三維模型</span>
+                        </h3>
+                        <p class="text-slate-600 text-sm mb-4 flex-grow">
+                            <span lang="en">Examine the detail structure of Covalent substances.</span>
+                            <span lang="zh">你可以在這裡仔細觀察共價物質的詳細結構。</span>
+                        </p>
+                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/GiantCovalent3D" target="_blank" class="inline-block bg-rose-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-rose-700 transition">
+                            <span lang="en">Launch Simulation</span><span lang="zh">開始模擬</span>
+                        </a>
                     </div>
                 </div>
                 <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
@@ -279,9 +478,17 @@
                         <img src="https://imgur.com/l1Kt4qA.png" alt="Solubility" class="card-img w-full h-full object-cover">
                     </div>
                     <div class="p-6 flex-grow flex flex-col">
-                        <h3 class="font-bold text-lg mb-2">Solubility of substances</h3>
-                        <p class="text-slate-600 text-sm mb-4 flex-grow">Visualize what does solubility means in particle view.</p>
-                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/SolubilityOfSubstance" target="_blank" class="inline-block bg-rose-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-rose-700 transition">Launch Simulation</a>
+                        <h3 class="font-bold text-lg mb-2">
+                            <span lang="en">Solubility of substances</span>
+                            <span lang="zh">物質的溶解度</span>
+                        </h3>
+                        <p class="text-slate-600 text-sm mb-4 flex-grow">
+                            <span lang="en">Visualize what does solubility means in particle view.</span>
+                            <span lang="zh">在此以微粒視角觀察溶解度的含義。</span>
+                        </p>
+                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/SolubilityOfSubstance" target="_blank" class="inline-block bg-rose-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-rose-700 transition">
+                            <span lang="en">Launch Simulation</span><span lang="zh">開始模擬</span>
+                        </a>
                     </div>
                 </div>
             </div>
@@ -290,7 +497,10 @@
     </main>
 
     <footer class="bg-slate-900 text-slate-400 py-12 px-6 text-center">
-        <p>© 2026 Mr.Daniel Mak. Built for interactive learning.</p>
+        <p>
+            <span lang="en">© 2026 Mr. Daniel Mak. Built for interactive learning.</span>
+            <span lang="zh">© 2026 Mr. Daniel Mak. 為互動學習而建。</span>
+        </p>
     </footer>
 
 </body>

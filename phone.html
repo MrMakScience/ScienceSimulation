@@ -3,442 +3,505 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ionic Compound Brittleness Simulation</title>
+    <title>Mr. Daniel Mak Science Simulation</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         body {
+            font-family: 'Inter', sans-serif;
             background-color: #f8fafc;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        canvas {
-            border: 2px solid #334155;
-            border-radius: 8px;
-            background-color: #ffffff;
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-            touch-action: none;
-            cursor: default;
+        .topic-section {
+            scroll-margin-top: 5rem;
         }
-        canvas.clickable {
-            cursor: pointer;
+        .card-img-container {
+            aspect-ratio: 16 / 9;
+            overflow: hidden;
         }
-        .controls {
-            display: flex;
-            gap: 1rem;
-            margin-top: 1.5rem;
-            flex-wrap: wrap;
-            justify-content: center;
+        .card-img {
+            transition: transform 0.3s ease;
         }
-        .btn {
-            padding: 0.75rem 1.5rem;
-            border-radius: 0.5rem;
-            font-weight: 600;
-            transition: all 0.2s;
-            cursor: pointer;
+        .sim-card:hover .card-img {
+            transform: scale(1.05);
         }
-        .btn-hammer {
-            background-color: #ef4444;
-            color: white;
-        }
-        .btn-hammer:hover:not(:disabled) {
-            background-color: #dc2626;
-        }
-        .btn-hammer:disabled {
-            background-color: #94a3b8;
-            cursor: not-allowed;
-        }
-        .btn-reset {
-            background-color: #3b82f6;
-            color: white;
-        }
-        .btn-reset:hover {
-            background-color: #2563eb;
-        }
-        .mode-toggle {
-            display: flex;
-            background: #e2e8f0;
-            padding: 0.25rem;
-            border-radius: 0.5rem;
-            align-items: center;
-        }
-        .mode-btn {
-            padding: 0.5rem 1rem;
-            border-radius: 0.375rem;
-            font-size: 0.875rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .mode-btn.active {
-            background: white;
-            color: #1e293b;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-        
-        #hammerIcon {
-            position: absolute;
-            top: 20px; 
-            font-size: 70px;
-            pointer-events: none;
-            transform: scaleX(-1) rotate(45deg); 
-            opacity: 0;
-            z-index: 20;
-            filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.2));
-            /* Default Desktop left position */
-            left: -100px;
-        }
-
-        /* Mobile specific adjustments for the hammer */
-        @media (max-width: 640px) {
-            #hammerIcon {
-                /* Use a percentage or smaller negative value to keep it in the viewport */
-                left: 10px; 
-                font-size: 50px; 
-                top: 5px;
-            }
-            @keyframes strike {
-                0% { transform: scaleX(-1) translate(0, 0) rotate(45deg); }
-                70% { transform: scaleX(-1) translate(40px, 40px) rotate(-15deg); }
-                100% { transform: scaleX(-1) translate(35px, 45px) rotate(-10deg); }
-            }
-        }
-
-        /* Desktop keyframes (Original) */
-        @media (min-width: 641px) {
-            @keyframes strike {
-                0% { transform: scaleX(-1) translate(0, 0) rotate(45deg); }
-                70% { transform: scaleX(-1) translate(75px, 40px) rotate(-15deg); }
-                100% { transform: scaleX(-1) translate(65px, 45px) rotate(-10deg); }
-            }
-        }
-
-        .hammer-swing {
-            animation: strike 0.4s cubic-bezier(0.3, 0, 0.7, 1) forwards;
-            opacity: 1 !important;
-        }
-
-        /* Updated Notification Style to not block diagram */
-        #shatterMessage {
-            position: absolute;
-            top: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 90%;
-            background-color: rgba(255, 255, 255, 0.95);
-            padding: 12px;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            border-left: 6px solid #ef4444;
-            z-index: 30;
-            pointer-events: none; 
-        }
+        /* Translation Logic */
+        [lang="zh"] { display: none; }
+        body.lang-zh [lang="en"] { display: none; }
+        body.lang-zh [lang="zh"] { display: block; }
+        body.lang-zh .inline-zh { display: inline; }
+        .inline-zh { display: none; }
+        body.lang-zh .inline-en { display: none; }
     </style>
 </head>
-<body class="flex flex-col items-center p-4 md:p-10">
-    <div class="max-w-3xl w-full text-center">
-        <h1 class="text-3xl font-bold text-slate-800 mb-2">Why are Ionic Crystals Brittle?</h1>
-        <p class="text-slate-600 mb-6">
-            In an ionic lattice, ions are held together by strong electrostatic forces. 
-            Watch what happens to the force directions when a physical force is applied.
-        </p>
+<body class="text-slate-900">
 
-        <div class="relative inline-block">
-            <div id="hammerIcon">🔨</div>
-            
-            <canvas id="simCanvas"></canvas>
-            
-            <!-- Relocated message to the top to avoid blocking the lattice -->
-            <div id="shatterMessage" class="hidden">
-                <div class="flex flex-col items-center">
-                    <p id="messageTitle" class="text-red-600 font-bold text-lg uppercase leading-tight">Repulsion Occurring!</p>
-                    <p id="messageSub" class="text-xs text-slate-700">Like charges have aligned and are pushing apart.</p>
-                    <p id="manualPrompt" class="hidden mt-1 text-sm font-bold text-blue-600 animate-bounce">↓ CLICK CANVAS TO RELEASE ↓</p>
+    <!-- Header Section -->
+    <header class="bg-indigo-700 text-white py-12 px-6 shadow-lg relative">
+        <div class="max-w-6xl mx-auto">
+            <!-- Language Toggle at the top -->
+            <div class="flex justify-end mb-4">
+                <button onclick="document.body.classList.toggle('lang-zh')" class="bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 px-3 py-1.5 rounded-md text-sm font-medium transition flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                    <span class="inline-en">繁體中文</span>
+                    <span class="inline-zh">English</span>
+                </button>
+            </div>
+
+            <h1 class="text-4xl md:text-5xl font-bold mb-4 pr-10">
+                <span lang="en">Interactive Simulation for Microscopic World I</span>
+                <span lang="zh">微觀世界 I 互動模擬站</span>
+            </h1>
+            <p class="text-indigo-100 text-lg max-w-2xl mb-6">
+                <span lang="en">Explore concepts in Chemistry through interactive visualizations and games. Select a topic below to get started.</span>
+                <span lang="zh">透過可視化的互動和遊戲去探索化學概念。請在下方選擇主題開始學習。</span>
+            </p>
+            <div class="inline-block bg-white/20 backdrop-blur-sm border border-white/30 rounded-lg px-4 py-2">
+                <p class="text-white font-semibold">
+                    <span lang="en">💡 Suggest using iPad/ Computer for the best experience. For phone user, please use the simulation at vertical view.</span>
+                    <span lang="zh">💡 建議使用 iPad 或電腦以獲得最佳體驗。手機用戶請在垂直模式下使用不同的模擬器。記得要轉換語言作中文。</span>
+                </p>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation -->
+    <nav class="sticky top-0 bg-white border-b border-slate-200 z-20 shadow-sm overflow-x-auto">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex space-x-6 whitespace-nowrap">
+            <a href="#Atomic Structure" class="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition">
+                <span lang="en">Atomic Structure</span><span lang="zh">原子結構</span>
+            </a>
+            <a href="#The Periodic Table" class="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition">
+                <span lang="en">Periodic Table</span><span lang="zh">元素週期表</span>
+            </a>
+            <a href="#Metallic Bonding and Ionic Bonding" class="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition">
+                <span lang="en">Ionic Bonding</span><span lang="zh">金屬鍵與離子鍵</span>
+            </a>
+            <a href="#Covalent bonding" class="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition">
+                <span lang="en">Covalent Bonding</span><span lang="zh">共價鍵</span>
+            </a>
+            <a href="#Structures and properties of substances" class="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition">
+                <span lang="en">Structures & Properties</span><span lang="zh">物質的結構與性質</span>
+            </a>
+        </div>
+    </nav>
+
+    <main class="max-w-6xl mx-auto px-6 py-12">
+        
+        <!-- Topic: Atomic Structure -->
+        <section id="Atomic Structure" class="topic-section mb-16">
+            <h2 class="text-2xl font-bold border-l-4 border-indigo-600 pl-4 mb-8">
+                <span lang="en">Atomic Structure</span><span lang="zh">原子結構</span>
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
+                    <div class="card-img-container bg-slate-200">
+                        <img src="https://imgur.com/gJOKCGH.png" alt="Isotope Stability" class="card-img w-full h-full object-cover">
+                    </div>
+                    <div class="p-6 flex-grow flex flex-col">
+                        <h3 class="font-bold text-lg mb-2">
+                            <span lang="en">Stability of Isotopes & relative abundance</span>
+                            <span lang="zh">同位素的穩定性與相對豐度</span>
+                        </h3>
+                        <p class="text-slate-600 text-sm mb-4 flex-grow">
+                            <span lang="en">Study the structure of the atom! You can also change the number of neutrons in the atom's nucleus to understand why different isotopes have different abundance.</span>
+                            <span lang="zh">你可以在此研究原子的微觀結構。你亦可以改變原子核中的中子數量，以理解為何不同同位素具有不同的豐度。</span>
+                        </p>
+                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/IsotopeStability" target="_blank" class="inline-block bg-indigo-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-indigo-700 transition">
+                            <span lang="en">Launch Simulation</span><span lang="zh">開始模擬</span>
+                        </a>
+                    </div>
+                </div>
+                <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
+                    <div class="card-img-container bg-slate-200">
+                        <img src="https://imgur.com/fJKeEAp.png" alt="C-12 scale" class="card-img w-full h-full object-cover">
+                    </div>
+                    <div class="p-6 flex-grow flex flex-col">
+                        <h3 class="font-bold text-lg mb-2">
+                            <span lang="en">C-12 scale and R.A.M.</span>
+                            <span lang="zh">碳-12 標度與相對原子質量 (R.A.M.)</span>
+                        </h3>
+                        <p class="text-slate-600 text-sm mb-4 flex-grow">
+                            <span lang="en">Understand the meaning of C-12 scale and visualize nature's element sample in particle view.</span>
+                            <span lang="zh">了解 碳-12 標度的含義，並以微觀視角觀察自然界中的元素樣本。</span>
+                        </p>
+                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/RAM&C12" target="_blank" class="inline-block bg-indigo-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-indigo-700 transition">
+                            <span lang="en">Launch Simulation</span><span lang="zh">開始模擬</span>
+                        </a>
+                    </div>
                 </div>
             </div>
-        </div>
+        </section>
 
-        <div class="controls">
-            <div class="mode-toggle mr-4">
-                <button id="modeAuto" class="mode-btn active">Auto Split</button>
-                <button id="modeManual" class="mode-btn">Manual Split</button>
+        <!-- Topic: The Periodic Table -->
+        <section id="The Periodic Table" class="topic-section mb-16">
+            <h2 class="text-2xl font-bold border-l-4 border-emerald-600 pl-4 mb-8">
+                <span lang="en">The Periodic Table</span><span lang="zh">元素週期表</span>
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
+                    <div class="card-img-container bg-slate-200">
+                        <img src="https://imgur.com/9dBaLig.png" alt="Atomic reactivity" class="card-img w-full h-full object-cover">
+                    </div>
+                    <div class="p-6 flex-grow flex flex-col">
+                        <h3 class="font-bold text-lg mb-2">
+                            <span lang="en">Atomic structure and reactivity</span>
+                            <span lang="zh">原子結構與反應性</span>
+                        </h3>
+                        <p class="text-slate-600 text-sm mb-4 flex-grow">
+                            <span lang="en">Compare the structure of different atoms and see how does it relates to reactivity.</span>
+                            <span lang="zh">比較不同原子的結構，並觀察其與反應性的關係。</span>
+                        </p>
+                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/ReactivityOfAtoms" target="_blank" class="inline-block bg-emerald-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-emerald-700 transition">
+                            <span lang="en">Launch Simulation</span><span lang="zh">開始模擬</span>
+                        </a>
+                    </div>
+                </div>
+                <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
+                    <div class="card-img-container bg-slate-200">
+                        <img src="https://imgur.com/FCmQfjK.png" alt="Metal reaction" class="card-img w-full h-full object-cover">
+                    </div>
+                    <div class="p-6 flex-grow flex flex-col">
+                        <h3 class="font-bold text-lg mb-2">
+                            <span lang="en">Reaction of metals in water</span>
+                            <span lang="zh">金屬在水中的反應</span>
+                        </h3>
+                        <p class="text-slate-600 text-sm mb-4 flex-grow">
+                            <span lang="en">Conduct the explosive experiment in your device! Turn on the sound!</span>
+                            <span lang="zh">你可以在電子設備中進行爆炸性實驗！請開啟聲音去獲得更好的體驗。</span>
+                        </p>
+                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/MetalReaction" target="_blank" class="inline-block bg-emerald-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-emerald-700 transition">
+                            <span lang="en">Launch Simulation</span><span lang="zh">開始模擬</span>
+                        </a>
+                    </div>
+                </div>
             </div>
-            <button id="hammerBtn" class="btn btn-hammer">Apply Force (Hammer)</button>
-            <button id="resetBtn" class="btn btn-reset">Reset Structure</button>
-        </div>
+        </section>
 
-        <div class="mt-8 text-left bg-blue-50 p-6 rounded-xl border border-blue-100">
-            <h2 class="text-lg font-bold text-blue-900 mb-2">Key Concept:</h2>
-            <ul class="list-disc ml-5 text-blue-800 space-y-2">
-                <li><strong>Attraction (Green):</strong> Opposite charges pull toward each other.</li>
-                <li><strong>Repulsion (Red):</strong> Like charges push away from each other.</li>
-                <li><strong>Brittleness:</strong> Shifting layers causes like-charge alignment. In <strong>Manual mode</strong>, you can see this alignment frozen before the crystal shatters.</li>
-            </ul>
-        </div>
-    </div>
+        <!-- Topic: Metallic Bonding and Ionic Bonding -->
+        <section id="Metallic Bonding and Ionic Bonding" class="topic-section mb-16">
+            <h2 class="text-2xl font-bold border-l-4 border-amber-500 pl-4 mb-8">
+                <span lang="en">Metallic Bonding and Ionic Bonding</span>
+                <span lang="zh">金屬鍵與離子鍵</span>
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
+                    <div class="card-img-container bg-slate-200">
+                        <img src="https://imgur.com/vD1ZYFm.png" alt="Formation" class="card-img w-full h-full object-cover">
+                    </div>
+                    <div class="p-6 flex-grow flex flex-col">
+                        <h3 class="font-bold text-lg mb-2">
+                            <span lang="en">Formation of ionic compound</span>
+                            <span lang="zh">離子化合物的形成</span>
+                        </h3>
+                        <p class="text-slate-600 text-sm mb-4 flex-grow">
+                            <span lang="en">Visualize how atoms become stable by forming ions.</span>
+                            <span lang="zh">在此觀察原子如何透過形成離子來變得穩定。</span>
+                        </p>
+                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/IonicCompoundForms" target="_blank" class="inline-block bg-amber-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-amber-700 transition">
+                            <span lang="en">Launch Simulation</span><span lang="zh">開始模擬</span>
+                        </a>
+                    </div>
+                </div>
+                <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
+                    <div class="card-img-container bg-slate-200">
+                        <img src="https://imgur.com/jfG2fQg.png" alt="Diagram" class="card-img w-full h-full object-cover">
+                    </div>
+                    <div class="p-6 flex-grow flex flex-col">
+                        <h3 class="font-bold text-lg mb-2">
+                            <span lang="en">Electron diagram of ionic compound</span>
+                            <span lang="zh">離子化合物的電子圖</span>
+                        </h3>
+                        <p class="text-slate-600 text-sm mb-4 flex-grow">
+                            <span lang="en">Step-by-step guidance on drawing the electron diagram of ionic compound!</span>
+                            <span lang="zh">這裡可以逐步指導你繪製離子化合物的電子圖！</span>
+                        </p>
+                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/IonicElectronDiagram" target="_blank" class="inline-block bg-amber-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-amber-700 transition">
+                            <span lang="en">Launch Simulation</span><span lang="zh">開始模擬</span>
+                        </a>
+                    </div>
+                </div>
+                <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
+                    <div class="card-img-container bg-slate-200">
+                        <img src="https://imgur.com/PJiouzU.png" alt="Cross method" class="card-img w-full h-full object-cover">
+                    </div>
+                    <div class="p-6 flex-grow flex flex-col">
+                        <h3 class="font-bold text-lg mb-2">
+                            <span lang="en">Ionic formula - Cross method</span>
+                            <span lang="zh">離子化學式 - 交叉法</span>
+                        </h3>
+                        <p class="text-slate-600 text-sm mb-4 flex-grow">
+                            <span lang="en">Learn to build the chemical formula of Ionic compound with cross method.</span>
+                            <span lang="zh">學習使用交叉法建立離子化合物的化學式。</span>
+                        </p>
+                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/CrossMethod" target="_blank" class="inline-block bg-amber-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-amber-700 transition">
+                            <span lang="en">Launch Simulation</span><span lang="zh">開始模擬</span>
+                        </a>
+                    </div>
+                </div>
+                <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
+                    <div class="card-img-container bg-slate-200">
+                        <img src="https://imgur.com/2xVcyrq.png" alt="Ion Blaster" class="card-img w-full h-full object-cover">
+                    </div>
+                    <div class="p-6 flex-grow flex flex-col">
+                        <h3 class="font-bold text-lg mb-2">
+                            <span lang="en">Ionic compound game - Ion blaster</span>
+                            <span lang="zh">離子化合物遊戲 - 離子爆破員</span>
+                        </h3>
+                        <p class="text-slate-600 text-sm mb-4 flex-grow">
+                            <span lang="en">A mini game to practice identifying ions!</span>
+                            <span lang="zh">這是一個協助你識別離子的小遊戲！</span>
+                        </p>
+                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/IonBlaster" target="_blank" class="inline-block bg-amber-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-amber-700 transition">
+                            <span lang="en">Launch Simulation</span><span lang="zh">開始模擬</span>
+                        </a>
+                    </div>
+                </div>
+                <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
+                    <div class="card-img-container bg-slate-200">
+                        <img src="https://imgur.com/wEM8c5w.png" alt="Flame Test" class="card-img w-full h-full object-cover">
+                    </div>
+                    <div class="p-6 flex-grow flex flex-col">
+                        <h3 class="font-bold text-lg mb-2">
+                            <span lang="en">Flame test</span>
+                            <span lang="zh">焰色試驗</span>
+                        </h3>
+                        <p class="text-slate-600 text-sm mb-4 flex-grow">
+                            <span lang="en">Conduct flame test for different chemicals to find out the metal ions present.</span>
+                            <span lang="zh">對不同的化學物質進行焰色試驗，以找出其中存在的金屬離子。</span>
+                        </p>
+                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/FlameTest" target="_blank" class="inline-block bg-amber-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-amber-700 transition">
+                            <span lang="en">Launch Simulation</span><span lang="zh">開始模擬</span>
+                        </a>
+                    </div>
+                </div>
+                <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
+                    <div class="card-img-container bg-slate-200">
+                        <img src="https://imgur.com/C2B8xGX.png" alt="Migration of Ions" class="card-img w-full h-full object-cover">
+                    </div>
+                    <div class="p-6 flex-grow flex flex-col">
+                        <h3 class="font-bold text-lg mb-2">
+                            <span lang="en">Migration of ions</span>
+                            <span lang="zh">離子的遷移</span>
+                        </h3>
+                        <p class="text-slate-600 text-sm mb-4 flex-grow">
+                            <span lang="en">Visualize how ions move toward different electrodes under an electric field.</span>
+                            <span lang="zh">觀察離子在電場下如何移向不同電極。</span>
+                        </p>
+                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/IonMigration" target="_blank" class="inline-block bg-amber-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-amber-700 transition">
+                            <span lang="en">Launch Simulation</span><span lang="zh">開始模擬</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-    <script>
-        const canvas = document.getElementById('simCanvas');
-        const ctx = canvas.getContext('2d');
-        const hammerBtn = document.getElementById('hammerBtn');
-        const resetBtn = document.getElementById('resetBtn');
-        const message = document.getElementById('shatterMessage');
-        const manualPrompt = document.getElementById('manualPrompt');
-        const hammerIcon = document.getElementById('hammerIcon');
-        const modeAuto = document.getElementById('modeAuto');
-        const modeManual = document.getElementById('modeManual');
+        <!-- Topic: Covalent bonding -->
+        <section id="Covalent bonding" class="topic-section mb-16">
+            <h2 class="text-2xl font-bold border-l-4 border-sky-500 pl-4 mb-8">
+                <span lang="en">Covalent Bond</span><span lang="zh">共價鍵</span>
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
+                    <div class="card-img-container bg-slate-200">
+                        <img src="https://imgur.com/oPCWL49.png" alt="Direction of Bonds" class="card-img w-full h-full object-cover">
+                    </div>
+                    <div class="p-6 flex-grow flex flex-col">
+                        <h3 class="font-bold text-lg mb-2">
+                            <span lang="en">Direction of Chemical Bonds</span>
+                            <span lang="zh">化學鍵的方向性</span>
+                        </h3>
+                        <p class="text-slate-600 text-sm mb-4 flex-grow">
+                            <span lang="en">Understand the direction of different types of bonds.</span>
+                            <span lang="zh">了解不同類型化學鍵的方向性。</span>
+                        </p>
+                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/DirectionOfBonds" target="_blank" class="inline-block bg-sky-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-sky-700 transition">
+                            <span lang="en">Launch Simulation</span><span lang="zh">開始模擬</span>
+                        </a>
+                    </div>
+                </div>
+                 <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
+                    <div class="card-img-container bg-slate-200">
+                        <img src="https://imgur.com/fEISJWV.png" alt="Formula of covalent compound" class="card-img w-full h-full object-cover">
+                    </div>
+                    <div class="p-6 flex-grow flex flex-col">
+                        <h3 class="font-bold text-lg mb-2">
+                            <span lang="en">Formula of covalent compound</span>
+                            <span lang="zh">共價化合物的化學式</span>
+                        </h3>
+                        <p class="text-slate-600 text-sm mb-4 flex-grow">
+                            <span lang="en">Learn how to build the formula of covalent compound!</span>
+                            <span lang="zh">在此學習如何建立共價化合物的化學式.</span>
+                        </p>
+                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/CovalentFormula" target="_blank" class="inline-block bg-sky-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-sky-700 transition">
+                            <span lang="en">Launch Simulation</span><span lang="zh">開始模擬</span>
+                        </a>
+                    </div>
+                </div>
+                <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
+                    <div class="card-img-container bg-slate-200">
+                        <img src="https://imgur.com/hncUJNl.png" alt="Covalent Diagram" class="card-img w-full h-full object-cover">
+                    </div>
+                    <div class="p-6 flex-grow flex flex-col">
+                        <h3 class="font-bold text-lg mb-2">
+                            <span lang="en">Electron diagram of covalent compound</span>
+                            <span lang="zh">共價化合物的電子圖</span>
+                        </h3>
+                        <p class="text-slate-600 text-sm mb-4 flex-grow">
+                            <span lang="en">Step-by-step guidance on drawing the electron diagram of covalent compound!</span>
+                            <span lang="zh">這裡會逐步指導你繪製共價化合物的電子圖！</span>
+                        </p>
+                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/CovalentElectronDiagram" target="_blank" class="inline-block bg-sky-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-sky-700 transition">
+                            <span lang="en">Launch Simulation</span><span lang="zh">開始模擬</span>
+                        </a>
+                    </div>
+                </div>
+                <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
+                    <div class="card-img-container bg-slate-200">
+                        <img src="https://imgur.com/5l5WjEq.png" alt="Dative Bond" class="card-img w-full h-full object-cover">
+                    </div>
+                    <div class="p-6 flex-grow flex flex-col">
+                        <h3 class="font-bold text-lg mb-2">
+                            <span lang="en">Dative covalent bond formation</span>
+                            <span lang="zh">配位共價鍵的形成</span>
+                        </h3>
+                        <p class="text-slate-600 text-sm mb-4 flex-grow">
+                            <span lang="en">Visualize how dative covalent bonds are formed between different chemicals.</span>
+                            <span lang="zh">觀察不同化學物質之間如何形成配位共價鍵。</span>
+                        </p>
+                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/DativeCovalent" target="_blank" class="inline-block bg-sky-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-sky-700 transition">
+                            <span lang="en">Launch Simulation</span><span lang="zh">開始模擬</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        
-        function playImpactSound() {
-            const now = audioCtx.currentTime;
-            const osc = audioCtx.createOscillator();
-            const oscGain = audioCtx.createGain();
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(150, now); 
-            osc.frequency.exponentialRampToValueAtTime(40, now + 0.15);
-            oscGain.gain.setValueAtTime(0.6, now);
-            oscGain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
-            osc.connect(oscGain);
-            oscGain.connect(audioCtx.destination);
-            
-            const bufferSize = audioCtx.sampleRate * 0.1;
-            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-            const data = buffer.getChannelData(0);
-            for (let i = 0; i < bufferSize; i++) { data[i] = Math.random() * 2 - 1; }
-            const noise = audioCtx.createBufferSource();
-            noise.buffer = buffer;
-            const noiseFilter = audioCtx.createBiquadFilter();
-            noiseFilter.type = 'lowpass';
-            noiseFilter.frequency.setValueAtTime(1000, now);
-            const noiseGain = audioCtx.createGain();
-            noiseGain.gain.setValueAtTime(0.3, now);
-            noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
-            noise.connect(noiseFilter);
-            noiseFilter.connect(noiseGain);
-            noiseGain.connect(audioCtx.destination);
-            osc.start(); osc.stop(now + 0.2);
-            noise.start(); noise.stop(now + 0.1);
-        }
+        <!-- Topic: Structures and properties of substances -->
+        <section id="Structures and properties of substances" class="topic-section mb-16">
+            <h2 class="text-2xl font-bold border-l-4 border-rose-500 pl-4 mb-8">
+                <span lang="en">Structures and properties of substances</span>
+                <span lang="zh">物質的結構與性質</span>
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
+                    <div class="card-img-container bg-slate-200">
+                        <img src="https://imgur.com/Jmeqv2I.png" alt="Quiz" class="card-img w-full h-full object-cover">
+                    </div>
+                    <div class="p-6 flex-grow flex flex-col">
+                        <h3 class="font-bold text-lg mb-2">
+                            <span lang="en">Quiz of structure of substances</span>
+                            <span lang="zh">物質結構分類測驗</span>
+                        </h3>
+                        <p class="text-slate-600 text-sm mb-4 flex-grow">
+                            <span lang="en">Test your understanding about the structure of different substances.</span>
+                            <span lang="zh">測試你對不同物質結構的理解。</span>
+                        </p>
+                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/StructureQuiz" target="_blank" class="inline-block bg-rose-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-rose-700 transition">
+                            <span lang="en">Launch Simulation</span><span lang="zh">開始模擬</span>
+                        </a>
+                    </div>
+                </div>
+                <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
+                    <div class="card-img-container bg-slate-200">
+                        <img src="https://imgur.com/6ZBaHhF.png" alt="Metal Properties" class="card-img w-full h-full object-cover">
+                    </div>
+                    <div class="p-6 flex-grow flex flex-col">
+                        <h3 class="font-bold text-lg mb-2">
+                            <span lang="en">Physical Properties of Metal</span>
+                            <span lang="zh">金屬的物理性質</span>
+                        </h3>
+                        <p class="text-slate-600 text-sm mb-4 flex-grow">
+                            <span lang="en">Experiment on different properties of the metal.</span>
+                            <span lang="zh">在此實驗金屬的不同性質。</span>
+                        </p>
+                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/MetalPhysicalProperty" target="_blank" class="inline-block bg-rose-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-rose-700 transition">
+                            <span lang="en">Launch Simulation</span><span lang="zh">開始模擬</span>
+                        </a>
+                    </div>
+                </div>
+                <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
+                    <div class="card-img-container bg-slate-200">
+                        <img src="https://imgur.com/h5v05X2.png" alt="Brittleness" class="card-img w-full h-full object-cover">
+                    </div>
+                    <div class="p-6 flex-grow flex flex-col">
+                        <h3 class="font-bold text-lg mb-2">
+                            <span lang="en">Brittleness of Ionic Compound</span>
+                            <span lang="zh">離子化合物的易碎性</span>
+                        </h3>
+                        <p class="text-slate-600 text-sm mb-4 flex-grow">
+                            <span lang="en">Understand why ionic compound is brittle upon force.</span>
+                            <span lang="zh">在此了解為什麼離子化合物在受力時會碎裂。</span>
+                        </p>
+                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/IonicCompoundBrittle" target="_blank" class="inline-block bg-rose-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-rose-700 transition">
+                            <span lang="en">Launch Simulation</span><span lang="zh">開始模擬</span>
+                        </a>
+                    </div>
+                </div>
+                <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
+                    <div class="card-img-container bg-slate-200">
+                        <img src="https://imgur.com/F2VeIgf.png" alt="3D Structure" class="card-img w-full h-full object-cover">
+                    </div>
+                    <div class="p-6 flex-grow flex flex-col">
+                        <h3 class="font-bold text-lg mb-2">
+                            <span lang="en">3D model of CsCl and NaCl</span>
+                            <span lang="zh">CsCl 與 NaCl 的三維模型</span>
+                        </h3>
+                        <p class="text-slate-600 text-sm mb-4 flex-grow">
+                            <span lang="en">Examine the detail structure of Ionic compound.</span>
+                            <span lang="zh">你可以在這裡仔細觀察不同離子化合物的詳細結構。</span>
+                        </p>
+                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/IonicCompound3D" target="_blank" class="inline-block bg-rose-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-rose-700 transition">
+                            <span lang="en">Launch Simulation</span><span lang="zh">開始模擬</span>
+                        </a>
+                    </div>
+                </div>
+                <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
+                    <div class="card-img-container bg-slate-200">
+                        <img src="https://imgur.com/bklFofa.png" alt="Giant Covalent" class="card-img w-full h-full object-cover">
+                    </div>
+                    <div class="p-6 flex-grow flex flex-col">
+                        <h3 class="font-bold text-lg mb-2">
+                            <span lang="en">3D model of Giant Covalent Structure</span>
+                            <span lang="zh">巨型共價結構的三維模型</span>
+                        </h3>
+                        <p class="text-slate-600 text-sm mb-4 flex-grow">
+                            <span lang="en">Examine the detail structure of Covalent substances.</span>
+                            <span lang="zh">你可以在這裡仔細觀察共價物質的詳細結構。</span>
+                        </p>
+                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/GiantCovalent3D" target="_blank" class="inline-block bg-rose-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-rose-700 transition">
+                            <span lang="en">Launch Simulation</span><span lang="zh">開始模擬</span>
+                        </a>
+                    </div>
+                </div>
+                <div class="sim-card bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 flex flex-col">
+                    <div class="card-img-container bg-slate-200">
+                        <img src="https://imgur.com/l1Kt4qA.png" alt="Solubility" class="card-img w-full h-full object-cover">
+                    </div>
+                    <div class="p-6 flex-grow flex flex-col">
+                        <h3 class="font-bold text-lg mb-2">
+                            <span lang="en">Solubility of substances</span>
+                            <span lang="zh">物質的溶解度</span>
+                        </h3>
+                        <p class="text-slate-600 text-sm mb-4 flex-grow">
+                            <span lang="en">Visualize what does solubility means in particle view.</span>
+                            <span lang="zh">在此以微粒視角觀察溶解度的含義。</span>
+                        </p>
+                        <a href="https://mrmakscience.github.io/ScienceSimulation/ChemDSE/MicWorld1/SolubilityOfSubstance" target="_blank" class="inline-block bg-rose-600 text-white text-center py-2 px-4 rounded-lg font-semibold hover:bg-rose-700 transition">
+                            <span lang="en">Launch Simulation</span><span lang="zh">開始模擬</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-        const ROWS = 4;
-        const COLS = 6;
-        const ION_RADIUS = 25;
-        const SPACING = 85; 
-        
-        let ions = [];
-        let isShattered = false;
-        let isPausedForManual = false;
-        let splitMode = 'auto'; 
-        let animationFrame;
+    </main>
 
-        function init() {
-            ions = [];
-            isShattered = false;
-            isPausedForManual = false;
-            hammerBtn.disabled = false;
-            message.classList.add('hidden');
-            manualPrompt.classList.add('hidden');
-            canvas.classList.remove('clickable');
-            hammerIcon.classList.remove('hammer-swing');
-            hammerIcon.style.opacity = '0';
-            
-            const startX = (canvas.width - (COLS - 1) * SPACING) / 2;
-            const startY = (canvas.height - (ROWS - 1) * SPACING) / 2;
+    <footer class="bg-slate-900 text-slate-400 py-12 px-6 text-center">
+        <p>
+            <span lang="en">© 2026 Mr. Daniel Mak. Built for interactive learning.</span>
+            <span lang="zh">© 2026 Mr. Daniel Mak. 為互動學習而建。</span>
+        </p>
+    </footer>
 
-            for (let r = 0; r < ROWS; r++) {
-                for (let c = 0; c < COLS; c++) {
-                    const type = (r + c) % 2 === 0 ? 'cation' : 'anion';
-                    ions.push({
-                        r, c,
-                        x: startX + c * SPACING,
-                        y: startY + r * SPACING,
-                        baseX: startX + c * SPACING,
-                        baseY: startY + r * SPACING,
-                        type: type,
-                        vx: 0,
-                        vy: 0
-                    });
-                }
-            }
-            draw();
-        }
-
-        function drawSingleArrow(ionA, ionB) {
-            const isAttracting = ionA.type !== ionB.type;
-            const color = isAttracting ? '#16a34a' : '#dc2626'; 
-            const dx = ionB.x - ionA.x;
-            const dy = ionB.y - ionA.y;
-            const angle = Math.atan2(dy, dx);
-            const headlen = 10;
-            const margin = 28; 
-
-            ctx.strokeStyle = color;
-            ctx.lineWidth = 5;
-            ctx.beginPath();
-
-            const startX = ionA.x + Math.cos(angle) * margin;
-            const startY = ionA.y + Math.sin(angle) * margin;
-            const endX = ionB.x - Math.cos(angle) * margin;
-            const endY = ionB.y - Math.sin(angle) * margin;
-
-            ctx.moveTo(startX, startY);
-            ctx.lineTo(endX, endY);
-
-            // One head at A pointing toward B
-            ctx.moveTo(startX, startY);
-            ctx.lineTo(startX + headlen * Math.cos(angle + 0.6), startY + headlen * Math.sin(angle + 0.6));
-            ctx.moveTo(startX, startY);
-            ctx.lineTo(startX + headlen * Math.cos(angle - 0.6), startY + headlen * Math.sin(angle - 0.6));
-            
-            // One head at B pointing toward A
-            ctx.moveTo(endX, endY);
-            ctx.lineTo(endX + headlen * Math.cos(angle + 2.5), endY + headlen * Math.sin(angle + 2.5));
-            ctx.moveTo(endX, endY);
-            ctx.lineTo(endX + headlen * Math.cos(angle - 2.5), endY + headlen * Math.sin(angle - 2.5));
-            
-            ctx.stroke();
-        }
-
-        function drawAllForceArrows() {
-            for (let i = 0; i < ions.length; i++) {
-                const ionA = ions[i];
-                const rightNeighbor = ions.find(target => target.r === ionA.r && target.c === ionA.c + 1);
-                if (rightNeighbor) drawSingleArrow(ionA, rightNeighbor);
-
-                const bottomNeighbor = ions.find(target => target.c === ionA.c && target.r === ionA.r + 1);
-                if (bottomNeighbor) {
-                    if (ionA.r === 1) {
-                        const shiftedBottom = ions.filter(t => t.r === 2)
-                            .find(t => Math.abs(t.x - ionA.x) < SPACING / 2);
-                        if (shiftedBottom) drawSingleArrow(ionA, shiftedBottom);
-                    } else {
-                        drawSingleArrow(ionA, bottomNeighbor);
-                    }
-                }
-            }
-        }
-
-        function draw() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            if (!isShattered || isPausedForManual) {
-                drawAllForceArrows();
-            }
-
-            ions.forEach(ion => {
-                ctx.beginPath();
-                ctx.arc(ion.x, ion.y, ion.type === 'cation' ? ION_RADIUS * 0.85 : ION_RADIUS, 0, Math.PI * 2);
-                if (ion.type === 'cation') {
-                    ctx.fillStyle = '#3b82f6'; 
-                    ctx.fill();
-                    ctx.fillStyle = 'white';
-                    ctx.font = 'bold 20px Arial';
-                    ctx.textAlign = 'center';
-                    ctx.fillText('+', ion.x, ion.y + 7);
-                } else {
-                    ctx.fillStyle = '#f97316'; 
-                    ctx.fill();
-                    ctx.fillStyle = 'white';
-                    ctx.font = 'bold 20px Arial';
-                    ctx.textAlign = 'center';
-                    ctx.fillText('–', ion.x, ion.y + 7);
-                }
-                ctx.closePath();
-            });
-        }
-
-        function update() {
-            if (isShattered && !isPausedForManual) {
-                ions.forEach(ion => {
-                    if (ion.r < 2) ion.vy -= 1.5;
-                    else ion.vy += 1.5;
-                    ion.y += ion.vy;
-                });
-            }
-            
-            draw();
-            if (isShattered && !isPausedForManual && ions[0].y > -100 && ions[ions.length-1].y < canvas.height + 100) {
-                animationFrame = requestAnimationFrame(update);
-            }
-        }
-
-        function triggerShatter() {
-            isPausedForManual = false;
-            isShattered = true;
-            message.classList.add('hidden');
-            manualPrompt.classList.add('hidden');
-            canvas.classList.remove('clickable');
-            update();
-        }
-
-        hammerBtn.addEventListener('click', () => {
-            if (isShattered || isPausedForManual) return;
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-            
-            hammerBtn.disabled = true;
-            hammerIcon.classList.add('hammer-swing');
-            
-            setTimeout(() => {
-                playImpactSound();
-                let shift = 0;
-                const shiftTarget = SPACING;
-                
-                const interval = setInterval(() => {
-                    shift += 4;
-                    ions.forEach(ion => { if (ion.r < 2) ion.x = ion.baseX + shift; });
-                    draw();
-
-                    if (shift >= shiftTarget) {
-                        clearInterval(interval);
-                        setTimeout(() => {
-                            message.classList.remove('hidden');
-                            if (splitMode === 'manual') {
-                                isPausedForManual = true;
-                                isShattered = true; 
-                                message.classList.remove('hidden');
-                                manualPrompt.classList.remove('hidden');
-                                canvas.classList.add('clickable');
-                                draw(); 
-                            } else {
-                                isShattered = true;
-                                update();
-                            }
-                        }, splitMode === 'manual' ? 100 : 800); 
-                    }
-                }, 16);
-            }, 280); 
-        });
-
-        canvas.addEventListener('click', () => {
-            if (isPausedForManual) {
-                triggerShatter();
-            }
-        });
-
-        resetBtn.addEventListener('click', () => {
-            cancelAnimationFrame(animationFrame);
-            init();
-        });
-
-        modeAuto.addEventListener('click', () => {
-            splitMode = 'auto';
-            modeAuto.classList.add('active');
-            modeManual.classList.remove('active');
-            init();
-        });
-
-        modeManual.addEventListener('click', () => {
-            splitMode = 'manual';
-            modeManual.classList.add('active');
-            modeAuto.classList.remove('active');
-            init();
-        });
-
-        window.onload = resize;
-        window.onresize = resize;
-        function resize() {
-            canvas.width = Math.min(window.innerWidth - 40, 600);
-            canvas.height = 450;
-            init();
-        }
-    </script>
 </body>
 </html>
