@@ -3,636 +3,295 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Migration of Ions Simulation</title>
+    <title>Ionic Bond Formation Simulation</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .u-tube-container {
-            position: relative;
-            width: 300px;
-            height: 280px;
-        }
-
-        .glass-svg {
+        .lowercase-label { text-transform: none !important; }
+        .electron { transition: all 1.2s cubic-bezier(0.4, 0, 0.2, 1); }
+        .orbit {
+            border: 1px dashed rgba(156, 163, 175, 0.5);
+            border-radius: 50%;
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            overflow: visible; 
-        }
-
-        .switch-arm {
-            transition: transform 0.2s ease-in-out;
-        }
-
-        .solution-btn.active {
-            background-color: #1e293b;
-            color: white;
-            border-color: #334155;
-        }
-
-        .crystal-btn.active {
-            background-color: #4f46e5;
-            color: white;
-            border-color: #4338ca;
-        }
-
-        .ion-spot {
-            mix-blend-mode: multiply;
-            transition: opacity 0.3s ease;
-        }
-        
-        .light-theme-multiply {
-            isolation: isolate;
-        }
-
-        .u-ion-cloud {
-            mix-blend-mode: multiply;
-            filter: blur(3px);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
             pointer-events: none;
         }
-
-        /* Tab styling */
-        .tab-active {
-            color: #2563eb;
-            border-bottom: 2px solid #2563eb;
+        .preference-label { 
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5); 
+            z-index: 100;
         }
-        .tab-inactive {
-            color: #64748b;
-            border-bottom: 2px solid transparent;
+        
+        .ion-bracket {
+            position: absolute;
+            top: -10px;
+            bottom: -10px;
+            width: 15px;
+            border: 2px solid rgba(255, 255, 255, 0.7);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.5s ease-in;
+        }
+        .bracket-visible { opacity: 1; }
+        .bracket-left { left: -20px; border-right: 0; }
+        .bracket-right { right: -20px; border-left: 0; }
+        
+        .charge-display {
+            position: absolute;
+            top: -10px;
+            right: -28px;
+            font-weight: 900;
+            font-size: 1rem;
+            color: white;
+            text-shadow: 0 0 5px rgba(0,0,0,0.5);
+            white-space: nowrap;
         }
     </style>
 </head>
-<body class="bg-slate-50 min-h-screen p-4 font-sans">
-    <div class="max-w-4xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200">
-        <!-- Header -->
-        <header class="bg-slate-800 text-white p-4 relative">
-            <button onclick="toggleLanguage()" class="absolute top-4 right-4 flex items-center gap-1.5 px-3 py-1 bg-slate-700 hover:bg-slate-600 rounded-full text-xs font-medium transition-colors border border-slate-600 shadow-sm">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-                <span id="lang-btn-text">繁體中文</span>
-            </button>
-            <h1 id="ui-title" class="text-xl font-bold">Migration of Ions</h1>
-            <p id="ui-subtitle" class="text-slate-300 text-xs mt-1">Simulating the movement of charged particles toward electrodes.</p>
-        </header>
+<body class="bg-slate-900 text-white min-h-screen flex flex-col items-center p-2 md:p-8">
 
-        <!-- Tabs -->
-        <div class="flex border-b border-slate-200">
-            <button onclick="switchTab('filter')" id="tab-filter" class="flex-1 py-3 text-sm font-semibold tab-active transition-all">
-                Filter Paper Method
-            </button>
-            <button onclick="switchTab('utube')" id="tab-utube" class="flex-1 py-3 text-sm font-semibold tab-inactive hover:bg-slate-50 transition-all">
-                U-Shaped Tube Method
-            </button>
-        </div>
-
-        <!-- Main Controls -->
-        <div class="p-4 bg-slate-100 flex flex-wrap items-center justify-between gap-4 border-b border-slate-200">
-            <div class="flex items-center gap-3">
-                <button id="powerBtn" onclick="togglePower()" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg transition-colors shadow-md min-w-[110px]">
-                    Power: OFF
-                </button>
-                <button id="ui-reverse" onclick="reversePolarity()" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-lg transition-colors shadow-md flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10v4h10v-4h-4V4H11v6z"/><path d="M17 14v4h-4v4h-2v-4H7v-4h4V8h2v6z"/></svg>
-                    Reverse Polarity
-                </button>
-                <button id="ui-reset" onclick="resetSim()" class="px-5 py-2 bg-slate-500 hover:bg-slate-600 text-white font-bold rounded-lg transition-colors shadow-md">
-                    Reset
-                </button>
+    <div class="max-w-4xl w-full bg-slate-800 rounded-3xl shadow-2xl overflow-hidden border border-slate-700">
+        <div class="bg-slate-700 p-4 md:p-6 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div>
+                <h1 class="text-xl md:text-2xl font-bold text-blue-400">Ionic Bond Simulator</h1>
+                <p class="text-slate-300 text-xs md:text-sm">Understanding Electron Transfer</p>
             </div>
-            <div class="flex items-center gap-2">
-                <span id="ui-voltage" class="text-sm font-medium text-slate-600">Voltage:</span>
-                <input type="range" id="voltage" min="1" max="10" value="5" class="w-32 accent-blue-600">
-                <span id="voltValue" class="text-sm font-bold w-8 text-center text-slate-800">5V</span>
+            <div class="flex gap-1 md:gap-2" id="example-selector">
+                <button onclick="selectExample('LiS')" id="btn-LiS" class="px-3 py-1.5 md:px-4 md:py-2 rounded-lg bg-blue-600 hover:bg-blue-500 transition-colors text-xs md:text-sm font-medium">Li + S</button>
+                <button onclick="selectExample('AlO')" id="btn-AlO" class="px-3 py-1.5 md:px-4 md:py-2 rounded-lg bg-slate-600 hover:bg-blue-500 transition-colors text-xs md:text-sm font-medium">Al + O</button>
+                <button onclick="selectExample('NaCl')" id="btn-NaCl" class="px-3 py-1.5 md:px-4 md:py-2 rounded-lg bg-slate-600 hover:bg-blue-500 transition-colors text-xs md:text-sm font-medium">Na + Cl</button>
             </div>
         </div>
 
-        <!-- Selection Bar -->
-        <div class="px-6 py-2 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center gap-4">
-            <span id="ui-compound-label" class="text-[10px] font-bold text-slate-500 uppercase">Compound:</span>
-            <div class="flex flex-wrap gap-2">
-                <button onclick="setCompound('kmno4')" id="btn-kmno4" class="crystal-btn active px-3 py-1 text-[11px] font-semibold rounded border border-slate-300 hover:bg-slate-100 transition-colors">Potassium Permanganate</button>
-                <button onclick="setCompound('cucro4')" id="btn-cucro4" class="crystal-btn px-3 py-1 text-[11px] font-semibold rounded border border-slate-300 hover:bg-slate-100 transition-colors">Copper(II) Chromate</button>
-                <button onclick="setCompound('feso4')" id="btn-feso4" class="crystal-btn px-3 py-1 text-[11px] font-semibold rounded border border-slate-300 hover:bg-slate-100 transition-colors">Iron(II) Sulphate</button>
-            </div>
-        </div>
+        <div class="relative h-[400px] w-full bg-slate-900 flex items-center justify-center overflow-hidden" id="stage"></div>
 
-        <div id="solution-panel" class="px-6 py-2 bg-slate-50 border-b border-slate-200 flex items-center gap-4">
-            <span id="ui-solution-label" class="text-[10px] font-bold text-slate-500 uppercase">Soaking Solution:</span>
-            <div class="flex gap-2">
-                <button onclick="setSolution('hcl')" id="btn-hcl" class="solution-btn active px-3 py-1 text-[11px] font-semibold rounded border border-slate-300 hover:bg-slate-200 transition-colors">HCl (aq)</button>
-                <button onclick="setSolution('nacl')" id="btn-nacl" class="solution-btn px-3 py-1 text-[11px] font-semibold rounded border border-slate-300 hover:bg-slate-200 transition-colors">NaCl (aq)</button>
-                <button onclick="setSolution('ethanol')" id="btn-ethanol" class="solution-btn px-3 py-1 text-[11px] font-semibold rounded border border-slate-300 hover:bg-slate-200 transition-colors">Ethanol</button>
-            </div>
-        </div>
-
-        <!-- Simulation Area -->
-        <div class="relative h-[320px] w-full bg-slate-200 overflow-hidden flex items-center justify-center p-2">
-            
-            <!-- Setup 1: Filter Paper -->
-            <div id="sim-filter" class="relative w-full h-full flex flex-col items-center justify-center light-theme-multiply">
-                <svg width="400" height="280" viewBox="0 0 400 280" class="relative overflow-visible">
-                    <defs>
-                        <pattern id="dot-pattern" width="10" height="10" patternUnits="userSpaceOnUse">
-                            <circle cx="2" cy="2" r="0.5" fill="#cbd5e1" />
-                        </pattern>
-                        <radialGradient id="grad-purple"><stop offset="10%" stop-color="#a855f7"/><stop offset="100%" stop-color="#6b21a8" stop-opacity="0"/></radialGradient>
-                        <radialGradient id="grad-yellow"><stop offset="10%" stop-color="#facc15"/><stop offset="100%" stop-color="#ca8a04" stop-opacity="0"/></radialGradient>
-                        <radialGradient id="grad-blue"><stop offset="10%" stop-color="#3b82f6"/><stop offset="100%" stop-color="#1d4ed8" stop-opacity="0"/></radialGradient>
-                        <radialGradient id="grad-green"><stop offset="10%" stop-color="#4ade80"/><stop offset="100%" stop-color="#166534" stop-opacity="0"/></radialGradient>
-                        <filter id="glow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-                    </defs>
-
-                    <!-- Filter Paper -->
-                    <rect x="50" y="80" width="300" height="150" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1" rx="2" />
-                    <rect x="50" y="80" width="300" height="150" fill="url(#dot-pattern)" rx="2" />
-                    
-                    <!-- Left Electrode -->
-                    <rect x="55" y="95" width="15" height="120" fill="#333" rx="1" />
-                    <rect id="filter-left-color" x="55" y="95" width="15" height="4" fill="#ef4444" />
-                    <text id="filter-left-label" x="62.5" y="108" text-anchor="middle" fill="white" font-size="10" font-weight="bold">+</text>
-                    
-                    <!-- Right Electrode -->
-                    <rect x="330" y="95" width="15" height="120" fill="#333" rx="1" />
-                    <rect id="filter-right-color" x="330" y="95" width="15" height="4" fill="#3b82f6" />
-                    <text id="filter-right-label" x="337.5" y="108" text-anchor="middle" fill="white" font-size="10" font-weight="bold">-</text>
-
-                    <!-- Circuit -->
-                    <path d="M 62 95 L 62 45 L 135 45" fill="none" stroke="#333" stroke-width="2" />
-                    <path d="M 230 45 L 337 45 L 337 95" fill="none" stroke="#333" stroke-width="2" />
-
-                    <g transform="translate(135, 45)">
-                        <circle cx="0" cy="0" r="3" fill="#333" />
-                        <circle cx="30" cy="0" r="3" fill="#333" />
-                        <line id="switch-arm-filter" x1="0" y1="0" x2="30" y2="0" stroke="#333" stroke-width="3" style="transform-origin: 0px 0px; transform: rotate(-35deg);" class="switch-arm" />
-                        <line x1="30" y1="0" x2="55" y2="0" stroke="#333" stroke-width="2" />
-                        <g id="filter-battery-group" transform="translate(55, 0)">
-                            <line id="filter-batt-plate-pos" x1="5" y1="-10" x2="5" y2="10" stroke="#333" stroke-width="3" /> 
-                            <line id="filter-batt-plate-neg" x1="15" y1="-5" x2="15" y2="5" stroke="#333" stroke-width="5" /> 
-                            <line x1="15" y1="0" x2="40" y2="0" stroke="#333" stroke-width="2" />
-                        </g>
-                    </g>
-
-                    <circle id="filter-ion-anion" class="ion-spot" cx="200" cy="155" r="16" fill="url(#grad-purple)" filter="url(#glow)" opacity="0.9" />
-                    <circle id="filter-ion-cation" class="ion-spot" cx="200" cy="155" r="16" fill="url(#grad-blue)" filter="url(#glow)" opacity="0.9" visibility="hidden" />
-                </svg>
+        <div class="p-4 md:p-6 bg-slate-800 border-t border-slate-700">
+            <div id="instruction-box" class="mb-4 md:mb-6 min-h-[100px]">
+                <h2 id="step-title" class="text-lg md:text-xl font-semibold text-yellow-400 mb-2">Step 1: Individual Atoms</h2>
+                <p id="step-text" class="text-sm md:text-base text-slate-200"></p>
+                <p id="step-note" class="text-xs md:text-sm text-blue-300 mt-2 italic font-medium"></p>
             </div>
 
-            <!-- Setup 2: U-Tube -->
-            <div id="sim-utube" class="hidden relative w-full h-full flex flex-col items-center justify-center light-theme-multiply">
-                <div class="u-tube-container">
-                    <svg class="glass-svg" viewBox="0 0 300 280">
-                        <defs>
-                            <path id="tube-shape" d="M 80 50 L 80 220 A 70 70 0 0 0 220 220 L 220 50 L 180 50 L 180 220 A 30 30 0 0 1 120 220 L 120 50 Z" />
-                            <clipPath id="tube-mask"><use href="#tube-shape" /></clipPath>
-                        </defs>
-                        
-                        <!-- Electrodes -->
-                        <g transform="translate(90, 30)">
-                            <rect width="20" height="120" fill="#333" rx="1" />
-                        </g>
-                        <g transform="translate(190, 30)">
-                            <rect width="20" height="120" fill="#333" rx="1" />
-                        </g>
-
-                        <!-- Solution and Movement -->
-                        <g clip-path="url(#tube-mask)">
-                            <!-- Base buffer solution (U-part) -->
-                            <path id="buffer-fill" d="M 80 185 L 80 220 A 70 70 0 0 0 220 220 L 220 185 L 180 185 L 180 220 A 30 30 0 0 1 120 220 L 120 185 Z" fill="#a855f7" opacity="0.4" />
-                            
-                            <!-- Electrolyte solution in arms -->
-                            <rect x="80" y="100" width="40" height="85" fill="#bae6fd" opacity="0.3" />
-                            <rect x="180" y="100" width="40" height="85" fill="#bae6fd" opacity="0.3" />
-                            
-                            <!-- Rising Ion Clouds -->
-                            <rect id="utube-left-cloud" class="u-ion-cloud" x="80" y="185" width="40" height="0" fill="#facc15" opacity="0" />
-                            <rect id="utube-right-cloud" class="u-ion-cloud" x="180" y="185" width="40" height="0" fill="#3b82f6" opacity="0" />
-
-                            <!-- Interfaces -->
-                            <line x1="80" y1="100" x2="120" y2="100" stroke="#0ea5e9" stroke-width="2.5" />
-                            <line x1="180" y1="100" x2="220" y2="100" stroke="#0ea5e9" stroke-width="2.5" />
-                            <line x1="80" y1="185" x2="120" y2="185" stroke="#94a3b8" stroke-width="1" stroke-dasharray="2,2" />
-                            <line x1="180" y1="185" x2="220" y2="185" stroke="#94a3b8" stroke-width="1" stroke-dasharray="2,2" />
-                        </g>
-
-                        <!-- Glass Outline -->
-                        <use href="#tube-shape" fill="none" stroke="#94a3b8" stroke-width="2" />
-                        
-                        <!-- Fixed Polarity: Left is Anode (+), Right is Cathode (-) -->
-                        <g transform="translate(90, 30)">
-                            <rect id="utube-left-color" width="20" height="4" fill="#ef4444" />
-                            <text id="utube-left-label" x="10" y="12" text-anchor="middle" fill="white" font-size="11" font-weight="bold" pointer-events="none">+</text>
-                        </g>
-                        <g transform="translate(190, 30)">
-                            <rect id="utube-right-color" width="20" height="4" fill="#3b82f6" />
-                            <text id="utube-right-label" x="10" y="12" text-anchor="middle" fill="white" font-size="11" font-weight="bold" pointer-events="none">-</text>
-                        </g>
-                        
-                        <!-- Circuitry -->
-                        <path d="M 100 30 L 100 15 L 110 15" fill="none" stroke="#333" stroke-width="2"/>
-                        <path d="M 175 15 L 200 15 L 200 30" fill="none" stroke="#333" stroke-width="2"/>
-                        
-                        <g transform="translate(110, 15)">
-                            <circle cx="0" cy="0" r="2.5" fill="#333" />
-                            <circle cx="20" cy="0" r="2.5" fill="#333" />
-                            <line id="switch-arm-utube" x1="0" y1="0" x2="20" y2="0" stroke="#333" stroke-width="3" style="transform-origin: 0px 0px; transform: rotate(-35deg);" class="switch-arm" />
-                            <line x1="20" y1="0" x2="40" y2="0" stroke="#333" stroke-width="2" />
-                            
-                            <g id="utube-battery-group" transform="translate(40, 0)">
-                                <line id="utube-batt-plate-pos" x1="0" y1="-7" x2="0" y2="7" stroke="#333" stroke-width="2" /> 
-                                <line id="utube-batt-plate-neg" x1="10" y1="-3" x2="10" y2="3" stroke="#333" stroke-width="4" />
-                                <line x1="10" y1="0" x2="50" y2="0" stroke="#333" stroke-width="2" />
-                            </g>
-                        </g>
-                    </svg>
+            <div class="flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                    <span class="hidden xs:inline text-[10px] text-slate-400 uppercase tracking-widest">Progress</span>
+                    <div class="flex gap-1" id="progress-dots">
+                        <div class="w-2.5 h-2.5 rounded-full bg-blue-500"></div>
+                        <div class="w-2.5 h-2.5 rounded-full bg-slate-600"></div>
+                        <div class="w-2.5 h-2.5 rounded-full bg-slate-600"></div>
+                    </div>
                 </div>
-            </div>
-        </div>
-
-        <!-- Explanation Footer -->
-        <div class="p-4 bg-white border-t border-slate-200">
-            <h3 id="ui-obs-label" class="font-bold text-slate-800 text-xs mb-1">Teacher's Observation:</h3>
-            <div id="observationText" class="text-slate-600 text-xs italic min-h-[30px]">Circuit is OPEN. Switch is up.</div>
-            <div class="mt-2 grid grid-cols-2 gap-3">
-                <div class="p-2 bg-blue-50 rounded-lg border border-blue-100">
-                    <h4 id="ui-anion-title" class="text-[9px] font-bold text-blue-700 uppercase">Anions (-)</h4>
-                    <p class="text-[10px]" id="anion-info">Move toward Terminal (+).</p>
-                </div>
-                <div class="p-2 bg-red-50 rounded-lg border border-red-100">
-                    <h4 id="ui-cation-title" class="text-[9px] font-bold text-red-700 uppercase">Cations (+)</h4>
-                    <p class="text-[10px]" id="cation-info">Move toward Terminal (-).</p>
+                
+                <div class="flex gap-2 md:gap-4">
+                    <button id="prev-btn" onclick="prevStep()" class="hidden px-4 py-2 md:px-6 md:py-3 rounded-xl bg-slate-700 hover:bg-slate-600 transition-all flex items-center gap-2 text-sm">
+                        <span>← Back</span>
+                    </button>
+                    <button id="next-btn" onclick="nextStep()" class="px-5 py-2 md:px-8 md:py-3 rounded-xl bg-blue-600 hover:bg-blue-500 shadow-lg shadow-blue-900/20 transition-all font-bold flex items-center gap-2 text-sm">
+                        <span>Next Step</span><span class="text-lg">→</span>
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        let isPowerOn = false;
-        let currentTab = 'filter';
-        let progress = 0;
-        let selectedSolution = 'hcl';
-        let selectedCompound = 'kmno4';
-        let polarityReversed = false; 
-        let currentLang = 'en';
-
-        const translations = {
-            en: {
-                title: "Chemistry Lab: Migration of Ions",
-                subtitle: "Simulating the movement of charged particles toward electrodes.",
-                tabFilter: "Filter Paper Method",
-                tabUtube: "U-Shaped Tube Method",
-                powerOn: "Power: ON",
-                powerOff: "Power: OFF",
-                reverse: "Reverse Polarity",
-                reset: "Reset",
-                voltage: "Voltage:",
-                compound: "Compound:",
-                solution: "Soaking Solution:",
-                observation: "Teacher's Observation:",
-                anions: "Anions (-)",
-                cations: "Cations (+)",
-                circuitOpen: "Circuit is OPEN. Switch is up.",
-                circuitClosed: "Circuit CLOSED.",
-                movePos: "Move toward Terminal (+).",
-                moveNeg: "Move toward Terminal (-).",
-                langBtn: "繁體中文",
-                ethanolMsg: "Ethanol is a non-electrolyte. It is not conductive, so no migration occurs.",
-                migratingMsg: "Current flows and ions are migrating.",
-                compounds: {
-                    kmno4: "Potassium Permanganate",
-                    cucro4: "Copper(II) Chromate",
-                    feso4: "Iron(II) Sulphate"
-                },
-                solutions: {
-                    hcl: "HCl (aq)",
-                    nacl: "NaCl (aq)",
-                    ethanol: "Ethanol"
-                },
-                ions: {
-                    kmno4: { a: "MnO₄⁻ (Purple)", c: "K⁺ (Colorless)" },
-                    cucro4: { a: "CrO₄²⁻ (Yellow)", c: "Cu²⁺ (Blue)" },
-                    feso4: { a: "SO₄²⁻ (Colorless)", c: "Fe²⁺ (Green)" }
-                },
-                solDetails: {
-                    hcl: "HCl (aq) contains mobile H⁺ and Cl⁻ ions.",
-                    nacl: "NaCl (aq) contains mobile Na⁺ and Cl⁻ ions."
-                }
-            },
-            zh: {
-                title: "化學實驗室：離子的遷移",
-                subtitle: "模擬電荷向電極移動的過程。",
-                tabFilter: "濾紙法",
-                tabUtube: "U形管法",
-                powerOn: "電源：開啟",
-                powerOff: "電源：關閉",
-                reverse: "切換極性",
-                reset: "重設",
-                voltage: "電壓：",
-                compound: "化合物：",
-                solution: "浸潤溶液：",
-                observation: "實驗觀察：",
-                anions: "陰離子 (-)",
-                cations: "陽離子 (+)",
-                circuitOpen: "電路斷開。開關向上。",
-                circuitClosed: "電路接通。",
-                movePos: "向正極 (+) 移動。",
-                moveNeg: "向負極 (-) 移動。",
-                langBtn: "English",
-                ethanolMsg: "乙醇是非電解質，所以不導電。",
-                migratingMsg: "電流通過，離子正在遷移。",
-                compounds: {
-                    kmno4: "高錳酸鉀",
-                    cucro4: "鉻酸銅(II)",
-                    feso4: "硫酸鐵(II)"
-                },
-                solutions: {
-                    hcl: "稀氫氯酸 (HCl)",
-                    nacl: "氯化鈉溶液 (NaCl)",
-                    ethanol: "乙醇"
-                },
-                ions: {
-                    kmno4: { a: "MnO₄⁻ (紫色)", c: "K⁺ (無色)" },
-                    cucro4: { a: "CrO₄²⁻ (黃色)", c: "Cu²⁺ (藍色)" },
-                    feso4: { a: "SO₄²⁻ (無色)", c: "Fe²⁺ (綠色)" }
-                },
-                solDetails: {
-                    hcl: "氫氯酸(HCl) 含有可移動的 H⁺ 和 Cl⁻ 離子。",
-                    nacl: "氯化鈉溶液 (NaCl) 含有可移動的 Na⁺ 和 Cl⁻ 離子。",
-                }
-            }
+        const config = {
+            LiS: { metal: { name: 'Lithium', symbol: 'Li', electrons: [2, 1], color: '#60a5fa', count: 2 }, nonMetal: { name: 'Sulfur', symbol: 'S', electrons: [2, 8, 6], color: '#facc15', count: 1 }, formula: 'Li₂S' },
+            AlO: { metal: { name: 'Aluminum', symbol: 'Al', electrons: [2, 8, 3], color: '#94a3b8', count: 2 }, nonMetal: { name: 'Oxygen', symbol: 'O', electrons: [2, 6], color: '#f87171', count: 3 }, formula: 'Al₂O₃' },
+            NaCl: { metal: { name: 'Sodium', symbol: 'Na', electrons: [2, 8, 1], color: '#fb923c', count: 1 }, nonMetal: { name: 'Chlorine', symbol: 'Cl', electrons: [2, 8, 7], color: '#4ade80', count: 1 }, formula: 'NaCl' }
         };
 
-        const compounds = {
-            kmno4: {
-                cation: { color: "transparent", grad: "" },
-                anion: { color: "#a855f7", grad: "url(#grad-purple)" },
-                uBuffer: "#a855f7"
-            },
-            cucro4: {
-                cation: { color: "#3b82f6", grad: "url(#grad-blue)" },
-                anion: { color: "#facc15", grad: "url(#grad-yellow)" },
-                uBuffer: "#4d7c0f"
-            },
-            feso4: {
-                cation: { color: "#4ade80", grad: "url(#grad-green)" },
-                anion: { color: "transparent", grad: "" },
-                uBuffer: "#4ade80"
-            }
-        };
+        let currentExample = 'LiS';
+        let currentStep = 1;
 
-        const powerBtn = document.getElementById('powerBtn');
-        const voltInput = document.getElementById('voltage');
-        const voltDisplay = document.getElementById('voltValue');
-        const obsText = document.getElementById('observationText');
-        
-        const fAnion = document.getElementById('filter-ion-anion');
-        const fCation = document.getElementById('filter-ion-cation');
-        const uLeftCloud = document.getElementById('utube-left-cloud');
-        const uRightCloud = document.getElementById('utube-right-cloud');
-        const uBufferFill = document.getElementById('buffer-fill');
-
-        function toggleLanguage() {
-            currentLang = currentLang === 'en' ? 'zh' : 'en';
-            const t = translations[currentLang];
-            
-            // Update Headers
-            document.getElementById('ui-title').textContent = t.title;
-            document.getElementById('ui-subtitle').textContent = t.subtitle;
-            document.getElementById('lang-btn-text').textContent = t.langBtn;
-            
-            // Tabs
-            document.getElementById('tab-filter').textContent = t.tabFilter;
-            document.getElementById('tab-utube').textContent = t.tabUtube;
-            
-            // Controls
-            powerBtn.innerText = isPowerOn ? t.powerOn : t.powerOff;
-            document.getElementById('ui-reverse').childNodes[2].nodeValue = " " + t.reverse;
-            document.getElementById('ui-reset').textContent = t.reset;
-            document.getElementById('ui-voltage').textContent = t.voltage;
-            
-            // Selection Labels
-            document.getElementById('ui-compound-label').textContent = t.compound;
-            document.getElementById('ui-solution-label').textContent = t.solution;
-            
-            // Buttons
-            document.getElementById('btn-kmno4').textContent = t.compounds.kmno4;
-            document.getElementById('btn-cucro4').textContent = t.compounds.cucro4;
-            document.getElementById('btn-feso4').textContent = t.compounds.feso4;
-
-            document.getElementById('btn-hcl').textContent = t.solutions.hcl;
-            document.getElementById('btn-nacl').textContent = t.solutions.nacl;
-            document.getElementById('btn-ethanol').textContent = t.solutions.ethanol;
-            
-            // Footer
-            document.getElementById('ui-obs-label').textContent = t.observation;
-            document.getElementById('ui-anion-title').textContent = t.anions;
-            document.getElementById('ui-cation-title').textContent = t.cations;
-            
-            setCompound(selectedCompound); // Refresh compound specific labels
-            updateObservations();
+        function selectExample(key) {
+            currentExample = key; currentStep = 1;
+            ['LiS', 'AlO', 'NaCl'].forEach(k => document.getElementById(`btn-${k}`).className = k === key ? "px-3 py-1.5 md:px-4 md:py-2 rounded-lg bg-blue-600 hover:bg-blue-500 transition-colors text-xs md:text-sm font-medium" : "px-3 py-1.5 md:px-4 md:py-2 rounded-lg bg-slate-600 hover:bg-blue-500 transition-colors text-xs md:text-sm font-medium");
+            render();
         }
 
-        function switchTab(tab) {
-            currentTab = tab;
-            document.getElementById('sim-filter').classList.toggle('hidden', tab !== 'filter');
-            document.getElementById('sim-utube').classList.toggle('hidden', tab !== 'utube');
+        function nextStep() { if (currentStep < 3) currentStep++; else currentStep = 1; render(); }
+        function prevStep() { if (currentStep > 1) { currentStep--; render(); } }
+
+        function render() {
+            const stage = document.getElementById('stage');
+            const data = config[currentExample];
+            const dots = document.getElementById('progress-dots').children;
+            for(let i=0; i<3; i++) dots[i].className = `w-2.5 h-2.5 rounded-full ${i < currentStep ? 'bg-blue-500' : 'bg-slate-600'}`;
+
+            stage.innerHTML = '';
+            document.getElementById('prev-btn').classList.toggle('hidden', currentStep === 1);
+            document.getElementById('next-btn').innerHTML = currentStep === 3 ? 'Restart ⟳' : 'Next Step →';
             
-            const filterTab = document.getElementById('tab-filter');
-            const utubeTab = document.getElementById('tab-utube');
-            
-            if (tab === 'filter') {
-                filterTab.className = "flex-1 py-3 text-sm font-semibold tab-active transition-all";
-                utubeTab.className = "flex-1 py-3 text-sm font-semibold tab-inactive hover:bg-slate-50 transition-all";
+            const stepTitle = document.getElementById('step-title');
+            const stepText = document.getElementById('step-text');
+            const stepNote = document.getElementById('step-note');
+            stepNote.innerText = "";
+
+            if (currentStep === 1) {
+                stepTitle.innerText = "Step 1: Individual Atoms";
+                stepText.innerText = `Atoms of ${data.metal.name} and ${data.nonMetal.name} are unstable. They react to achieve a stable noble gas electronic arrangement.`;
+                drawAtoms(stage, data, false, false);
+            } else if (currentStep === 2) {
+                stepTitle.innerText = "Step 2: Identifying Preferences";
+                stepText.innerText = `${data.metal.name} loses outermost shell electrons, while ${data.nonMetal.name} gains them to fill its outermost shell.`;
+                stepNote.innerText = "Metals lose electrons to form positive ions; Non-metals gain to form negative ions.";
+                drawAtoms(stage, data, true, false);
             } else {
-                filterTab.className = "flex-1 py-3 text-sm font-semibold tab-inactive hover:bg-slate-50 transition-all";
-                utubeTab.className = "flex-1 py-3 text-sm font-semibold tab-active transition-all";
+                stepTitle.innerText = "Step 3: Transfer & Ion Formation";
+                
+                const mVal = data.metal.electrons[data.metal.electrons.length - 1];
+                const mPlural = data.metal.count > 1 ? "atoms" : "atom";
+                const nmPlural = data.nonMetal.count > 1 ? "atoms" : "atom";
+                const ePlural = mVal > 1 ? "electrons" : "electron";
+
+                stepText.innerText = `Ionic bond is formed when ${data.metal.count} ${data.metal.name} ${mPlural} each transfer ${mVal} ${ePlural} to ${data.nonMetal.count} ${data.nonMetal.name} ${nmPlural}, which forms ${data.metal.name} ions and ${data.nonMetal.name} ions with stable electronic arrangement of noble gas.`;
+                
+                drawAtoms(stage, data, true, true);
             }
-            
-            resetSim();
         }
 
-        function setCompound(comp) {
-            selectedCompound = comp;
-            document.querySelectorAll('.crystal-btn').forEach(btn => btn.classList.remove('active'));
-            document.getElementById(`btn-${comp}`).classList.add('active');
-            
-            const c = compounds[comp];
-            const t = translations[currentLang];
+        function drawAtoms(container, data, showPreferences, animateTransfer) {
+            const metalBox = document.createElement('div');
+            metalBox.className = "flex flex-col gap-2 md:gap-4 items-center justify-center w-1/2 h-full border-r border-slate-800 p-1 md:p-2 relative";
+            const nonMetalBox = document.createElement('div');
+            nonMetalBox.className = "flex flex-col gap-2 md:gap-4 items-center justify-center w-1/2 h-full p-1 md:p-2 relative";
 
-            fAnion.setAttribute('fill', c.anion.grad || "transparent");
-            fAnion.style.visibility = c.anion.color === "transparent" ? "hidden" : "visible";
-            fCation.setAttribute('fill', c.cation.grad || "transparent");
-            fCation.style.visibility = c.cation.color === "transparent" ? "hidden" : "visible";
+            const metalAtoms = [];
+            const nonMetalAtoms = [];
 
-            uBufferFill.setAttribute('fill', c.uBuffer);
-            uBufferFill.setAttribute('opacity', 0.4);
-
-            document.getElementById('anion-info').innerHTML = `${t.movePos} <br><span class="font-mono text-[9px]">${t.ions[comp].a}</span>`;
-            document.getElementById('cation-info').innerHTML = `${t.moveNeg} <br><span class="font-mono text-[9px]">${t.ions[comp].c}</span>`;
-
-            resetSim();
-        }
-
-        function setSolution(sol) {
-            selectedSolution = sol;
-            document.querySelectorAll('.solution-btn').forEach(btn => btn.classList.remove('active'));
-            document.getElementById(`btn-${sol}`).classList.add('active');
-            resetSim();
-        }
-
-        function togglePower() {
-            isPowerOn = !isPowerOn;
-            const t = translations[currentLang];
-            powerBtn.innerText = isPowerOn ? t.powerOn : t.powerOff;
-            powerBtn.className = isPowerOn ? "px-5 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg shadow-md min-w-[110px]" : "px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow-md min-w-[110px]";
-            
-            const rot = isPowerOn ? "rotate(0deg)" : "rotate(-35deg)";
-            document.getElementById('switch-arm-filter').style.transform = rot;
-            document.getElementById('switch-arm-utube').style.transform = rot;
-
-            if (isPowerOn) requestAnimationFrame(updateSim);
-            updateObservations();
-        }
-
-        function reversePolarity() {
-            polarityReversed = !polarityReversed;
-            
-            const fPlatePos = document.getElementById('filter-batt-plate-pos');
-            const fPlateNeg = document.getElementById('filter-batt-plate-neg');
-
-            const uPlatePos = document.getElementById('utube-batt-plate-pos');
-            const uPlateNeg = document.getElementById('utube-batt-plate-neg');
-
-            if (polarityReversed) {
-                fPlatePos.setAttribute('x1', '15'); fPlatePos.setAttribute('x2', '15');
-                fPlateNeg.setAttribute('x1', '5'); fPlateNeg.setAttribute('x2', '5');
-                
-                document.getElementById('filter-left-label').textContent = '-';
-                document.getElementById('filter-left-color').setAttribute('fill', '#3b82f6');
-                document.getElementById('filter-right-label').textContent = '+';
-                document.getElementById('filter-right-color').setAttribute('fill', '#ef4444');
-
-                uPlatePos.setAttribute('x1', '10'); uPlatePos.setAttribute('x2', '10');
-                uPlateNeg.setAttribute('x1', '0'); uPlateNeg.setAttribute('x2', '0');
-                
-                document.getElementById('utube-left-label').textContent = '-';
-                document.getElementById('utube-left-color').setAttribute('fill', '#3b82f6');
-                document.getElementById('utube-right-label').textContent = '+';
-                document.getElementById('utube-right-color').setAttribute('fill', '#ef4444');
-
-            } else {
-                fPlatePos.setAttribute('x1', '5'); fPlatePos.setAttribute('x2', '5');
-                fPlateNeg.setAttribute('x1', '15'); fPlateNeg.setAttribute('x2', '15');
-                
-                document.getElementById('filter-left-label').textContent = '+';
-                document.getElementById('filter-left-color').setAttribute('fill', '#ef4444');
-                document.getElementById('filter-right-label').textContent = '-';
-                document.getElementById('filter-right-color').setAttribute('fill', '#3b82f6');
-
-                uPlatePos.setAttribute('x1', '0'); uPlatePos.setAttribute('x2', '0');
-                uPlateNeg.setAttribute('x1', '10'); uPlateNeg.setAttribute('x2', '10');
-
-                document.getElementById('utube-left-label').textContent = '+';
-                document.getElementById('utube-left-color').setAttribute('fill', '#ef4444');
-                document.getElementById('utube-right-label').textContent = '-';
-                document.getElementById('utube-right-color').setAttribute('fill', '#3b82f6');
+            for (let i = 0; i < (animateTransfer ? data.metal.count : 1); i++) {
+                const el = createAtomUI(data.metal, 'metal', showPreferences, animateTransfer);
+                metalBox.appendChild(el);
+                metalAtoms.push(el);
+            }
+            for (let i = 0; i < (animateTransfer ? data.nonMetal.count : 1); i++) {
+                const el = createAtomUI(data.nonMetal, 'nonmetal', showPreferences, animateTransfer);
+                nonMetalBox.appendChild(el);
+                nonMetalAtoms.push(el);
             }
 
-            resetSim();
+            container.appendChild(metalBox);
+            container.appendChild(nonMetalBox);
+
+            if (animateTransfer) {
+                let nMIdx = 0, slotsUsed = 0;
+                const neededPerNM = 8 - data.nonMetal.electrons[data.nonMetal.electrons.length - 1];
+                metalAtoms.forEach((mAtom, mI) => {
+                    mAtom.querySelectorAll('.valence-electron').forEach((e) => {
+                        if (slotsUsed >= neededPerNM) { nMIdx++; slotsUsed = 0; }
+                        const targetAtom = nonMetalAtoms[nMIdx];
+                        if (!targetAtom) return;
+                        const targetSlot = targetAtom.querySelectorAll('.empty-slot')[slotsUsed];
+                        if (targetSlot) {
+                            const rectFrom = e.getBoundingClientRect();
+                            const rectTo = targetSlot.getBoundingClientRect();
+                            setTimeout(() => {
+                                e.style.transform = `translate(${rectTo.left - rectFrom.left}px, ${rectTo.top - rectFrom.top}px)`;
+                                setTimeout(() => { targetSlot.style.opacity = '1'; e.style.opacity = '0'; }, 1200);
+                            }, 500 + (mI * 300) + (slotsUsed * 100));
+                        }
+                        slotsUsed++;
+                    });
+                });
+            }
         }
 
-        function resetSim() {
-            isPowerOn = false;
-            progress = 0;
-            const t = translations[currentLang];
-            powerBtn.innerText = t.powerOff;
-            powerBtn.className = "px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow-md min-w-[110px]";
-            document.getElementById('switch-arm-filter').style.transform = "rotate(-35deg)";
-            document.getElementById('switch-arm-utube').style.transform = "rotate(-35deg)";
-
-            fAnion.setAttribute('cx', 200);
-            fCation.setAttribute('cx', 200);
+        function createAtomUI(atomData, type, showPrefs, animate) {
+            const wrapper = document.createElement('div');
+            wrapper.className = "relative flex items-center justify-center";
             
-            uLeftCloud.setAttribute('height', 0);
-            uLeftCloud.setAttribute('y', 185);
-            uLeftCloud.setAttribute('opacity', 0);
-
-            uRightCloud.setAttribute('height', 0);
-            uRightCloud.setAttribute('y', 185);
-            uRightCloud.setAttribute('opacity', 0);
-
-            uBufferFill.setAttribute('opacity', 0.4);
-            updateObservations();
-        }
-
-        function updateSim() {
-            if (!isPowerOn || selectedSolution === 'ethanol') return;
-
-            const speed = voltInput.value * 0.0015;
-            if (progress < 1) {
-                progress += speed;
-                
-                let anionDir = polarityReversed ? 1 : -1;
-                let cationDir = polarityReversed ? -1 : 1;
-
-                fAnion.setAttribute('cx', 200 + (progress * 130 * anionDir));
-                fCation.setAttribute('cx', 200 + (progress * 130 * cationDir));
-
-                const maxRise = 85;
-                const currentRise = progress * maxRise;
-                const c = compounds[selectedCompound];
-
-                if (polarityReversed) {
-                    uLeftCloud.setAttribute('fill', c.cation.color);
-                    uLeftCloud.style.visibility = c.cation.color === "transparent" ? "hidden" : "visible";
-                    uRightCloud.setAttribute('fill', c.anion.color);
-                    uRightCloud.style.visibility = c.anion.color === "transparent" ? "hidden" : "visible";
+            const isMobile = window.innerWidth < 640;
+            // availableSpace is half width minus padding/gutters
+            const availableSpace = isMobile ? (window.innerWidth / 2) - 30 : 200;
+            const baseSize = 180;
+            
+            // ADJUSTMENT: Force a smaller scale on mobile specifically for the final ion step (animate)
+            // or for multi-atom layouts to prevent charge clipping.
+            let responsiveScale = Math.min(0.9, availableSpace / baseSize);
+            
+            if (isMobile) {
+                if (animate) {
+                   // If in ion formation mode on mobile, shrink further to make room for brackets/charges
+                   responsiveScale *= (atomData.count > 1 ? 0.55 : 0.75);
                 } else {
-                    uLeftCloud.setAttribute('fill', c.anion.color);
-                    uLeftCloud.style.visibility = c.anion.color === "transparent" ? "hidden" : "visible";
-                    uRightCloud.setAttribute('fill', c.cation.color);
-                    uRightCloud.style.visibility = c.cation.color === "transparent" ? "hidden" : "visible";
+                   responsiveScale *= 0.9;
                 }
-
-                uLeftCloud.setAttribute('height', currentRise);
-                uLeftCloud.setAttribute('y', 185 - currentRise);
-                uLeftCloud.setAttribute('opacity', Math.min(progress * 2.5, 0.8));
-
-                uRightCloud.setAttribute('height', currentRise);
-                uRightCloud.setAttribute('y', 185 - currentRise);
-                uRightCloud.setAttribute('opacity', Math.min(progress * 2.5, 0.8));
-
-                uBufferFill.setAttribute('opacity', Math.max(0.4 * (1 - (progress * 0.8)), 0.1));
-            }
-            updateObservations();
-            if (isPowerOn) requestAnimationFrame(updateSim);
-        }
-
-        function updateObservations() {
-            const t = translations[currentLang];
-            if (!isPowerOn) {
-                obsText.innerText = t.circuitOpen;
-                return;
+            } else {
+                // Desktop logic remains original
+                responsiveScale *= (animate && atomData.count > 1 ? 0.7 : 0.95);
             }
             
-            let detail = "";
-            if (selectedSolution === 'hcl') {
-                detail = t.solDetails.hcl;
-            } else if (selectedSolution === 'nacl') {
-                detail = t.solDetails.nacl;
-            } else if (selectedSolution === 'ethanol') {
-                obsText.innerText = (currentLang === 'en' ? "Circuit is CLOSED, but " : "電路已接通，但 ") + t.ethanolMsg;
-                return;
+            wrapper.style.width = `${baseSize * responsiveScale}px`;
+            wrapper.style.height = `${baseSize * responsiveScale}px`;
+            wrapper.style.transform = `scale(${responsiveScale})`;
+
+            if (animate) {
+                const bL = document.createElement('div'); bL.className = "ion-bracket bracket-left";
+                const bR = document.createElement('div'); bR.className = "ion-bracket bracket-right";
+                const ch = document.createElement('div'); ch.className = "charge-display";
+                const v = atomData.electrons[atomData.electrons.length - 1];
+                ch.innerHTML = type === 'metal' ? (v === 1 ? "+" : v+"+") : ((8-v) === 1 ? "&ndash;" : (8-v)+"&ndash;");
+                bR.appendChild(ch); wrapper.appendChild(bL); wrapper.appendChild(bR);
+                setTimeout(() => { bL.classList.add('bracket-visible'); bR.classList.add('bracket-visible'); }, 1800);
             }
 
-            if (progress > 0.05) {
-                obsText.innerText = `${detail} ${t.migratingMsg}`;
-            } else {
-                obsText.innerText = `${t.circuitClosed} ${detail}`;
+            const core = document.createElement('div');
+            core.className = "z-10 w-9 h-9 rounded-full flex items-center justify-center font-bold text-base shadow-lg border-2 border-white/20 absolute";
+            core.style.backgroundColor = atomData.color; core.style.top = "50%"; core.style.left = "50%"; core.style.transform = "translate(-50%, -50%)";
+            core.innerText = atomData.symbol; wrapper.appendChild(core);
+
+            atomData.electrons.forEach((count, orbitIdx) => {
+                const r = 35 + (orbitIdx * 22); 
+                const isOuter = orbitIdx === atomData.electrons.length - 1;
+                const orbit = document.createElement('div');
+                orbit.className = "orbit"; orbit.style.width = `${r * 2}px`; orbit.style.height = `${r * 2}px`;
+                if (animate && type === 'metal' && isOuter) { orbit.style.transition = "opacity 0.5s ease 1.2s"; setTimeout(() => orbit.style.opacity = '0', 1200); }
+                wrapper.appendChild(orbit);
+
+                for (let e = 0; e < count; e++) {
+                    const el = document.createElement('div');
+                    el.className = `electron absolute w-2.5 h-2.5 rounded-full z-20 shadow-sm ${isOuter && type === 'metal' ? 'valence-electron' : ''}`;
+                    el.style.backgroundColor = isOuter ? '#FFF' : '#cbd5e1';
+                    const p = getPos(e, count, r);
+                    el.style.left = `calc(50% + ${p.x}px - 5px)`; el.style.top = `calc(50% + ${p.y}px - 5px)`;
+                    wrapper.appendChild(el);
+                }
+
+                if (animate && type === 'nonmetal' && isOuter) {
+                    for (let n = 0; n < (8 - count); n++) {
+                        const slot = document.createElement('div');
+                        slot.className = "empty-slot absolute w-2.5 h-2.5 rounded-full z-10 opacity-0 bg-blue-400 shadow-[0_0_8px_#60a5fa]";
+                        const p = getPos(count + n, 8, r);
+                        slot.style.left = `calc(50% + ${p.x}px - 5px)`; slot.style.top = `calc(50% + ${p.y}px - 5px)`;
+                        wrapper.appendChild(slot);
+                    }
+                }
+            });
+
+            if (showPrefs && !animate) {
+                const lb = document.createElement('div');
+                lb.className = "preference-label lowercase-label absolute left-1/2 -translate-x-1/2 whitespace-nowrap px-3 py-1.5 rounded-lg bg-slate-700 text-sm md:text-base font-black border-2 border-white/30 z-[100] transition-all";
+                lb.style.bottom = "-55px"; 
+                const v = atomData.electrons[atomData.electrons.length - 1];
+                lb.innerHTML = type === 'metal' ? `lose ${v} e-` : `gain ${8-v} e-`;
+                lb.classList.add(type === 'metal' ? "text-blue-300" : "text-yellow-300");
+                wrapper.appendChild(lb);
             }
+            return wrapper;
         }
 
-        voltInput.addEventListener('input', (e) => { voltDisplay.innerText = e.target.value + 'V'; });
-        setCompound('kmno4');
+        function getPos(i, n, r) {
+            if (n <= 2) { const a = (i === 0) ? -Math.PI / 2 : Math.PI / 2; return { x: Math.cos(a) * r, y: Math.sin(a) * r }; }
+            const pI = Math.floor(i / 2), sP = i % 2 === 1, bA = [ -Math.PI/2, Math.PI/2, 0, Math.PI ];
+            let x = Math.cos(bA[pI]) * r, y = Math.sin(bA[pI]) * r;
+            const pairOffset = 5.5; 
+            if (pI < 2) x += sP ? pairOffset : -pairOffset; else y += sP ? pairOffset : -pairOffset;
+            return { x, y };
+        }
+
+        window.addEventListener('resize', render);
+        window.onload = () => render();
     </script>
 </body>
 </html>
