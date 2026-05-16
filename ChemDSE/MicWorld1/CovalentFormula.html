@@ -102,21 +102,29 @@
     </style>
 </head>
 <body class="p-4 md:p-8">
-    <div class="max-w-3xl mx-auto">
+    <div class="max-w-3xl mx-auto relative">
+        <!-- Language Switcher -->
+        <div class="absolute -top-4 right-0 z-[100]">
+            <button onclick="toggleLanguage()" class="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-full shadow-sm hover:bg-slate-50 transition-colors text-slate-600 font-medium text-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                <span id="lang-text">繁體中文</span>
+            </button>
+        </div>
+
         <header class="text-center mb-8">
-            <h1 class="text-3xl font-bold text-slate-800">Covalent Formula Builder</h1>
-            <p class="text-slate-600 mt-2">Master the step-by-step process of covalent bonding.</p>
+            <h1 id="ui-title" class="text-3xl font-bold text-slate-800">Covalent Formula Builder</h1>
+            <p id="ui-subtitle" class="text-slate-600 mt-2">Master the step-by-step process of covalent bonding.</p>
         </header>
 
         <div id="selection-screen" class="bg-white rounded-2xl shadow-xl p-6 border border-slate-200">
-            <h2 class="text-xl font-semibold mb-4 text-slate-700 text-center">Choose a pair of elements:</h2>
+            <h2 id="ui-choose" class="text-xl font-semibold mb-4 text-slate-700 text-center">Choose a pair of elements:</h2>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" id="pair-list"></div>
         </div>
 
         <div id="step-container" class="hidden space-y-6">
             <div class="flex justify-between items-center mb-4">
                 <button onclick="resetSim()" class="text-blue-600 font-medium hover:underline flex items-center gap-1">
-                    ← Change Elements
+                    <span id="ui-back-change">← Change Elements</span>
                 </button>
                 <div id="step-indicator" class="text-sm font-bold text-slate-400 tracking-widest uppercase">Step 1 of 5</div>
             </div>
@@ -131,7 +139,7 @@
                 <div class="mt-8 w-full flex justify-between">
                     <button id="prev-btn" onclick="prevStep()" class="text-slate-500 px-4 py-3 md:px-6 rounded-full font-bold hover:bg-slate-100 transition flex items-center gap-2">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-                        <span>Back</span>
+                        <span id="ui-back">Back</span>
                     </button>
                     <button id="next-btn" onclick="nextStep()" class="bg-blue-600 text-white px-6 py-3 md:px-8 rounded-full font-bold hover:bg-blue-700 transition shadow-lg flex items-center gap-2">
                         <span id="next-btn-text">Continue</span>
@@ -144,21 +152,103 @@
 
     <script>
         const ELEMENT_ORDER = ['B', 'Si', 'C', 'P', 'N', 'H', 'S', 'I', 'Br', 'Cl', 'O', 'F'];
+        
+        let currentLang = 'en';
+
+        const TRANSLATIONS = {
+            en: {
+                title: "Covalent Formula Builder",
+                subtitle: "Master the step-by-step process of covalent bonding.",
+                choose: "Choose a pair of elements:",
+                backChange: "← Change Elements",
+                back: "Back",
+                start: "Start →",
+                step: "Step",
+                of: "of",
+                checkAnswer: "Check Answer",
+                checkCross: "Check & Cross",
+                simplifyCheck: "Simplify & Check",
+                getName: "Get Chemical Name",
+                continue: "Continue",
+                finish: "Finish",
+                missing: "Missing?",
+                startConf: "Start",
+                targetConf: "Target",
+                needsLabel: "needs",
+                tipSimplify: "Tip: If a subscript is 1, leave it empty to cancel it.",
+                dontLeaveOne: "Don't leave a 1",
+                finishedFormula: "Step 4: This is the finished chemical formula. Subscripts of 1 are invisible.",
+                finalResult: "Final Result: How we name this covalent compound.",
+                namingRules: "Naming Rule Checklist",
+                rule1: "Write the element according to the series: <b>B, Si, C, P, N, H, S, I, Br, Cl, O, F</b>",
+                rule2: "The name of the second element should end with <b>\"ide\"</b>",
+                rule3: "Prefixes indicate the number of atoms.",
+                ruleNote: "<b>Note:</b> Water, peroxide, ammonia, methane are common special cases.",
+                guidanceS1: "Select how many electrons are missing for each element's outermost shell.",
+                guidanceS2: "Cross over the numbers: One atom's need becomes the other's subscript. Click the up/down arrows.",
+                guidanceS3: "Simplify the ratio. In chemistry, we cancel the 1 (leave the box empty).",
+                shakeS1: "Check the outermost shells again—how many more electrons are needed?",
+                shakeS2: "Click the up/down arrows to 'Cross Over'! One atom's need becomes the other's subscript.",
+                shakeS3: "Check the math. Simplify the ratio and cancel any 1s by leaving the box empty."
+            },
+            zh: {
+                title: "共價鍵化學式構建器",
+                subtitle: "逐步掌握共價鍵化學式的編寫過程。",
+                choose: "選擇一對元素：",
+                backChange: "← 更換元素",
+                back: "返回",
+                start: "開始 →",
+                step: "步驟",
+                of: "/",
+                checkAnswer: "檢查答案",
+                checkCross: "檢查並交叉相乘",
+                simplifyCheck: "約簡並檢查",
+                getName: "獲取化學名稱",
+                continue: "繼續",
+                finish: "完成",
+                missing: "缺多少電子？",
+                startConf: "起始狀態",
+                targetConf: "目標狀態",
+                needsLabel: "需要",
+                tipSimplify: "提示：如果下標為 1，請保持空格以將其省略。",
+                dontLeaveOne: "不要填寫 1",
+                finishedFormula: "步驟 4：這是最終的化學式。下標為 1 時不顯示。",
+                finalResult: "最終結果：此共價化合物的命名如上。",
+                namingRules: "命名規則檢查表",
+                rule1: "根據以下順序書寫元素：<b>B, Si, C, P, N, H, S, I, Br, Cl, O, F</b>",
+                rule2: "第一元素放在後面。第二個元素放在前面，在這元素後面加上 <b>「化」</b>",
+                rule3: "前綴表示原子的數量（如：二、三、四）。",
+                ruleNote: "<b>備註：</b> 水、過氧化氫、氨、甲烷是常見的特殊名稱。",
+                guidanceS1: "請選擇每個元素的最外層電子殼還需要多少個電子才能填滿。",
+                guidanceS2: "數值交叉相乘：一個原子的需求量變成另一個原子的下標。請點擊上下箭頭控制。",
+                guidanceS3: "約簡比例。在化學中，下標為 1 時我們會將其省略（保持空格）。",
+                shakeS1: "請再次檢查最外層電子殼——還需要多少個電子？",
+                shakeS2: "點擊箭頭進行「交叉相乘」！一個原子的需求量會變成另一個原子的下標。",
+                shakeS3: "請檢查計算。約簡比例，如果是 1 則保持空格以省略。"
+            }
+        };
+
         const DATA = {
-            'C': { sym: 'C', name: 'Carbon', start: '2, 4', full: '2, 8', needs: 4 },
-            'O': { sym: 'O', name: 'Oxygen', start: '2, 6', full: '2, 8', needs: 2 },
-            'H': { sym: 'H', name: 'Hydrogen', start: '1', full: '2', needs: 1 },
-            'N': { sym: 'N', name: 'Nitrogen', start: '2, 5', full: '2, 8', needs: 3 },
-            'S': { sym: 'S', name: 'Sulfur', start: '2, 8, 6', full: '2, 8, 8', needs: 2 },
-            'Cl': { sym: 'Cl', name: 'Chlorine', start: '2, 8, 7', full: '2, 8, 8', needs: 1 },
-            'F': { sym: 'F', name: 'Fluorine', start: '2, 7', full: '2, 8', needs: 1 }
+            'C': { sym: 'C', name: 'Carbon', zh: '碳', start: '2, 4', full: '2, 8', needs: 4 },
+            'O': { sym: 'O', name: 'Oxygen', zh: '氧', start: '2, 6', full: '2, 8', needs: 2 },
+            'H': { sym: 'H', name: 'Hydrogen', zh: '氫', start: '1', full: '2', needs: 1 },
+            'N': { sym: 'N', name: 'Nitrogen', zh: '氮', start: '2, 5', full: '2, 8', needs: 3 },
+            'S': { sym: 'S', name: 'Sulfur', zh: '硫', start: '2, 8, 6', full: '2, 8, 8', needs: 2 },
+            'Cl': { sym: 'Cl', name: 'Chlorine', zh: '氯', start: '2, 8, 7', full: '2, 8, 8', needs: 1 },
+            'F': { sym: 'F', name: 'Fluorine', zh: '氟', start: '2, 7', full: '2, 8', needs: 1 }
         };
 
         const PAIRS = [['C', 'O'], ['H', 'O'], ['N', 'H'], ['S', 'Cl'], ['H', 'F'], ['C', 'Cl'], ['C', 'H']];
-        const PREFIXES = ["", "mono", "di", "tri", "tetra", "penta", "hexa"];
+        const PREFIXES_EN = ["", "mono", "di", "tri", "tetra", "penta", "hexa"];
+        const PREFIXES_ZH = ["", "一", "二", "三", "四", "五", "六"];
+        
         const SPECIAL_NAMES = { 
-            "H2O": "Water", "H2O2": "Hydrogen peroxide", "NH3": "Ammonia", 
-            "CH4": "Methane", "HF": "Hydrogen fluoride", "CCl4": "Carbon tetrachloride"
+            "H2O": { en: "Water", zh: "水" },
+            "H2O2": { en: "Hydrogen peroxide", zh: "過氧化氫" },
+            "NH3": { en: "Ammonia", zh: "氨" }, 
+            "CH4": { en: "Methane", zh: "甲烷" }, 
+            "HF": { en: "Hydrogen fluoride", zh: "氟化氫" }, 
+            "CCl4": { en: "Carbon tetrachloride", zh: "四氯化碳" }
         };
 
         let currentPair = null;
@@ -169,15 +259,42 @@
         let isAnimating = false;
         let showStep2Values = false;
 
-        function init() {
+        function toggleLanguage() {
+            currentLang = currentLang === 'en' ? 'zh' : 'en';
+            document.getElementById('lang-text').innerText = currentLang === 'en' ? '繁體中文' : 'English';
+            updateStaticUI();
+            if (currentPair) {
+                renderStep();
+            } else {
+                renderSelectionScreen();
+            }
+        }
+
+        function updateStaticUI() {
+            const t = TRANSLATIONS[currentLang];
+            document.getElementById('ui-title').innerText = t.title;
+            document.getElementById('ui-subtitle').innerText = t.subtitle;
+            document.getElementById('ui-choose').innerText = t.choose;
+            document.getElementById('ui-back-change').innerText = t.backChange;
+            document.getElementById('ui-back').innerText = t.back;
+        }
+
+        function renderSelectionScreen() {
             const list = document.getElementById('pair-list');
+            list.innerHTML = '';
+            const t = TRANSLATIONS[currentLang];
             PAIRS.forEach(pair => {
                 const btn = document.createElement('button');
                 btn.className = "p-4 border-2 border-slate-100 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition text-left flex justify-between items-center group";
                 btn.onclick = () => startSimulation(pair);
-                btn.innerHTML = `<span class="text-lg font-bold text-slate-700">${pair[0]} & ${pair[1]}</span><span class="opacity-0 group-hover:opacity-100 text-blue-500 text-sm font-bold transition">Start →</span>`;
+                btn.innerHTML = `<span class="text-lg font-bold text-slate-700">${pair[0]} & ${pair[1]}</span><span class="opacity-0 group-hover:opacity-100 text-blue-500 text-sm font-bold transition">${t.start}</span>`;
                 list.appendChild(btn);
             });
+        }
+
+        function init() {
+            updateStaticUI();
+            renderSelectionScreen();
         }
 
         function startSimulation(pair) {
@@ -196,10 +313,12 @@
         function resetSim() {
             document.getElementById('selection-screen').classList.remove('hidden');
             document.getElementById('step-container').classList.add('hidden');
+            renderSelectionScreen();
         }
 
         function nextStep() {
             if (isAnimating) return;
+            const t = TRANSLATIONS[currentLang];
             const [el1, el2] = currentPair;
             const gcd = (a, b) => b === 0 ? a : gcd(b, a % b);
             const commonFactor = gcd(el1.needs, el2.needs);
@@ -208,7 +327,7 @@
                 if (userInputs.el1 === el1.needs && userInputs.el2 === el2.needs) {
                     triggerFlyToHeaders();
                 } else {
-                    shakeGuidance("Check the outermost shells again—how many more electrons are needed?");
+                    shakeGuidance(t.shakeS1);
                 }
                 return;
             }
@@ -217,7 +336,7 @@
                 if (parseInt(crossInputs.sub1) === el2.needs && parseInt(crossInputs.sub2) === el1.needs) {
                     triggerCrossAnimation();
                 } else {
-                    shakeGuidance("Click the up/down arrows to 'Cross Over'! One atom's need becomes the other's subscript.");
+                    shakeGuidance(t.shakeS2);
                 }
                 return;
             }
@@ -236,7 +355,7 @@
                     currentStep++;
                     renderStep();
                 } else {
-                    shakeGuidance("Check the math. Simplify the ratio and cancel any 1s by leaving the box empty.");
+                    shakeGuidance(t.shakeS3);
                 }
                 return;
             }
@@ -416,27 +535,29 @@
         function renderStep() {
             const display = document.getElementById('display-area'), guidance = document.getElementById('guidance-text');
             const indicator = document.getElementById('step-indicator'), nextBtnText = document.getElementById('next-btn-text'), prevBtn = document.getElementById('prev-btn');
-            indicator.innerText = `Step ${currentStep} of 5`;
+            const t = TRANSLATIONS[currentLang];
+            
+            indicator.innerText = `${t.step} ${currentStep} ${t.of} 5`;
             display.innerHTML = '';
             prevBtn.style.visibility = (currentStep === 1) ? 'hidden' : 'visible';
             const [el1, el2] = currentPair;
 
             if (currentStep === 1) {
-                nextBtnText.innerText = "Check Answer";
-                guidance.innerText = `Select how many electrons are missing for each element's outermost shell.`;
-                display.innerHTML = `<div class="flex gap-4 md:gap-8 items-start fade-in">${[el1, el2].map((el, idx) => `<div class="text-center p-4 md:p-6 bg-slate-50 rounded-2xl border border-slate-100 shadow-sm w-36 md:w-44"><div class="w-10 h-10 md:w-12 md:h-12 bg-slate-800 text-white rounded-full flex items-center justify-center text-lg md:text-xl font-bold mx-auto mb-4">${el.sym}</div><div class="mb-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Start: <span class="font-mono text-slate-700">${el.start}</span></div><div class="mb-4 text-[10px] font-bold text-blue-500 uppercase tracking-wider">Target: <span class="font-mono text-blue-600">${el.full}</span></div><div class="pt-4 border-t border-slate-200"><p class="text-[10px] md:text-xs font-bold text-slate-500 mb-2 uppercase">Missing?</p><div class="grid grid-cols-2 gap-2">${[1, 2, 3, 4].map(num => `<button onclick="checkInput(${idx}, ${num}, this)" class="py-2 md:py-3 border-2 rounded-lg font-bold transition-all ${userInputs[idx === 0 ? 'el1' : 'el2'] === num ? 'bg-green-500 text-white border-green-600' : 'bg-white text-slate-600 border-slate-200 hover:border-blue-400'}" ${userInputs[idx === 0 ? 'el1' : 'el2'] === num ? `data-correct-btn="${idx}"` : ''}>${num}</button>`).join('')}</div></div></div>`).join('')}</div>`;
+                nextBtnText.innerText = t.checkAnswer;
+                guidance.innerText = t.guidanceS1;
+                display.innerHTML = `<div class="flex gap-4 md:gap-8 items-start fade-in">${[el1, el2].map((el, idx) => `<div class="text-center p-4 md:p-6 bg-slate-50 rounded-2xl border border-slate-100 shadow-sm w-36 md:w-44"><div class="w-10 h-10 md:w-12 md:h-12 bg-slate-800 text-white rounded-full flex items-center justify-center text-lg md:text-xl font-bold mx-auto mb-4">${el.sym}</div><div class="mb-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider">${t.startConf}: <span class="font-mono text-slate-700">${el.start}</span></div><div class="mb-4 text-[10px] font-bold text-blue-500 uppercase tracking-wider">${t.targetConf}: <span class="font-mono text-blue-600">${el.full}</span></div><div class="pt-4 border-t border-slate-200"><p class="text-[10px] md:text-xs font-bold text-slate-500 mb-2 uppercase">${t.missing}</p><div class="grid grid-cols-2 gap-2">${[1, 2, 3, 4].map(num => `<button onclick="checkInput(${idx}, ${num}, this)" class="py-2 md:py-3 border-2 rounded-lg font-bold transition-all ${userInputs[idx === 0 ? 'el1' : 'el2'] === num ? 'bg-green-500 text-white border-green-600' : 'bg-white text-slate-600 border-slate-200 hover:border-blue-400'}" ${userInputs[idx === 0 ? 'el1' : 'el2'] === num ? `data-correct-btn="${idx}"` : ''}>${num}</button>`).join('')}</div></div></div>`).join('')}</div>`;
             } else if (currentStep === 2) {
-                nextBtnText.innerText = "Check & Cross";
-                guidance.innerText = `Cross over the numbers: One atom's need becomes the other's subscript. Click the up/down arrows.`;
+                nextBtnText.innerText = t.checkCross;
+                guidance.innerText = t.guidanceS2;
                 display.innerHTML = `
                 <div class="relative w-full max-w-[500px] h-80 flex flex-col items-center fade-in">
                     <div class="flex justify-between w-full px-12 mb-12">
                         <div class="text-center">
-                            <div class="text-[10px] font-bold text-slate-400 uppercase mb-1">${el1.sym} needs</div>
+                            <div class="text-[10px] font-bold text-slate-400 uppercase mb-1">${el1.sym} ${t.needsLabel}</div>
                             <div id="target-val-1" class="text-3xl font-bold text-blue-600 h-10 w-10 flex items-center justify-center mx-auto transition-opacity duration-300 ${showStep2Values ? '' : 'opacity-0'}">${el1.needs}</div>
                         </div>
                         <div class="text-center">
-                            <div class="text-[10px] font-bold text-slate-400 uppercase mb-1">${el2.sym} needs</div>
+                            <div class="text-[10px] font-bold text-slate-400 uppercase mb-1">${el2.sym} ${t.needsLabel}</div>
                             <div id="target-val-2" class="text-3xl font-bold text-blue-600 h-10 w-10 flex items-center justify-center mx-auto transition-opacity duration-300 ${showStep2Values ? '' : 'opacity-0'}">${el2.needs}</div>
                         </div>
                     </div>
@@ -480,8 +601,8 @@
                     </div>
                 </div>`;
             } else if (currentStep === 3) {
-                nextBtnText.innerText = "Simplify & Check";
-                guidance.innerText = `Simplify the ratio. In chemistry, we cancel the 1 (leave the box empty).`;
+                nextBtnText.innerText = t.simplifyCheck;
+                guidance.innerText = t.guidanceS3;
                 display.innerHTML = `
                 <div class="flex flex-col items-center gap-6 md:gap-10 fade-in py-6 md:py-10 w-full">
                     <div class="formula-step-3 text-4xl md:text-6xl font-bold">
@@ -515,30 +636,42 @@
                         </div>
                     </div>
                     <div class="text-center px-4">
-                        <p class="text-xs md:text-sm text-slate-500 italic mb-2">Tip: If a subscript is 1, leave it empty to cancel it.</p>
-                        <div class="bg-red-50 text-red-700 text-[10px] md:text-xs font-bold px-3 py-1 rounded-full border border-red-100 inline-block uppercase tracking-wider">Don't leave a 1</div>
+                        <p class="text-xs md:text-sm text-slate-500 italic mb-2">${t.tipSimplify}</p>
+                        <div class="bg-red-50 text-red-700 text-[10px] md:text-xs font-bold px-3 py-1 rounded-full border border-red-100 inline-block uppercase tracking-wider">${t.dontLeaveOne}</div>
                     </div>
                 </div>`;
             } else if (currentStep === 4) {
-                nextBtnText.innerText = "Get Chemical Name";
+                nextBtnText.innerText = t.getName;
                 const gcd = (a, b) => b === 0 ? a : gcd(b, a % b), cf = gcd(el1.needs, el2.needs);
                 const s1 = el2.needs / cf, s2 = el1.needs / cf;
-                guidance.innerText = `Step 4: This is the finished chemical formula. Subscripts of 1 are invisible.`;
+                guidance.innerText = t.finishedFormula;
                 display.innerHTML = `<div class="text-center fade-in py-12"><div class="text-7xl md:text-8xl font-extrabold text-slate-800 tracking-tighter">${el1.sym}${s1 === 1 ? '' : `<sub class="text-4xl md:text-5xl">${s1}</sub>`}${el2.sym}${s2 === 1 ? '' : `<sub class="text-4xl md:text-5xl">${s2}</sub>`}</div></div>`;
             } else if (currentStep === 5) {
-                nextBtnText.innerText = "Finish";
+                nextBtnText.innerText = t.finish;
                 const gcd = (a, b) => b === 0 ? a : gcd(b, a % b), cf = gcd(el1.needs, el2.needs);
                 const s1 = el2.needs / cf, s2 = el1.needs / cf;
                 const formula = `${el1.sym}${s1 === 1 ? '' : s1}${el2.sym}${s2 === 1 ? '' : s2}`;
-                let finalName = SPECIAL_NAMES[formula] || "";
-                if (!finalName) {
-                    const prefix1 = s1 > 1 ? PREFIXES[s1] : "";
-                    let p2 = PREFIXES[s2], root2 = el2.sym === 'O' ? 'oxide' : el2.sym === 'Cl' ? 'chloride' : el2.sym === 'F' ? 'fluoride' : el2.sym === 'S' ? 'sulfide' : el2.sym === 'H' ? 'hydride' : el2.name.toLowerCase() + 'ide';
-                    if (p2 === 'mono' && root2 === 'oxide') p2 = 'mon';
-                    else if ((p2.endsWith('a') || p2.endsWith('o')) && root2.startsWith('o')) p2 = p2.slice(0, -1);
-                    finalName = (prefix1 + el1.name.toLowerCase()).replace(/^\w/, c => c.toUpperCase()) + " " + p2 + root2;
+                
+                let finalName = "";
+                if (SPECIAL_NAMES[formula]) {
+                    finalName = SPECIAL_NAMES[formula][currentLang];
+                } else {
+                    if (currentLang === 'en') {
+                        const prefix1 = s1 > 1 ? PREFIXES_EN[s1] : "";
+                        let p2 = PREFIXES_EN[s2], root2 = el2.sym === 'O' ? 'oxide' : el2.sym === 'Cl' ? 'chloride' : el2.sym === 'F' ? 'fluoride' : el2.sym === 'S' ? 'sulfide' : el2.sym === 'H' ? 'hydride' : el2.name.toLowerCase() + 'ide';
+                        if (p2 === 'mono' && root2 === 'oxide') p2 = 'mon';
+                        else if ((p2.endsWith('a') || p2.endsWith('o')) && root2.startsWith('o')) p2 = p2.slice(0, -1);
+                        finalName = (prefix1 + el1.name.toLowerCase()).replace(/^\w/, c => c.toUpperCase()) + " " + p2 + root2;
+                    } else {
+                        // Traditional Chinese Naming: [Prefix][Element2]化[Prefix][Element1]
+                        const p1 = s1 > 1 ? PREFIXES_ZH[s1] : "";
+                        const p2 = s2 > 1 ? PREFIXES_ZH[s2] : "";
+                        const root2 = el2.sym === 'O' ? '氧' : el2.sym === 'Cl' ? '氯' : el2.sym === 'F' ? '氟' : el2.sym === 'S' ? '硫' : el2.sym === 'H' ? '氫' : el2.zh;
+                        finalName = `${p2}${root2}化${p1}${el1.zh}`;
+                    }
                 }
-                guidance.innerText = `Final Result: How we name this covalent compound.`;
+
+                guidance.innerText = t.finalResult;
                 display.innerHTML = `
                     <div class="w-full flex flex-col items-center gap-6 md:gap-8 py-2 md:py-4">
                         <div class="w-full text-center bg-slate-900 text-white p-6 md:p-8 rounded-2xl shadow-xl fade-in max-w-md">
@@ -546,14 +679,14 @@
                             <div class="text-xl md:text-2xl font-semibold text-blue-300 border-t border-slate-700 pt-4">${finalName}</div>
                         </div>
                         <div class="bg-amber-50 p-4 md:p-6 rounded-2xl border border-amber-200 text-[10px] md:text-sm max-w-lg w-full">
-                            <h4 class="font-bold text-amber-800 uppercase mb-3 border-b border-amber-200 pb-1">Naming Rule Checklist</h4>
+                            <h4 class="font-bold text-amber-800 uppercase mb-3 border-b border-amber-200 pb-1">${t.namingRules}</h4>
                             <ul class="space-y-3 md:space-y-4 text-amber-900">
-                                <li class="flex gap-2"><span>1.</span> <span>Write the element according to the series: <b>B, Si, C, P, N, H, S, I, Br, Cl, O, F</b></span></li>
-                                <li class="flex gap-2"><span>2.</span> <span>The name of the second element should end with <b>"ide"</b></span></li>
-                                <li class="flex gap-2"><span>3.</span> <span>Prefixes indicate the number of atoms.</span></li>
+                                <li class="flex gap-2"><span>1.</span> <span>${t.rule1}</span></li>
+                                <li class="flex gap-2"><span>2.</span> <span>${t.rule2}</span></li>
+                                <li class="flex gap-2"><span>3.</span> <span>${t.rule3}</span></li>
                             </ul>
                             <div class="mt-4 pt-4 border-t border-amber-200 italic text-amber-800">
-                                <b>Note:</b> Water, peroxide, ammonia, methane are common special cases.
+                                ${t.ruleNote}
                             </div>
                         </div>
                     </div>`;
