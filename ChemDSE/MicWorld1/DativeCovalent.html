@@ -51,10 +51,12 @@
 </head>
 <body class="p-4 md:p-8">
     <div class="max-w-7xl mx-auto">
-        <header class="mb-8 relative">
-            <div class="absolute right-0 top-0 bg-slate-200 rounded-lg p-1 flex items-center text-sm font-semibold">
-                <button id="lang-en" class="px-3 py-1 rounded-md transition-colors bg-white shadow-sm">EN</button>
-                <button id="lang-zh" class="px-3 py-1 rounded-md transition-colors text-slate-500 hover:text-slate-800">繁中</button>
+        <header class="mb-8 relative flex flex-col items-start">
+            <div class="w-full flex justify-end mb-2">
+                <button id="lang-toggle" class="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-lg shadow-sm hover:bg-slate-50 transition-colors text-sm font-medium text-slate-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                    <span id="lang-text">繁中</span>
+                </button>
             </div>
             <h1 id="ui-title" class="text-3xl font-bold text-slate-800">Formation of Dative Covalent Bonds</h1>
             <p id="ui-subtitle" class="text-slate-600 mt-2">Interactive dot-and-cross diagrams with tablet-optimized animations</p>
@@ -112,14 +114,15 @@
         const i18n = {
             en: {
                 title: "Formation of Dative Covalent Bonds",
-                subtitle: "Interactive dot-and-cross diagrams with animations",
+                subtitle: "Interactive dot-and-cross diagrams with tablet-optimized animations",
                 selectExample: "Select Example",
                 structLabel: "Structural Formula",
                 prev: "Previous",
                 next: "Next",
                 step: "Step",
                 octet: "octet",
-                duplet: "duplet"
+                duplet: "duplet",
+                toggleTo: "繁中"
             },
             zh: {
                 title: "配位共價鍵的形成",
@@ -130,7 +133,8 @@
                 next: "下一步",
                 step: "步驟",
                 octet: "八隅體",
-                duplet: "二隅體"
+                duplet: "二隅體",
+                toggleTo: "English"
             }
         };
 
@@ -403,6 +407,7 @@
             document.getElementById('ui-struct-label').innerText = text.structLabel;
             document.getElementById('prev-btn').innerText = text.prev;
             document.getElementById('next-btn').innerText = text.next;
+            document.getElementById('lang-text').innerText = text.toggleTo;
 
             // Visual Content
             c.setup(svgGroups, currentStep);
@@ -417,7 +422,7 @@
             if (currentLang === 'en') {
                 msg = currentStep === 0 ? `${donorName} in ${c.dMol} contains lone pair electron.` : 
                       currentStep === 1 ? `While ${acceptorName} in ${c.aMol} outermost electron shell is not fully filled, which has a vacant site to accept the electron.` : 
-                      `${acceptorName} in ${c.aMol} accepts the lone pair electron from ${donorName} in ${c.dMol} to form dative covalent bond, so that ${acceptorName.toLowerCase()} atom in ${c.final} attains a stable ${octetType} structure.`;
+                      `${acceptorName} in ${c.aMol} accepts the lone pair electron from ${donorName} atom in ${c.dMol} to form dative covalent bond, so that ${acceptorName.toLowerCase()} atom in ${c.final} attains a stable ${octetType} structure.`;
             } else {
                 msg = currentStep === 0 ? `${c.dMol} 中的 ${donorName} 含有孤電子對。` : 
                       currentStep === 1 ? `而 ${c.aMol} 中的 ${acceptorName} 最外層電子殼未填滿，具有空位可接收電子。` : 
@@ -434,22 +439,13 @@
                 const isActive = b.innerHTML === formatChem(c.name);
                 b.classList.toggle('bg-blue-50', isActive); b.classList.toggle('border-blue-300', isActive);
             });
-
-            // Update Language Buttons
-            const btnEn = document.getElementById('lang-en');
-            const btnZh = document.getElementById('lang-zh');
-            if (currentLang === 'en') {
-                btnEn.classList.add('bg-white', 'shadow-sm'); btnEn.classList.remove('text-slate-500');
-                btnZh.classList.remove('bg-white', 'shadow-sm'); btnZh.classList.add('text-slate-500');
-            } else {
-                btnZh.classList.add('bg-white', 'shadow-sm'); btnZh.classList.remove('text-slate-500');
-                btnEn.classList.remove('bg-white', 'shadow-sm'); btnEn.classList.add('text-slate-500');
-            }
         }
 
         // Event Listeners
-        document.getElementById('lang-en').onclick = () => { currentLang = 'en'; update(); };
-        document.getElementById('lang-zh').onclick = () => { currentLang = 'zh'; update(); };
+        document.getElementById('lang-toggle').onclick = () => {
+            currentLang = currentLang === 'en' ? 'zh' : 'en';
+            update();
+        };
         document.getElementById('prev-btn').onclick = () => { if(currentStep > 0) { currentStep--; update(); }};
         document.getElementById('next-btn').onclick = () => { if(currentStep < 2) { currentStep++; update(); }};
         

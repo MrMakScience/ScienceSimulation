@@ -3,536 +3,456 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ionization Energy Lab</title>
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <title>Dative Covalent Bond Simulation</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
-        body { font-family: 'Inter', sans-serif; }
-        .radius-transition { transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); }
-        .analogy-label { filter: drop-shadow(0 1px 1px rgba(0,0,0,0.1)); }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; overflow-x: hidden; }
+        
+        .move-transition { 
+            transition: transform 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+            will-change: transform;
+        }
+        
+        .atom-label { font-weight: bold; font-size: 1.2rem; pointer-events: none; }
+        
+        .highlight-pulse { 
+            animation: pulse-ring 1.5s infinite; 
+            transform-origin: center;
+            transform-box: fill-box;
+        }
+        @keyframes pulse-ring {
+            0% { transform: scale(0.6); opacity: 0.8; }
+            50% { transform: scale(1.1); opacity: 0.3; }
+            100% { transform: scale(0.6); opacity: 0.8; }
+        }
+
+        .canvas-container {
+            aspect-ratio: 16/9;
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .struct-line { stroke: #334155; stroke-width: 2.2; }
+        .struct-text { font-family: 'Inter', sans-serif; font-weight: 700; font-size: 18px; fill: #1e293b; }
+        
+        .symbol-draw { stroke-width: 2.5; fill: none; }
+        .symbol-fill { transition: opacity 0.5s ease; }
+
+        .ion-bracket { stroke: #334155; stroke-width: 3; fill: none; stroke-linecap: round; }
+        .ion-charge { font-weight: bold; font-size: 1.6rem; fill: #1e293b; }
+        
+        .struct-bracket { stroke: #000000; stroke-width: 2; fill: none; }
+        .struct-charge { font-size: 16px; font-weight: bold; fill: #1e293b; }
     </style>
 </head>
-<body>
-    <div id="root"></div>
+<body class="p-4 md:p-8">
+    <div class="max-w-7xl mx-auto">
+        <header class="mb-8 relative flex flex-col items-start">
+            <div class="w-full flex justify-end mb-2">
+                <button id="lang-toggle" class="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-lg shadow-sm hover:bg-slate-50 transition-colors text-sm font-medium text-slate-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                    <span id="lang-text">繁中</span>
+                </button>
+            </div>
+            <h1 id="ui-title" class="text-3xl font-bold text-slate-800">Formation of Dative Covalent Bonds</h1>
+            <p id="ui-subtitle" class="text-slate-600 mt-2">Interactive dot-and-cross diagrams with tablet-optimized animations</p>
+        </header>
 
-    <script type="text/babel">
-        const Icons = {
-            ChevronLeft: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>,
-            ChevronRight: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>,
-            Layers: ({size=24}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.1 6.27a2 2 0 0 0 0 3.46l9.07 4.09a2 2 0 0 0 1.66 0l9.07-4.09a2 2 0 0 0 0-3.46z"/><path d="m2.1 14.27 9.07 4.09a2 2 0 0 0 1.66 0l9.07-4.09"/><path d="m2.1 10.27 9.07 4.09a2 2 0 0 0 1.66 0l9.07-4.09"/></svg>,
-            Target: ({size=24}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>,
-            ArrowRightLeft: ({size=24}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/></svg>,
-            Zap: ({size=14}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 14.71 13 3l-2.09 7.84H20l-9 11.71L13.09 14.71z"/></svg>,
-            BookOpen: ({size=20}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>,
-            Settings2: ({size=20}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 7h-9"/><path d="M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></svg>,
-            Globe: ({size=18}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-        };
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <div class="lg:col-span-1 space-y-4">
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                    <h2 id="ui-select-example" class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-4">Select Example</h2>
+                    <div id="case-selector" class="space-y-2"></div>
+                </div>
+                <div id="structural-panel" class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <p id="ui-struct-label" class="text-[10px] font-bold text-slate-400 mb-2 uppercase tracking-widest text-center">Structural Formula</p>
+                    <div id="struct-svg-container" class="flex items-center justify-center min-h-[220px]"></div>
+                </div>
+            </div>
 
-        const translations = {
+            <div class="lg:col-span-3 space-y-6">
+                <div class="canvas-container border border-slate-200" id="viz-container">
+                    <svg id="main-svg" viewBox="0 0 800 450" class="w-full h-full">
+                        <g id="drawing-area">
+                            <g id="donor-group" class="move-transition"></g>
+                            <g id="acceptor-group" class="move-transition"></g>
+                            <g id="lone-pair-group" class="move-transition"></g>
+                        </g>
+                    </svg>
+                </div>
+
+                <div id="guidance-box" class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 min-h-[100px] flex items-center">
+                    <p id="guidance-text" class="text-lg text-slate-700 text-center w-full leading-relaxed"></p>
+                </div>
+
+                <div class="flex justify-between items-center bg-slate-800 p-4 rounded-xl text-white">
+                    <button id="prev-btn" class="px-6 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg disabled:opacity-50 transition-colors">Previous</button>
+                    <div id="step-indicator" class="font-mono text-sm md:text-base">Step 1 / 3</div>
+                    <button id="next-btn" class="px-6 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg disabled:opacity-50 transition-colors">Next</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const MAIN_RADIUS = 85; 
+        const PERIPHERAL_RADIUS = 60; 
+        const ION_RADIUS = 85; 
+        const HYDROGEN_RADIUS = 45; 
+        const OVERLAP_DEPTH = 18; 
+
+        const DONOR_MOL_COLOR = '#3b82f6';
+        const ACCEPTOR_MOL_COLOR = '#f59e0b'; 
+        const DATIVE_COLOR = '#ef4444';
+
+        let currentLang = 'en';
+
+        const i18n = {
             en: {
-                title: "Atomic structure and reactivity",
-                subtitle: "Study how nuclear charge and atomic radius affecting reactivity.",
-                selection: "Selection",
-                groupComp: "Group Comparisons",
-                jumpPeriod: "Jump to Period",
-                displayOptions: "Display Options",
-                analogy: "Analogy Mode (Magnet/Clip)",
-                showForce: "Show Electrostatic Force Arrow",
-                showRadius: "Show Atomic Radius Arrow",
-                forceTitle: "Attraction between nucleus and outermost shell electrons (F)",
-                forceNote: "How strongly the nucleus \"pulls\" the outermost shell electron when compared to Sodium relatively.",
-                compViz: "Comparative Visualization",
-                previous: "Previous",
-                current: "Current",
-                strongerMagnet: "STRONGER MAGNET",
-                names: {
-                    Hydrogen: "Hydrogen", Helium: "Helium", Lithium: "Lithium", Beryllium: "Beryllium", Boron: "Boron",
-                    Carbon: "Carbon", Nitrogen: "Nitrogen", Oxygen: "Oxygen", Fluorine: "Fluorine", Neon: "Neon",
-                    Sodium: "Sodium", Magnesium: "Magnesium", Aluminum: "Aluminum", Silicon: "Silicon",
-                    Phosphorus: "Phosphorus", Sulfur: "Sulfur", Chlorine: "Chlorine", Argon: "Argon"
-                },
-                g1Title: "Group I Comparison Explanation",
-                g1L1: "Na has a lower position than Li in Group I",
-                g1L2: "When going down the group, number of occupied electron shells increases",
-                g1L3: "Distance between the outermost shell electron and the nucleus increases",
-                g1L4: "Attraction between the outermost shell electron and the nucleus weakens",
-                g1L5: "The tendency of Na losing the outermost shell electron to get a stable electronic arrangement increases.",
-                metalNote: "Note: metal reacts by losing electrons.",
-                g7Title: "Group VII Comparison Explanation",
-                g7L1: "Cl has a lower position than F in Group VII",
-                g7L2: "When going down the group, number of occupied electron shells increases",
-                g7L3: "Distance between the outermost shell electron and the nucleus increases",
-                g7L4: "Attraction between the outermost shell electron and the nucleus weakens",
-                g7L5: "The tendency of Cl gaining the outermost shell electron to get a stable electronic arrangement decreases.",
-                nonMetalNote: "Note: non-metal reacts by gaining electrons.",
-                periodTitle: "Acrossing Period Comparison Explanation",
-                periodL1: "When going across the period, number of protons increases.",
-                periodL2: "Attraction between the outermost shell electron and the nucleus increases, the atomic radius also decreases.",
-                periodL3: "The tendency of %s losing the outermost shell electron to get a stable electronic arrangement decreases. So it is less reactive."
+                title: "Formation of Dative Covalent Bonds",
+                subtitle: "Interactive dot-and-cross diagrams with tablet-optimized animations",
+                selectExample: "Select Example",
+                structLabel: "Structural Formula",
+                prev: "Previous",
+                next: "Next",
+                step: "Step",
+                octet: "octet",
+                duplet: "duplet",
+                toggleTo: "繁中"
             },
             zh: {
-                title: "原子結構與活性",
-                subtitle: "理解核電荷與原子半徑如何影響活性。",
-                selection: "選擇元素",
-                groupComp: "族群比較",
-                jumpPeriod: "跳至週期",
-                displayOptions: "顯示選項",
-                analogy: "類比模式 (磁鐵/萬字夾)",
-                showForce: "顯示靜電吸引力箭頭",
-                showRadius: "顯示原子半徑箭頭",
-                forceTitle: "原子核與最外層電子間的靜電吸引力 (F)",
-                forceNote: "與鈉相比，原子核對最外層電子的相對「拉力」強度。",
-                compViz: "對比原子",
-                previous: "上一個",
-                current: "當前",
-                strongerMagnet: "磁力更強",
-                names: {
-                    Hydrogen: "氫", Helium: "氦", Lithium: "鋰", Beryllium: "鈹", Boron: "硼",
-                    Carbon: "碳", Nitrogen: "氮", Oxygen: "氧", Fluorine: "氟", Neon: "氖",
-                    Sodium: "鈉", Magnesium: "鎂", Aluminum: "鋁", Silicon: "矽",
-                    Phosphorus: "磷", Sulfur: "硫", Chlorine: "氯", Argon: "氬"
-                },
-                g1Title: "第 I 族的比較",
-                g1L1: "在第 I 族中，鈉 (Na) 的位置比鋰 (Li) 低",
-                g1L2: "當向族下移時，被佔用的電子層數目增加",
-                g1L3: "最外層電子與原子核之間的距離增加",
-                g1L4: "原子核與最外層電子之間的吸引力減弱",
-                g1L5: "鈉失去最外層電子以獲得穩定電子排列的傾向增加。",
-                metalNote: "註：金屬通過失去電子進行反應。",
-                g7Title: "第 VII 族的比較",
-                g7L1: "在第 VII 族中，氯 (Cl) 的位置比氟 (F) 低",
-                g7L2: "當向族下移時，被佔用的電子層數目增加",
-                g7L3: "最外層電子與原子核之間的距離增加",
-                g7L4: "原子核與最外層電子之間的吸引力減弱",
-                g7L5: "氯獲得最外層電子以獲得穩定電子排列的傾向降低。",
-                nonMetalNote: "註：非金屬通過獲得電子進行反應。",
-                periodTitle: "橫跨週期的比較",
-                periodL1: "當橫跨週期時，質子數目增加。",
-                periodL2: "原子核與最外層電子之間的吸引力增加，原子半徑也隨之減小。",
-                periodL3: "%s 失去最外層電子以獲得穩定電子排列的傾向降低。因此其反應性較低。"
+                title: "配位共價鍵的形成",
+                subtitle: "互動式電子圖動畫",
+                selectExample: "選擇例子",
+                structLabel: "結構式",
+                prev: "上一步",
+                next: "下一步",
+                step: "步驟",
+                octet: "八隅體",
+                duplet: "二隅體",
+                toggleTo: "English"
             }
         };
 
-        const { useState, useEffect } = React;
+        const getCrossSVG = (color, size = 4.5, weight = 2.5) => `<path d="M-${size},-${size} L${size},${size} M-${size},${size} L${size},-${size}" stroke="${color}" stroke-width="${weight}" fill="none" class="symbol-draw" />`;
+        const getDotSVG = (color) => `<circle cx="0" cy="0" r="4.5" fill="${color}" class="symbol-fill" />`;
+        const getCircleSVG = (color) => `<circle cx="0" cy="0" r="5" fill="white" stroke="${color}" stroke-width="2.2" class="symbol-draw" />`;
 
-        const PaperClip = ({ x, y, rotation, size = 16, color = "#3b82f6" }) => (
-            <g transform={`translate(${x-size/2}, ${y-size/2}) rotate(${rotation}, ${size/2}, ${size/2})`}>
-                <path 
-                    d="M13.85 5.5l-7.07 7.07a2.5 2.5 0 0 0 3.54 3.54l7.07-7.07a4.5 4.5 0 0 0-6.36-6.36l-7.07 7.07a6.5 6.5 0 0 0 9.19 9.19l7.07-7.07" 
-                    fill="none" 
-                    stroke={color} 
-                    strokeWidth="1.5" 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round"
-                    transform={`scale(${size/24})`}
-                />
-            </g>
-        );
+        function getInternalBrackets(radius, charge, isLarge = false) {
+            if (!charge) return '';
+            const pad = isLarge ? 110 : 25;
+            const hPad = isLarge ? 160 : 25;
+            const hook = 20;
+            const left = -radius - hPad;
+            const right = radius + hPad;
+            const top = -radius - pad;
+            const bottom = radius + pad;
 
-        const MagnetIcon = ({ x, y, size = 40, label = "" }) => (
-            <g transform={`translate(${x}, ${y})`}>
-                <text 
-                    x="0" 
-                    y="0" 
-                    textAnchor="middle" 
-                    dominantBaseline="middle" 
-                    fontSize={size}
-                >
-                    🧲
-                </text>
-                {label && (
-                    <text x="0" y={size/2 + 10} textAnchor="middle" fontSize="9" fontWeight="900" fill="#ef4444" className="analogy-label">
-                        {label}
-                    </text>
-                )}
-            </g>
-        );
+            return `
+                <g class="bracket-internal">
+                    <path d="M ${left + hook},${top} L ${left},${top} L ${left},${bottom} L ${left + hook},${bottom}" class="ion-bracket" />
+                    <path d="M ${right - hook},${top} L ${right},${top} L ${right},${bottom} L ${right - hook},${bottom}" class="ion-bracket" />
+                    <text x="${right + 8}" y="${top + 18}" class="ion-charge">${charge}</text>
+                </g>`;
+        }
 
-        const IonizationEnergyLab = () => {
-            const elements = [
-                { z: 1, symbol: 'H', name: 'Hydrogen', period: 1, ie: 1312, shells: [1], radius: 37, relForce: 10.33 },
-                { z: 2, symbol: 'He', name: 'Helium', period: 1, ie: 2372, shells: [2], radius: 31, relForce: 25.10 },
-                { z: 3, symbol: 'Li', name: 'Lithium', period: 2, ie: 520, shells: [2, 1], radius: 152, relForce: 1.15 },
-                { z: 4, symbol: 'Be', name: 'Beryllium', period: 2, ie: 900, shells: [2, 2], radius: 112, relForce: 1.83 },
-                { z: 5, symbol: 'B', name: 'Boron', period: 2, ie: 801, shells: [2, 3], radius: 88, relForce: 3.42 },
-                { z: 6, symbol: 'C', name: 'Carbon', period: 2, ie: 1086, shells: [2, 4], radius: 77, relForce: 4.88 },
-                { z: 7, symbol: 'N', name: 'Nitrogen', period: 2, ie: 1402, shells: [2, 5], radius: 70, relForce: 7.12 },
-                { z: 8, symbol: 'O', name: 'Oxygen', period: 2, ie: 1314, shells: [2, 6], radius: 66, relForce: 8.54 },
-                { z: 9, symbol: 'F', name: 'Fluorine', period: 2, ie: 1681, shells: [2, 7], radius: 64, relForce: 11.20 },
-                { z: 10, symbol: 'Ne', name: 'Neon', period: 2, ie: 2081, shells: [2, 8], radius: 58, relForce: 14.22 },
-                { z: 11, symbol: 'Na', name: 'Sodium', period: 3, ie: 496, shells: [2, 8, 1], radius: 186, relForce: 1.00 },
-                { z: 12, symbol: 'Mg', name: 'Magnesium', period: 3, ie: 738, shells: [2, 8, 2], radius: 160, relForce: 1.55 },
-                { z: 13, symbol: 'Al', name: 'Aluminum', period: 3, ie: 578, shells: [2, 8, 3], radius: 143, relForce: 1.98 },
-                { z: 14, symbol: 'Si', name: 'Silicon', period: 3, ie: 786, shells: [2, 8, 4], radius: 118, relForce: 3.12 },
-                { z: 15, symbol: 'P', name: 'Phosphorus', period: 3, ie: 1012, shells: [2, 8, 5], radius: 110, relForce: 4.25 },
-                { z: 16, symbol: 'S', name: 'Sulfur', period: 3, ie: 1000, shells: [2, 8, 6], radius: 104, relForce: 5.34 },
-                { z: 17, symbol: 'Cl', name: 'Chlorine', period: 3, ie: 1251, shells: [2, 8, 7], radius: 99, relForce: 6.95 },
-                { z: 18, symbol: 'Ar', name: 'Argon', period: 3, ie: 1521, shells: [2, 8, 8], radius: 88, relForce: 9.10 }
-            ];
+        function getAtomHtml(color, label, radius = MAIN_RADIUS) {
+            return `<circle cx="0" cy="0" r="${radius}" fill="none" stroke="${color}" stroke-width="2.5" />
+                <text x="0" y="8" text-anchor="middle" class="atom-label" fill="${color}">${label}</text>`;
+        }
 
-            const [currentIndex, setCurrentIndex] = useState(0); 
-            const [history, setHistory] = useState([elements[0]]);
-            const [showForce, setShowForce] = useState(true);
-            const [showRadius, setShowRadius] = useState(true);
-            const [analogyMode, setAnalogyMode] = useState(false);
-            const [comparisonType, setComparisonType] = useState(null); 
-            const [lang, setLang] = useState('en');
-            
-            const t = translations[lang];
-            const currentAtom = elements[currentIndex];
-            const previousAtom = history.length > 1 ? history[history.length - 2] : null;
+        function getLonePairHtml(angleDeg, color, symbolType = 'x', customRadius = PERIPHERAL_RADIUS) {
+            const rad = (angleDeg * Math.PI) / 180;
+            const tx = Math.cos(rad) * customRadius, ty = Math.sin(rad) * customRadius;
+            const pairRotation = angleDeg + 90; 
+            const symbolHtml = symbolType === 'x' ? getCrossSVG(color) : getCircleSVG(color);
+            const offset = 8;
+            return `<g transform="translate(${tx}, ${ty}) rotate(${pairRotation})"><g transform="translate(-${offset}, 0)">${symbolHtml}</g><g transform="translate(${offset}, 0)">${symbolHtml}</g></g>`;
+        }
 
-            useEffect(() => {
-                if (history[history.length - 1]?.z !== currentAtom.z) {
-                    setHistory(prev => [...prev, currentAtom]);
-                }
-                
-                const prevZ = previousAtom?.z;
-                const currZ = currentAtom.z;
-                
-                if ((prevZ === 3 && currZ === 11) || (prevZ === 11 && currZ === 3)) {
-                    setComparisonType('group1');
-                } else if ((prevZ === 9 && currZ === 17) || (prevZ === 17 && currZ === 9)) {
-                    setComparisonType('group7');
-                } else if ((prevZ === 3 && currZ === 4) || (prevZ === 4 && currZ === 3)) {
-                    setComparisonType('li-be');
-                } else if ((prevZ === 11 && currZ === 12) || (prevZ === 12 && currZ === 11)) {
-                    setComparisonType('na-mg');
-                } else if ((prevZ === 12 && currZ === 13) || (prevZ === 13 && currZ === 12)) {
-                    setComparisonType('mg-al');
-                } else {
-                    setComparisonType(null);
-                }
-            }, [currentIndex, currentAtom, history, previousAtom]);
+        function getBondHtml(angleDeg, sym1Type, sym2Type, molColor, atomLabel) {
+            const rad = (angleDeg * Math.PI) / 180;
+            const vec = { x: Math.cos(rad), y: Math.sin(rad) };
+            const pRadius = (atomLabel === 'H') ? HYDROGEN_RADIUS : PERIPHERAL_RADIUS;
+            const distToPeripheral = MAIN_RADIUS + pRadius - OVERLAP_DEPTH;
+            const atomX = vec.x * distToPeripheral, atomY = vec.y * distToPeripheral;
+            const lensCenterDist = MAIN_RADIUS - (OVERLAP_DEPTH / 2);
+            const sharedX = vec.x * lensCenterDist, sharedY = vec.y * lensCenterDist;
+            const spacing = 8;
 
-            const selectElement = (z) => {
-                const idx = elements.findIndex(e => e.z === z);
-                if (idx !== -1) setCurrentIndex(idx);
+            const getSym = (type, color) => {
+                if (type === 'x') return getCrossSVG(color);
+                if (type === '•' || type === 'dot') return getDotSVG(color);
+                return getCircleSVG(color);
             };
 
-            const triggerComparison = (z1, z2, type) => {
-                const atom1 = elements.find(e => e.z === z1);
-                const atom2 = elements.find(e => e.z === z2);
-                if (atom1 && atom2) {
-                    setHistory([atom1, atom2]);
-                    setCurrentIndex(elements.indexOf(atom2));
-                    setComparisonType(type);
-                }
-            };
+            let lonePairs = '';
+            if (atomLabel === 'Cl' || atomLabel === 'F') {
+                const baseAngle = (angleDeg + 180) % 360;
+                lonePairs = getLonePairHtml(baseAngle + 90, molColor, 'o', pRadius) + getLonePairHtml(baseAngle + 180, molColor, 'o', pRadius) + getLonePairHtml(baseAngle + 270, molColor, 'o', pRadius);
+            }
 
-            const BohrModel = ({ atom, size = 380, isSmall = false, compareAgainstAtom = null }) => {
-                if (!atom) return null;
-                
-                const baseNucleusSize = isSmall ? 18 : 22;
-                const magnetScale = analogyMode ? (0.55 + (atom.z / 30)) : 1;
-                const nucleusRadius = baseNucleusSize * magnetScale;
-                
-                const nucleusFontSize = isSmall ? 14 : 16;
-                const electronRadius = isSmall ? 5 : 6.5;
-                const maxRadiusValue = 186; 
-                const baseScaling = (atom.radius / maxRadiusValue);
-                const radiusFactor = 0.55 + (baseScaling * 0.45); 
-                
-                const shellSpacing = isSmall ? 45 : 55;
-                const outermostShellIdx = atom.shells.length - 1;
-                const outermostShellRadius = (baseNucleusSize + 25 + (outermostShellIdx * shellSpacing)) * radiusFactor;
-                
-                const angle = -Math.PI / 2; 
-                const ex = 200 + outermostShellRadius * Math.cos(angle);
-                const ey = 200 + outermostShellRadius * Math.sin(angle);
+            return `<g>
+                <g transform="translate(${atomX}, ${atomY})">
+                    <circle cx="0" cy="0" r="${pRadius}" fill="none" stroke="${molColor}" stroke-width="1.5" />
+                    <text x="0" y="5" text-anchor="middle" class="atom-label" style="font-size:0.9rem" fill="${molColor}">${atomLabel}</text>
+                    ${lonePairs}
+                </g>
+                <g transform="translate(${sharedX}, ${sharedY}) rotate(${angleDeg + 90})">
+                    <g transform="translate(-${spacing}, 0)">${getSym(sym1Type, molColor)}</g>
+                    <g transform="translate(${spacing}, 0)">${getSym(sym2Type, molColor)}</g>
+                </g></g>`;
+        }
 
-                const baseLen = 10;
-                const magnitudeScale = (5 * Math.log2(atom.relForce + 1) + (atom.relForce * 2.5)) / 2;
-                const forceArrowLength = baseLen + magnitudeScale;
+        function getLonePairSymbols(angleDeg, color, highlight = false, isDative = false) {
+            const rad = (angleDeg * Math.PI) / 180;
+            const dist = isDative ? (MAIN_RADIUS - (OVERLAP_DEPTH / 2)) : MAIN_RADIUS;
+            const tx = Math.cos(rad) * dist, ty = Math.sin(rad) * dist;
+            const offset = 8;
+            const pairRotation = angleDeg + 90;
 
-                let magnetLabel = "";
-                if (analogyMode && compareAgainstAtom !== null) {
-                    const samePeriod = atom.period === compareAgainstAtom.period;
-                    if (samePeriod && atom.z > compareAgainstAtom.z) {
-                        magnetLabel = t.strongerMagnet;
-                    }
-                }
+            return `<g transform="translate(${tx}, ${ty}) rotate(${pairRotation})">
+                <g transform="translate(-${offset}, 0)">${getCrossSVG(color)}</g>
+                <g transform="translate(${offset}, 0)">${getCrossSVG(color)}</g>
+                ${highlight ? `<circle cx="0" cy="0" r="32" fill="none" stroke="${color}" stroke-width="2.5" class="highlight-pulse" />` : ''}
+            </g>`;
+        }
 
-                return (
-                    <div className="flex flex-col items-center w-full relative">
-                        <svg viewBox="0 0 400 400" className={`w-full h-auto drop-shadow-md max-w-[${size}px]`}>
-                            <defs>
-                                <marker id="small-arrow-red" markerWidth="4" markerHeight="4" refX="3.5" refY="2" orient="auto">
-                                    <path d="M0,0 L4,2 L0,4 Z" fill="#ef4444" />
-                                </marker>
-                                <marker id="force-arrow-green" markerWidth="4" markerHeight="4" refX="3.5" refY="2" orient="auto">
-                                    <path d="M0,0 L4,2 L0,4 Z" fill="#22c55e" />
-                                </marker>
-                            </defs>
+        const cases = {
+            nh3bf3: {
+                name: "NH₃BF₃", 
+                donor: { en: "Nitrogen", zh: "氮" },
+                dMol: "NH₃", 
+                acceptor: { en: "Boron", zh: "硼" }, 
+                aMol: "BF₃", 
+                final: "NH₃BF₃", 
+                octet: "octet", 
+                charge: null,
+                setup: (groups, step) => {
+                    const isMerged = step === 2;
+                    const dX = isMerged ? 400 - (MAIN_RADIUS - OVERLAP_DEPTH/2) : 220;
+                    const aX = isMerged ? 400 + (MAIN_RADIUS - OVERLAP_DEPTH/2) : 580;
+                    const cy = 225;
 
-                            {analogyMode ? (
-                                <MagnetIcon x={200} y={200} size={nucleusRadius * 2.2} label={magnetLabel} />
-                            ) : (
-                                <g>
-                                    <circle cx="200" cy="200" r={nucleusRadius} fill="#ef4444" />
-                                    <text x="200" y={200 + (nucleusFontSize / 3)} textAnchor="middle" fill="white" fontSize={nucleusFontSize} fontWeight="900">+{atom.z}</text>
-                                </g>
-                            )}
-                            
-                            {atom.shells.map((count, sIdx) => {
-                                const shellRadius = (baseNucleusSize + 25 + (sIdx * shellSpacing)) * radiusFactor;
-                                const isOutermost = sIdx === atom.shells.length - 1;
-                                return (
-                                    <g key={sIdx}>
-                                        <circle cx="200" cy="200" r={shellRadius} fill="none" stroke="#cbd5e1" strokeWidth="1" strokeDasharray="4 4" />
-                                        {Array.from({ length: count }).map((_, eIdx) => {
-                                            const eAngle = (eIdx / count) * 2 * Math.PI - Math.PI / 2;
-                                            const e_x = 200 + shellRadius * Math.cos(eAngle);
-                                            const e_y = 200 + shellRadius * Math.sin(eAngle);
-                                            
-                                            if (analogyMode) {
-                                                const rot = (eAngle * 180) / Math.PI + 90;
-                                                return <PaperClip key={eIdx} x={e_x} y={e_y} rotation={rot} size={isOutermost ? 22 : 16} color={isOutermost ? "#3b82f6" : "#94a3b8"} />;
-                                            }
-                                            return <circle key={eIdx} cx={e_x} cy={e_y} r={isOutermost ? electronRadius : electronRadius * 0.75} fill={isOutermost ? "#3b82f6" : "#94a3b8"} />;
-                                        })}
-                                    </g>
-                                );
-                            })}
+                    groups.donor.innerHTML = getAtomHtml(DONOR_MOL_COLOR, 'N') + getBondHtml(270, 'x', 'o', DONOR_MOL_COLOR, 'H') + getBondHtml(180, 'x', 'o', DONOR_MOL_COLOR, 'H') + getBondHtml(90, 'x', 'o', DONOR_MOL_COLOR, 'H');
+                    const box = (step === 1) ? `<rect x="-105" y="-20" width="40" height="40" fill="none" stroke="${ACCEPTOR_MOL_COLOR}" stroke-width="2" stroke-dasharray="4" class="highlight-pulse" />` : '';
+                    groups.acceptor.innerHTML = getAtomHtml(ACCEPTOR_MOL_COLOR, 'B') + getBondHtml(270, 'dot', 'o', ACCEPTOR_MOL_COLOR, 'F') + getBondHtml(0, 'dot', 'o', ACCEPTOR_MOL_COLOR, 'F') + getBondHtml(90, 'dot', 'o', ACCEPTOR_MOL_COLOR, 'F') + box;
+                    groups.lonePair.innerHTML = getLonePairSymbols(0, DATIVE_COLOR, step === 0, isMerged);
 
-                            {showForce && (
-                                <g>
-                                    <line 
-                                        x1={ex} 
-                                        y1={ey + (electronRadius - 1)} 
-                                        x2={ex} 
-                                        y2={ey + (electronRadius - 1) + forceArrowLength} 
-                                        stroke="#22c55e" 
-                                        strokeWidth="2.5"
-                                        markerEnd="url(#force-arrow-green)"
-                                    />
-                                    <text x={ex + 6} y={ey + electronRadius + (forceArrowLength/2)} textAnchor="start" fontSize="11" fontWeight="900" fill="#166534">
-                                        F = {atom.relForce.toFixed(2)}
-                                    </text>
-                                </g>
-                            )}
+                    groups.donor.style.transform = `translate(${dX}px, ${cy}px)`;
+                    groups.acceptor.style.transform = `translate(${aX}px, ${cy}px)`;
+                    groups.lonePair.style.transform = `translate(${dX}px, ${cy}px)`;
+                },
+                struct: (step) => renderRefinedStruct(step, 'N', 'B', ['H','H','H'], ['F','F','F'], DATIVE_COLOR)
+            },
+            alcl4: {
+                name: "AlCl₄⁻", 
+                donor: { en: "Chlorine", zh: "氯" }, 
+                dMol: "Cl⁻", 
+                acceptor: { en: "Aluminium", zh: "鋁" }, 
+                aMol: "AlCl₃", 
+                final: "AlCl₄⁻", 
+                octet: "octet", 
+                charge: '-',
+                setup: (groups, step) => {
+                    const isMerged = step === 2;
+                    const dX = isMerged ? 400 - (MAIN_RADIUS - OVERLAP_DEPTH/2) : 220;
+                    const aX = isMerged ? 400 + (MAIN_RADIUS - OVERLAP_DEPTH/2) : 580;
+                    const cy = 225;
 
-                            {showRadius && (
-                                <g className="radius-transition opacity-100">
-                                    <line 
-                                        x1="200" y1="360" 
-                                        x2={200 + outermostShellRadius} y2="360" 
-                                        stroke="#ef4444" 
-                                        strokeWidth="2" 
-                                        markerEnd="url(#small-arrow-red)"
-                                    />
-                                    <circle cx="200" cy="360" r="2.5" fill="#ef4444" />
-                                    <text x="200" y={385} textAnchor="middle" fontSize="12" fontWeight="800" fill="#ef4444">
-                                        r: {atom.radius} pm
-                                    </text>
-                                </g>
-                            )}
-                        </svg>
-                        <div className="mt-1 text-center">
-                            <div className="text-lg font-black text-slate-800 leading-none">{atom.symbol}</div>
-                            <div className="flex gap-2 mt-2 justify-center">
-                                <div className="px-2 py-0.5 bg-blue-50 rounded-md text-[10px] font-bold text-blue-600 border border-blue-100 tracking-tighter">r: {atom.radius} pm</div>
-                                <div className="px-2 py-0.5 bg-green-50 rounded-md text-[10px] font-bold text-green-600 border border-green-100 tracking-tighter">Force: {atom.relForce.toFixed(2)}</div>
-                            </div>
-                        </div>
-                    </div>
-                );
-            };
+                    let dBrackets = (step < 2) ? getInternalBrackets(ION_RADIUS, '-') : '';
+                    let combinedBrackets = isMerged ? getInternalBrackets(MAIN_RADIUS, '-', true) : '';
 
-            const ComparisonExplanation = () => {
-                if (!comparisonType) return null;
+                    groups.donor.innerHTML = dBrackets + getAtomHtml(DONOR_MOL_COLOR, 'Cl', ION_RADIUS) + getLonePairHtml(270, DONOR_MOL_COLOR, 'x', ION_RADIUS) + getLonePairHtml(180, DONOR_MOL_COLOR, 'x', ION_RADIUS) + getLonePairHtml(90, DONOR_MOL_COLOR, 'x', ION_RADIUS);
+                    const box = (step === 1) ? `<rect x="-105" y="-20" width="40" height="40" fill="none" stroke="${ACCEPTOR_MOL_COLOR}" stroke-width="2" stroke-dasharray="4" class="highlight-pulse" />` : '';
+                    groups.acceptor.innerHTML = combinedBrackets + getAtomHtml(ACCEPTOR_MOL_COLOR, 'Al') + getBondHtml(270, 'dot', 'o', ACCEPTOR_MOL_COLOR, 'Cl') + getBondHtml(0, 'dot', 'o', ACCEPTOR_MOL_COLOR, 'Cl') + getBondHtml(90, 'dot', 'o', ACCEPTOR_MOL_COLOR, 'Cl') + box;
+                    groups.lonePair.innerHTML = getLonePairSymbols(0, DATIVE_COLOR, step === 0, isMerged);
 
-                const getAcrossPeriodExplanation = (element1, element2) => (
-                    <div className="mt-6 bg-orange-50 border border-orange-100 rounded-xl p-6 text-left animate-in fade-in slide-in-from-bottom-4">
-                        <h3 className="text-orange-800 font-bold flex items-center gap-2 mb-3">
-                            <Icons.BookOpen size={18} /> {t.names[element1] || element1} vs {t.names[element2] || element2} {t.periodTitle}
-                        </h3>
-                        <ul className="space-y-2 text-sm text-orange-900 font-medium list-disc ml-5">
-                            <li>{t.periodL1}</li>
-                            <li>{t.periodL2}</li>
-                            <li>{t.periodL3.replace('%s', t.names[element2] || element2)}</li>
-                        </ul>
-                    </div>
-                );
+                    groups.donor.style.transform = `translate(${dX}px, ${cy}px)`;
+                    groups.acceptor.style.transform = `translate(${aX}px, ${cy}px)`;
+                    groups.lonePair.style.transform = `translate(${dX}px, ${cy}px)`;
+                },
+                struct: (step) => renderRefinedStruct(step, 'Cl', 'Al', [], ['Cl','Cl','Cl'], DATIVE_COLOR, true, '-', true, false)
+            },
+            h3o: {
+                name: "H₃O⁺", 
+                donor: { en: "Oxygen", zh: "氧" }, 
+                dMol: "H₂O", 
+                acceptor: { en: "Hydrogen", zh: "氫" }, 
+                aMol: "H⁺", 
+                final: "H₃O⁺", 
+                octet: "duplet", 
+                charge: '+',
+                setup: (groups, step) => {
+                    const isMerged = step === 2;
+                    const dX = isMerged ? 400 - (MAIN_RADIUS - OVERLAP_DEPTH/2) : 220;
+                    const aX = isMerged ? 400 + (HYDROGEN_RADIUS - OVERLAP_DEPTH/2) : 580;
+                    const cy = 225;
 
-                if (comparisonType === 'group1') {
-                    return (
-                        <div className="mt-6 bg-blue-50 border border-blue-100 rounded-xl p-6 text-left animate-in fade-in slide-in-from-bottom-4">
-                            <h3 className="text-blue-800 font-bold flex items-center gap-2 mb-3">
-                                <Icons.BookOpen size={18} /> {t.g1Title}
-                            </h3>
-                            <ul className="space-y-2 text-sm text-blue-900 font-medium list-disc ml-5">
-                                <li>{t.g1L1}</li>
-                                <li>{t.g1L2}</li>
-                                <li>{t.g1L3}</li>
-                                <li>{t.g1L4}</li>
-                                <li>{t.g1L5}</li>
-                            </ul>
-                            <div className="mt-4 p-3 bg-blue-100 rounded-lg text-xs font-bold text-blue-800 italic">
-                                {t.metalNote}
-                            </div>
-                        </div>
-                    );
-                }
+                    let aBrackets = (step < 2) ? getInternalBrackets(HYDROGEN_RADIUS, '+') : '';
+                    let combinedBrackets = isMerged ? getInternalBrackets(MAIN_RADIUS, '+', true) : '';
 
-                if (comparisonType === 'group7') {
-                    return (
-                        <div className="mt-6 bg-purple-50 border border-purple-100 rounded-xl p-6 text-left animate-in fade-in slide-in-from-bottom-4">
-                            <h3 className="text-purple-800 font-bold flex items-center gap-2 mb-3">
-                                <Icons.BookOpen size={18} /> {t.g7Title}
-                            </h3>
-                            <ul className="space-y-2 text-sm text-purple-900 font-medium list-disc ml-5">
-                                <li>{t.g7L1}</li>
-                                <li>{t.g7L2}</li>
-                                <li>{t.g7L3}</li>
-                                <li>{t.g7L4}</li>
-                                <li>{t.g7L5}</li>
-                            </ul>
-                            <div className="mt-4 p-3 bg-purple-100 rounded-lg text-xs font-bold text-purple-800 italic">
-                                {t.nonMetalNote}
-                            </div>
-                        </div>
-                    );
-                }
+                    groups.donor.innerHTML = combinedBrackets + getAtomHtml(DONOR_MOL_COLOR, 'O') + getBondHtml(180, 'x', 'o', DONOR_MOL_COLOR, 'H') + getBondHtml(90, 'x', 'o', DONOR_MOL_COLOR, 'H') + getLonePairHtml(270, DONOR_MOL_COLOR, 'x', MAIN_RADIUS);
+                    const box = (step === 1) ? `<circle cx="-25" cy="0" r="32" fill="none" stroke="${DATIVE_COLOR}" stroke-width="2" stroke-dasharray="4" class="highlight-pulse" />` : '';
+                    groups.acceptor.innerHTML = aBrackets + `<circle cx="0" cy="0" r="${HYDROGEN_RADIUS}" fill="none" stroke="${ACCEPTOR_MOL_COLOR}" stroke-width="2" stroke-dasharray="4" /><text x="0" y="8" text-anchor="middle" class="atom-label" fill="${ACCEPTOR_MOL_COLOR}">H</text>${box}`;
+                    groups.lonePair.innerHTML = getLonePairSymbols(0, DATIVE_COLOR, step === 0, isMerged);
 
-                if (comparisonType === 'li-be') return getAcrossPeriodExplanation('Lithium', 'Beryllium');
-                if (comparisonType === 'na-mg') return getAcrossPeriodExplanation('Sodium', 'Magnesium');
-                if (comparisonType === 'mg-al') return getAcrossPeriodExplanation('Magnesium', 'Aluminum');
+                    groups.donor.style.transform = `translate(${dX}px, ${cy}px)`;
+                    groups.acceptor.style.transform = `translate(${aX}px, ${cy}px)`;
+                    groups.lonePair.style.transform = `translate(${dX}px, ${cy}px)`;
+                },
+                struct: (step) => renderRefinedStruct(step, 'O', 'H', ['H','H'], [], DATIVE_COLOR, true, '+', false, true)
+            },
+            nh4: {
+                name: "NH₄⁺", 
+                donor: { en: "Nitrogen", zh: "氮" }, 
+                dMol: "NH₃", 
+                acceptor: { en: "Hydrogen", zh: "氫" }, 
+                aMol: "H⁺", 
+                final: "NH₄⁺", 
+                octet: "duplet", 
+                charge: '+',
+                setup: (groups, step) => {
+                    const isMerged = step === 2;
+                    const dX = isMerged ? 400 - (MAIN_RADIUS - OVERLAP_DEPTH/2) : 220;
+                    const aX = isMerged ? 400 + (HYDROGEN_RADIUS - OVERLAP_DEPTH/2) : 580;
+                    const cy = 225;
 
-                return null;
-            };
+                    let aBrackets = (step < 2) ? getInternalBrackets(HYDROGEN_RADIUS, '+') : '';
+                    let combinedBrackets = isMerged ? getInternalBrackets(MAIN_RADIUS, '+', true) : '';
 
-            return (
-                <div className="min-h-screen bg-slate-50 p-4 md:p-6 font-sans text-slate-800 text-center">
-                    <div className="max-w-6xl mx-auto relative">
-                        {/* Translation Button - Top Right */}
-                        <div className="flex justify-end mb-4">
-                            <button 
-                                onClick={() => setLang(lang === 'en' ? 'zh' : 'en')}
-                                className="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-full shadow-sm hover:bg-slate-50 transition-colors text-xs font-bold text-slate-600"
-                            >
-                                <Icons.Globe size={14} />
-                                {lang === 'en' ? '繁體中文' : 'English'}
-                            </button>
-                        </div>
-                        
-                        <header className="mb-6 text-left">
-                            <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-2 tracking-tight">{t.title}</h1>
-                            <p className="text-slate-600 mt-1 text-sm font-medium">{t.subtitle}</p>
-                        </header>
+                    groups.donor.innerHTML = combinedBrackets + getAtomHtml(DONOR_MOL_COLOR, 'N') + getBondHtml(270, 'x', 'o', DONOR_MOL_COLOR, 'H') + getBondHtml(180, 'x', 'o', DONOR_MOL_COLOR, 'H') + getBondHtml(90, 'x', 'o', DONOR_MOL_COLOR, 'H');
+                    const box = (step === 1) ? `<circle cx="-25" cy="0" r="32" fill="none" stroke="${DATIVE_COLOR}" stroke-width="2" stroke-dasharray="4" class="highlight-pulse" />` : '';
+                    groups.acceptor.innerHTML = aBrackets + `<circle cx="0" cy="0" r="${HYDROGEN_RADIUS}" fill="none" stroke="${ACCEPTOR_MOL_COLOR}" stroke-width="2" stroke-dasharray="4" /><text x="0" y="8" text-anchor="middle" class="atom-label" fill="${ACCEPTOR_MOL_COLOR}">H</text>${box}`;
+                    groups.lonePair.innerHTML = getLonePairSymbols(0, DATIVE_COLOR, step === 0, isMerged);
 
-                        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                            <div className="lg:col-span-1 space-y-4">
-                                <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 text-left">
-                                    <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-slate-700"><Icons.Target size={20} /> {t.selection}</h2>
-                                    
-                                    <div className="flex items-center justify-between gap-2 mb-6">
-                                        <button onClick={() => selectElement(elements[Math.max(0, currentIndex - 1)].z)} disabled={currentIndex === 0} className="p-2 rounded-full bg-slate-100 hover:bg-slate-200 disabled:opacity-30 transition-colors"><Icons.ChevronLeft /></button>
-                                        <div className="text-center">
-                                            <div className="text-4xl font-black text-blue-600 tracking-tighter leading-none">{currentAtom.symbol}</div>
-                                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{t.names[currentAtom.name] || currentAtom.name}</div>
-                                        </div>
-                                        <button onClick={() => selectElement(elements[Math.min(elements.length-1, currentIndex + 1)].z)} disabled={currentIndex === elements.length - 1} className="p-2 rounded-full bg-slate-100 hover:bg-slate-200 disabled:opacity-30 transition-colors"><Icons.ChevronRight /></button>
-                                    </div>
-
-                                    <div className="mb-6">
-                                        <label className="text-xs font-bold uppercase text-slate-400 block mb-2">{t.groupComp}</label>
-                                        <div className="grid grid-cols-1 gap-2">
-                                            <button 
-                                                onClick={() => triggerComparison(3, 11, 'group1')}
-                                                className={`flex items-center justify-between px-3 py-2 border rounded-lg transition-all group ${comparisonType === 'group1' ? 'bg-blue-600 border-blue-600 text-white' : 'bg-slate-50 border-slate-200 hover:bg-blue-50 hover:border-blue-300'}`}
-                                            >
-                                                <span className={`text-sm font-semibold ${comparisonType === 'group1' ? 'text-white' : 'text-slate-600 group-hover:text-blue-700'}`}>Li vs Na</span>
-                                                <Icons.Zap className={comparisonType === 'group1' ? 'text-blue-200' : 'text-slate-300 group-hover:text-blue-400'} />
-                                            </button>
-                                            <button 
-                                                onClick={() => triggerComparison(9, 17, 'group7')}
-                                                className={`flex items-center justify-between px-3 py-2 border rounded-lg transition-all group ${comparisonType === 'group7' ? 'bg-purple-600 border-purple-600 text-white' : 'bg-slate-50 border-slate-200 hover:bg-purple-50 hover:border-purple-300'}`}
-                                            >
-                                                <span className={`text-sm font-semibold ${comparisonType === 'group7' ? 'text-white' : 'text-slate-600 group-hover:text-purple-700'}`}>F vs Cl</span>
-                                                <Icons.Zap className={comparisonType === 'group7' ? 'text-purple-200' : 'text-slate-300 group-hover:text-purple-400'} />
-                                            </button>
-                                        </div>
-                                    </div>
-                                    
-                                    <div className="mb-6">
-                                        <label className="text-xs font-bold uppercase text-slate-400 block mb-1">{t.jumpPeriod}</label>
-                                        <div className="flex gap-2">
-                                            {[1, 2, 3].map(p => (
-                                                <button key={p} onClick={() => selectElement(elements.find(e => e.period === p).z)} className={`flex-1 py-1 rounded text-sm font-medium border transition-all ${currentAtom.period === p ? 'bg-blue-600 border-blue-600 text-white shadow-sm' : 'bg-white border-slate-200 hover:border-blue-400'}`}>{p}</button>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    <div className="pt-4 border-t border-slate-100 space-y-3">
-                                        <label className="text-xs font-bold uppercase text-slate-400 block mb-1 flex items-center gap-1"><Icons.Settings2 size={12}/> {t.displayOptions}</label>
-                                        <div className="flex flex-col gap-2">
-                                            <label className="flex items-center gap-2 cursor-pointer hover:bg-blue-50 p-1.5 rounded transition-colors group">
-                                                <input type="checkbox" checked={analogyMode} onChange={() => setAnalogyMode(!analogyMode)} className="w-4 h-4 accent-blue-600 rounded" />
-                                                <span className={`text-sm font-bold ${analogyMode ? 'text-blue-700' : 'text-slate-600'}`}>{t.analogy}</span>
-                                            </label>
-                                            <label className="flex items-center gap-2 cursor-pointer hover:bg-slate-50 p-1 rounded transition-colors">
-                                                <input type="checkbox" checked={showForce} onChange={() => setShowForce(!showForce)} className="w-4 h-4 accent-green-600 rounded" />
-                                                <span className="text-sm font-semibold text-slate-600">{t.showForce}</span>
-                                            </label>
-                                            <label className="flex items-center gap-2 cursor-pointer hover:bg-slate-50 p-1 rounded transition-colors">
-                                                <input type="checkbox" checked={showRadius} onChange={() => setShowRadius(!showRadius)} className="w-4 h-4 accent-red-600 rounded" />
-                                                <span className="text-sm font-semibold text-slate-600">{t.showRadius}</span>
-                                            </label>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div className="bg-green-600 text-white p-5 rounded-2xl shadow-lg border border-green-700 text-left">
-                                    <h3 className="text-base font-bold tracking-tight mb-2 opacity-90 text-green-50 leading-snug">{t.forceTitle}</h3>
-                                    <div className="text-3xl font-black tracking-tighter">{currentAtom.relForce.toFixed(2)}</div>
-                                    <p className="text-[10px] font-bold mt-1 opacity-90 leading-tight italic">{t.forceNote}</p>
-                                </div>
-                            </div>
-
-                            <div className="lg:col-span-3 space-y-6">
-                                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col text-left">
-                                    <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-slate-700"><Icons.Layers size={20} /> {t.compViz}</h2>
-                                    <div className="flex-grow flex flex-col gap-4 relative bg-slate-50 rounded-2xl border border-dashed border-slate-300 py-8 px-2 overflow-hidden min-h-[460px]">
-                                        <div className="flex items-center justify-around w-full gap-4 relative z-10">
-                                            {previousAtom && previousAtom.symbol !== currentAtom.symbol ? (
-                                                <React.Fragment>
-                                                    <div className="flex-1 flex flex-col items-center max-w-[45%]">
-                                                        <div className="text-[10px] font-black text-slate-400 uppercase mb-2">{t.previous}</div>
-                                                        <BohrModel atom={previousAtom} size={280} isSmall={true} compareAgainstAtom={currentAtom} />
-                                                    </div>
-                                                    
-                                                    <div className="flex flex-col items-center text-slate-300">
-                                                        <Icons.ArrowRightLeft size={28} />
-                                                    </div>
-
-                                                    <div className="flex-1 flex flex-col items-center max-w-[45%]">
-                                                        <div className="text-[10px] font-black text-blue-500 uppercase mb-2">{t.current}</div>
-                                                        <BohrModel atom={currentAtom} size={280} isSmall={true} compareAgainstAtom={previousAtom} />
-                                                    </div>
-                                                </React.Fragment>
-                                            ) : (
-                                                <div className="flex flex-col items-center w-full max-w-lg mx-auto">
-                                                    <BohrModel atom={currentAtom} size={360} />
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                    
-                                    <ComparisonExplanation />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            );
+                    groups.donor.style.transform = `translate(${dX}px, ${cy}px)`;
+                    groups.acceptor.style.transform = `translate(${aX}px, ${cy}px)`;
+                    groups.lonePair.style.transform = `translate(${dX}px, ${cy}px)`;
+                },
+                struct: (step) => renderRefinedStruct(step, 'N', 'H', ['H','H','H'], [], DATIVE_COLOR, true, '+', false, true)
+            }
         };
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<IonizationEnergyLab />);
+        function renderRefinedStruct(step, dSym, aSym, dNeighbors, aNeighbors, arrowColor, isIon=false, charge='', dIsIon=false, aIsIon=false) {
+            const isMerged = step === 2;
+            const cx = 130, cy = 110, unit = 32;
+            const dX = isMerged ? -20 : -38, aX = isMerged ? 20 : 38;
+
+            const drawBonds = (neighbors, side, molColor) => {
+                let html = '';
+                const positions = neighbors.length === 3 ? [{x:0, y:-12, dx:0, dy:-unit+14},{x:side==='L'?-12:12, y:0, dx:side==='L'?-unit+14:unit-14, dy:0},{x:0, y:12, dx:0, dy:unit-14}] 
+                    : neighbors.length === 2 ? [{x:side==='L'?-12:12, y:0, dx:side==='L'?-unit+14:unit-14, dy:0},{x:0, y:12, dx:0, dy:unit-14}] 
+                    : neighbors.length === 1 ? [{x:side==='L'?-12:12, y:0, dx:side==='L'?-unit+14:unit-14, dy:0}] : [];
+                neighbors.forEach((sym, i) => {
+                    const p = positions[i];
+                    html += `<line x1="${p.x}" y1="${p.y}" x2="${p.x+p.dx}" y2="${p.y+p.dy}" class="struct-line" /><text x="${p.x+p.dx+(p.dx>0?8:(p.dx<0?-8:0))}" y="${p.y+p.dy+(p.dy>0?14:(p.dy<0?-6:7))}" text-anchor="middle" class="struct-text" style="fill:${molColor}">${sym}</text>`;
+                });
+                return html;
+            };
+
+            const atomBracket = (sign) => {
+                const bw=22, bh=24;
+                return `<g><path d="M -${bw-4},-${bh} L -${bw},-${bh} L -${bw},${bh} L -${bw-4},${bh}" class="struct-bracket" /><path d="M ${bw-4},-${bh} L ${bw},-${bh} L ${bw},${bh} L ${bw-4},${bh}" class="struct-bracket" /><text x="${bw+6}" y="-${bh-12}" class="struct-charge">${sign}</text></g>`;
+            };
+
+            const lonePairX = (x, y, color) => {
+                const offset = 5;
+                return `<g transform="translate(${x},${y})"><g transform="translate(0,-${offset})">${getCrossSVG(color, 3, 2)}</g><g transform="translate(0,${offset})">${getCrossSVG(color, 3, 2)}</g></g>`;
+            };
+
+            return `
+            <svg width="260" height="220" viewBox="0 0 260 220">
+                <defs><marker id="arr" markerWidth="6" markerHeight="6" refX="4" refY="3" orient="auto"><polygon points="0 0, 4 3, 0 6" fill="${arrowColor}"/></marker></defs>
+                <g transform="translate(${cx}, ${cy})">
+                    ${(isMerged && isIon) ? `<g><path d="M -85,-75 L -95,-75 L -95,80 L -85,80" class="struct-bracket" /><path d="M 85,-75 L 95,-75 L 95,80 L 85,80" class="struct-bracket" /><text x="100" y="-60" class="ion-charge" style="fill:#000">${charge}</text></g>` : ''}
+                    <g transform="translate(${dX}, 0)"><text x="0" y="7" text-anchor="middle" class="struct-text" style="fill:${DONOR_MOL_COLOR}">${dSym}</text>${drawBonds(dNeighbors, 'L', DONOR_MOL_COLOR)}${(!isMerged) ? lonePairX(15, 0, arrowColor) : ''}${(!isMerged && dIsIon) ? atomBracket(charge) : ''}</g>
+                    <g transform="translate(${aX}, 0)"><text x="0" y="7" text-anchor="middle" class="struct-text" style="fill:${ACCEPTOR_MOL_COLOR}">${aSym}</text>${drawBonds(aNeighbors, 'R', ACCEPTOR_MOL_COLOR)}${(!isMerged && aIsIon) ? atomBracket(charge) : ''}</g>
+                    ${isMerged ? `<line x1="${dX+10}" y1="0" x2="${aX-8}" y2="0" stroke="${arrowColor}" stroke-width="2.5" marker-end="url(#arr)"/>` : ''}
+                </g>
+            </svg>`;
+        }
+
+        let currentKey = 'nh3bf3', currentStep = 0;
+        const caseSelector = document.getElementById('case-selector');
+        const structContainer = document.getElementById('struct-svg-container');
+        const guidanceText = document.getElementById('guidance-text');
+        const svgGroups = { donor: document.getElementById('donor-group'), acceptor: document.getElementById('acceptor-group'), lonePair: document.getElementById('lone-pair-group') };
+
+        function formatChem(str) { return str.replace(/(\d+)/g, '<sub>$1</sub>').replace(/([-+])/, '<sup>$1</sup>'); }
+
+        function renderSelector() {
+            caseSelector.innerHTML = '';
+            Object.keys(cases).forEach(key => {
+                const btn = document.createElement('button');
+                btn.className = "chem-label w-full text-left px-4 py-2 rounded-lg border border-slate-200 hover:bg-slate-50 transition-all font-medium text-slate-700 active:scale-95";
+                btn.innerHTML = formatChem(cases[key].name);
+                btn.onclick = () => { currentKey = key; currentStep = 0; update(); };
+                caseSelector.appendChild(btn);
+            });
+        }
+
+        function update() {
+            const c = cases[currentKey];
+            const text = i18n[currentLang];
+            
+            // UI Static Labels
+            document.getElementById('ui-title').innerText = text.title;
+            document.getElementById('ui-subtitle').innerText = text.subtitle;
+            document.getElementById('ui-select-example').innerText = text.selectExample;
+            document.getElementById('ui-struct-label').innerText = text.structLabel;
+            document.getElementById('prev-btn').innerText = text.prev;
+            document.getElementById('next-btn').innerText = text.next;
+            document.getElementById('lang-text').innerText = text.toggleTo;
+
+            // Visual Content
+            c.setup(svgGroups, currentStep);
+            structContainer.innerHTML = c.struct(currentStep);
+
+            // Guidance Generation
+            let msg = "";
+            const donorName = c.donor[currentLang];
+            const acceptorName = c.acceptor[currentLang];
+            const octetType = text[c.octet];
+
+            if (currentLang === 'en') {
+                msg = currentStep === 0 ? `${donorName} in ${c.dMol} contains lone pair electron.` : 
+                      currentStep === 1 ? `While ${acceptorName} in ${c.aMol} outermost electron shell is not fully filled, which has a vacant site to accept the electron.` : 
+                      `${acceptorName} in ${c.aMol} accepts the lone pair electron from ${donorName} atom in ${c.dMol} to form dative covalent bond, so that ${acceptorName.toLowerCase()} atom in ${c.final} attains a stable ${octetType} structure.`;
+            } else {
+                msg = currentStep === 0 ? `${c.dMol} 中的 ${donorName} 含有孤電子對。` : 
+                      currentStep === 1 ? `而 ${c.aMol} 中的 ${acceptorName} 最外層電子殼未填滿，具有空位可接收電子。` : 
+                      `${c.aMol} 中的 ${acceptorName} 接收來自 ${c.dMol} 中 ${donorName} 的孤電子對，形成配位共價鍵，使 ${c.final} 中的 ${acceptorName} 原子達到穩定的 ${octetType} 結構。`;
+            }
+
+            guidanceText.innerText = msg;
+            document.getElementById('step-indicator').innerText = `${text.step} ${currentStep + 1} / 3`;
+            document.getElementById('prev-btn').disabled = currentStep === 0;
+            document.getElementById('next-btn').disabled = currentStep === 2;
+
+            // Update button states
+            Array.from(caseSelector.children).forEach(b => {
+                const isActive = b.innerHTML === formatChem(c.name);
+                b.classList.toggle('bg-blue-50', isActive); b.classList.toggle('border-blue-300', isActive);
+            });
+        }
+
+        // Event Listeners
+        document.getElementById('lang-toggle').onclick = () => {
+            currentLang = currentLang === 'en' ? 'zh' : 'en';
+            update();
+        };
+        document.getElementById('prev-btn').onclick = () => { if(currentStep > 0) { currentStep--; update(); }};
+        document.getElementById('next-btn').onclick = () => { if(currentStep < 2) { currentStep++; update(); }};
+        
+        window.onload = () => {
+            renderSelector();
+            update();
+        };
     </script>
 </body>
 </html>
