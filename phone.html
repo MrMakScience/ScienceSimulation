@@ -3,456 +3,696 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dative Covalent Bond Simulation</title>
+    <title>Covalent Compound Formula Simulator</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; overflow-x: hidden; }
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
         
-        .move-transition { 
-            transition: transform 1.2s cubic-bezier(0.4, 0, 0.2, 1);
-            will-change: transform;
+        .fade-in { animation: fadeIn 0.5s ease forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .move-num {
+            animation: moveNum 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+            z-index: 1000;
+            pointer-events: none;
+            position: fixed;
+            will-change: transform, opacity;
         }
-        
-        .atom-label { font-weight: bold; font-size: 1.2rem; pointer-events: none; }
-        
-        .highlight-pulse { 
-            animation: pulse-ring 1.5s infinite; 
-            transform-origin: center;
-            transform-box: fill-box;
-        }
-        @keyframes pulse-ring {
-            0% { transform: scale(0.6); opacity: 0.8; }
-            50% { transform: scale(1.1); opacity: 0.3; }
-            100% { transform: scale(0.6); opacity: 0.8; }
+        @keyframes moveNum {
+            0% { transform: translate(0, 0); opacity: 1; scale: 1; }
+            80% { opacity: 1; }
+            100% { transform: var(--translate-path); opacity: 0; scale: 1.2; }
         }
 
-        .canvas-container {
-            aspect-ratio: 16/9;
-            background: white;
-            border-radius: 1rem;
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-            overflow: hidden;
+        .shake { animation: shake 0.4s ease-in-out; }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        .strike-container { position: relative; display: flex; align-items: center; justify-content: center; }
+        .strike-line {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 4px;
+            background-color: #ef4444;
+            transform: translate(-50%, -50%) rotate(-15deg);
+            border-radius: 2px;
+            pointer-events: none;
+            z-index: 70;
+            animation: strikeGrow 0.4s ease-out forwards;
+        }
+        @keyframes strikeGrow {
+            to { width: 120%; }
+        }
+
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .step-input-wrapper {
             position: relative;
+            z-index: 50;
         }
+        .step-controls {
+            position: absolute;
+            right: -24px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            z-index: 60;
+        }
+        .step-arrow {
+            padding: 4px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            cursor: pointer;
+            color: #475569;
+            transition: all 0.2s;
+            border: none;
+            line-height: 0;
+        }
+        .step-arrow:hover { background: #cbd5e1; color: #1e293b; }
+        .step-arrow:active { transform: scale(0.9); }
 
-        .struct-line { stroke: #334155; stroke-width: 2.2; }
-        .struct-text { font-family: 'Inter', sans-serif; font-weight: 700; font-size: 18px; fill: #1e293b; }
-        
-        .symbol-draw { stroke-width: 2.5; fill: none; }
-        .symbol-fill { transition: opacity 0.5s ease; }
-
-        .ion-bracket { stroke: #334155; stroke-width: 3; fill: none; stroke-linecap: round; }
-        .ion-charge { font-weight: bold; font-size: 1.6rem; fill: #1e293b; }
-        
-        .struct-bracket { stroke: #000000; stroke-width: 2; fill: none; }
-        .struct-charge { font-size: 16px; font-weight: bold; fill: #1e293b; }
+        .formula-step-3 {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            width: 100%;
+            flex-wrap: wrap;
+        }
+        @media (max-width: 640px) {
+            .formula-step-3 { font-size: 2.25rem !important; gap: 0.25rem; }
+            .formula-step-3 sub { font-size: 1.25rem !important; }
+            .formula-step-3 .arrow { font-size: 1.5rem !important; }
+            .formula-step-3 .input-box { width: 3rem !important; height: 3rem !important; font-size: 1.5rem !important; }
+            .formula-step-3 .step-controls { right: -20px; }
+        }
     </style>
 </head>
 <body class="p-4 md:p-8">
-    <div class="max-w-7xl mx-auto">
-        <header class="mb-8 relative flex flex-col items-start">
-            <div class="w-full flex justify-end mb-2">
-                <button id="lang-toggle" class="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-lg shadow-sm hover:bg-slate-50 transition-colors text-sm font-medium text-slate-700">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-                    <span id="lang-text">繁中</span>
-                </button>
-            </div>
-            <h1 id="ui-title" class="text-3xl font-bold text-slate-800">Formation of Dative Covalent Bonds</h1>
-            <p id="ui-subtitle" class="text-slate-600 mt-2">Interactive dot-and-cross diagrams with tablet-optimized animations</p>
+    <div class="max-w-3xl mx-auto">
+        <!-- Language Switcher - Placed at the top right of the container, before the header -->
+        <div class="flex justify-end mb-6">
+            <button onclick="toggleLanguage()" class="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-full shadow-sm hover:bg-slate-50 transition-colors text-slate-600 font-medium text-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                <span id="lang-text">繁體中文</span>
+            </button>
+        </div>
+
+        <header class="text-center mb-8">
+            <h1 id="ui-title" class="text-3xl font-bold text-slate-800">Covalent Formula Builder</h1>
+            <p id="ui-subtitle" class="text-slate-600 mt-2">Master the step-by-step process of covalent bonding.</p>
         </header>
 
-        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            <div class="lg:col-span-1 space-y-4">
-                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-                    <h2 id="ui-select-example" class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-4">Select Example</h2>
-                    <div id="case-selector" class="space-y-2"></div>
-                </div>
-                <div id="structural-panel" class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                    <p id="ui-struct-label" class="text-[10px] font-bold text-slate-400 mb-2 uppercase tracking-widest text-center">Structural Formula</p>
-                    <div id="struct-svg-container" class="flex items-center justify-center min-h-[220px]"></div>
-                </div>
+        <div id="selection-screen" class="bg-white rounded-2xl shadow-xl p-6 border border-slate-200">
+            <h2 id="ui-choose" class="text-xl font-semibold mb-4 text-slate-700 text-center">Choose a pair of elements:</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" id="pair-list"></div>
+        </div>
+
+        <div id="step-container" class="hidden space-y-6">
+            <div class="flex justify-between items-center mb-4">
+                <button onclick="resetSim()" class="text-blue-600 font-medium hover:underline flex items-center gap-1">
+                    <span id="ui-back-change">← Change Elements</span>
+                </button>
+                <div id="step-indicator" class="text-sm font-bold text-slate-400 tracking-widest uppercase">Step 1 of 5</div>
             </div>
 
-            <div class="lg:col-span-3 space-y-6">
-                <div class="canvas-container border border-slate-200" id="viz-container">
-                    <svg id="main-svg" viewBox="0 0 800 450" class="w-full h-full">
-                        <g id="drawing-area">
-                            <g id="donor-group" class="move-transition"></g>
-                            <g id="acceptor-group" class="move-transition"></g>
-                            <g id="lone-pair-group" class="move-transition"></g>
-                        </g>
-                    </svg>
+            <div class="bg-white rounded-2xl shadow-xl p-4 md:p-8 border border-slate-200 min-h-[540px] flex flex-col items-center justify-center relative overflow-hidden">
+                <div id="display-area" class="w-full flex flex-col items-center"></div>
+
+                <div id="guidance-box" class="mt-8 p-4 bg-blue-50 border-l-4 border-blue-500 rounded-r-lg w-full">
+                    <p id="guidance-text" class="text-blue-800"></p>
                 </div>
 
-                <div id="guidance-box" class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 min-h-[100px] flex items-center">
-                    <p id="guidance-text" class="text-lg text-slate-700 text-center w-full leading-relaxed"></p>
-                </div>
-
-                <div class="flex justify-between items-center bg-slate-800 p-4 rounded-xl text-white">
-                    <button id="prev-btn" class="px-6 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg disabled:opacity-50 transition-colors">Previous</button>
-                    <div id="step-indicator" class="font-mono text-sm md:text-base">Step 1 / 3</div>
-                    <button id="next-btn" class="px-6 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg disabled:opacity-50 transition-colors">Next</button>
+                <div class="mt-8 w-full flex justify-between">
+                    <button id="prev-btn" onclick="prevStep()" class="text-slate-500 px-4 py-3 md:px-6 rounded-full font-bold hover:bg-slate-100 transition flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                        <span id="ui-back">Back</span>
+                    </button>
+                    <button id="next-btn" onclick="nextStep()" class="bg-blue-600 text-white px-6 py-3 md:px-8 rounded-full font-bold hover:bg-blue-700 transition shadow-lg flex items-center gap-2">
+                        <span id="next-btn-text">Continue</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <script>
-        const MAIN_RADIUS = 85; 
-        const PERIPHERAL_RADIUS = 60; 
-        const ION_RADIUS = 85; 
-        const HYDROGEN_RADIUS = 45; 
-        const OVERLAP_DEPTH = 18; 
-
-        const DONOR_MOL_COLOR = '#3b82f6';
-        const ACCEPTOR_MOL_COLOR = '#f59e0b'; 
-        const DATIVE_COLOR = '#ef4444';
-
+      <script>
+        const ELEMENT_ORDER = ['B', 'Si', 'C', 'P', 'N', 'H', 'S', 'I', 'Br', 'Cl', 'O', 'F'];
+        
         let currentLang = 'en';
 
-        const i18n = {
+        const TRANSLATIONS = {
             en: {
-                title: "Formation of Dative Covalent Bonds",
-                subtitle: "Interactive dot-and-cross diagrams with tablet-optimized animations",
-                selectExample: "Select Example",
-                structLabel: "Structural Formula",
-                prev: "Previous",
-                next: "Next",
+                title: "Covalent Formula Builder",
+                subtitle: "Master the step-by-step process of covalent bonding.",
+                choose: "Choose a pair of elements:",
+                backChange: "← Change Elements",
+                back: "Back",
+                start: "Start →",
                 step: "Step",
-                octet: "octet",
-                duplet: "duplet",
-                toggleTo: "繁中"
+                of: "of",
+                checkAnswer: "Check Answer",
+                checkCross: "Check & Cross",
+                simplifyCheck: "Simplify & Check",
+                getName: "Get Chemical Name",
+                continue: "Continue",
+                finish: "Finish",
+                missing: "Missing?",
+                startConf: "Start",
+                targetConf: "Target",
+                needsLabel: "needs",
+                tipSimplify: "Tip: If a subscript is 1, leave it empty to cancel it.",
+                dontLeaveOne: "Don't leave a 1",
+                finishedFormula: "Step 4: This is the finished chemical formula. Subscripts of 1 are invisible.",
+                finalResult: "Final Result: How we name this covalent compound.",
+                namingRules: "Naming Rule Checklist",
+                rule1: "Write the element according to the series: <b>B, Si, C, P, N, H, S, I, Br, Cl, O, F</b>",
+                rule2: "The name of the second element should end with <b>\"ide\"</b>",
+                rule3: "Prefixes indicate the number of atoms.",
+                ruleNote: "<b>Note:</b> Water, peroxide, ammonia, methane are common special cases.",
+                guidanceS1: "Select how many electrons are missing for each element's outermost shell.",
+                guidanceS2: "Cross over the numbers: One atom's need becomes the other's subscript. Click the up/down arrows.",
+                guidanceS3: "Simplify the ratio. In chemistry, we cancel the 1 (leave the box empty).",
+                shakeS1: "Check the outermost shells again—how many more electrons are needed?",
+                shakeS2: "Click the up/down arrows to 'Cross Over'! One atom's need becomes the other's subscript.",
+                shakeS3: "Check the math. Simplify the ratio and cancel any 1s by leaving the box empty."
             },
             zh: {
-                title: "配位共價鍵的形成",
-                subtitle: "互動式電子圖動畫",
-                selectExample: "選擇例子",
-                structLabel: "結構式",
-                prev: "上一步",
-                next: "下一步",
+                title: "共價鍵化學式構建器",
+                subtitle: "逐步掌握共價鍵化學式的編寫過程。",
+                choose: "選擇一對元素：",
+                backChange: "← 更換元素",
+                back: "返回",
+                start: "開始 →",
                 step: "步驟",
-                octet: "八隅體",
-                duplet: "二隅體",
-                toggleTo: "English"
+                of: "/",
+                checkAnswer: "檢查答案",
+                checkCross: "檢查並交叉相乘",
+                simplifyCheck: "約簡並檢查",
+                getName: "獲取化學名稱",
+                continue: "繼續",
+                finish: "完成",
+                missing: "缺多少電子？",
+                startConf: "起始狀態",
+                targetConf: "目標狀態",
+                needsLabel: "需要",
+                tipSimplify: "提示：如果下標為 1，請保持空格以將其省略。",
+                dontLeaveOne: "不要填寫 1",
+                finishedFormula: "步驟 4：這是最終的化學式。下標為 1 時不顯示。",
+                finalResult: "最終結果：此共價化合物的命名如上。",
+                namingRules: "命名規則檢查表",
+                rule1: "根據以下順序書寫元素：<b>B, Si, C, P, N, H, S, I, Br, Cl, O, F</b>",
+                rule2: "第一元素放在後面。第二個元素放在前面，在這元素後面加上 <b>「化」</b>",
+                rule3: "前綴表示原子的數量（如：二、三、四）。",
+                ruleNote: "<b>備註：</b> 水、過氧化氫、氨、甲烷是常見的特殊名稱。",
+                guidanceS1: "請選擇每個元素的最外層電子殼還需要多少個電子才能填滿。",
+                guidanceS2: "數值交叉相乘：一個原子的需求量變成另一個原子的下標。請點擊上下箭頭控制。",
+                guidanceS3: "約簡比例。在化學中，下標為 1 時我們會將其省略（保持空格）。",
+                shakeS1: "請再次檢查最外層電子殼——還需要多少個電子？",
+                shakeS2: "點擊箭頭進行「交叉相乘」！一個原子的需求量會變成另一個原子的下標。",
+                shakeS3: "請檢查計算。約簡比例，如果是 1 則保持空格以省略。"
             }
         };
 
-        const getCrossSVG = (color, size = 4.5, weight = 2.5) => `<path d="M-${size},-${size} L${size},${size} M-${size},${size} L${size},-${size}" stroke="${color}" stroke-width="${weight}" fill="none" class="symbol-draw" />`;
-        const getDotSVG = (color) => `<circle cx="0" cy="0" r="4.5" fill="${color}" class="symbol-fill" />`;
-        const getCircleSVG = (color) => `<circle cx="0" cy="0" r="5" fill="white" stroke="${color}" stroke-width="2.2" class="symbol-draw" />`;
-
-        function getInternalBrackets(radius, charge, isLarge = false) {
-            if (!charge) return '';
-            const pad = isLarge ? 110 : 25;
-            const hPad = isLarge ? 160 : 25;
-            const hook = 20;
-            const left = -radius - hPad;
-            const right = radius + hPad;
-            const top = -radius - pad;
-            const bottom = radius + pad;
-
-            return `
-                <g class="bracket-internal">
-                    <path d="M ${left + hook},${top} L ${left},${top} L ${left},${bottom} L ${left + hook},${bottom}" class="ion-bracket" />
-                    <path d="M ${right - hook},${top} L ${right},${top} L ${right},${bottom} L ${right - hook},${bottom}" class="ion-bracket" />
-                    <text x="${right + 8}" y="${top + 18}" class="ion-charge">${charge}</text>
-                </g>`;
-        }
-
-        function getAtomHtml(color, label, radius = MAIN_RADIUS) {
-            return `<circle cx="0" cy="0" r="${radius}" fill="none" stroke="${color}" stroke-width="2.5" />
-                <text x="0" y="8" text-anchor="middle" class="atom-label" fill="${color}">${label}</text>`;
-        }
-
-        function getLonePairHtml(angleDeg, color, symbolType = 'x', customRadius = PERIPHERAL_RADIUS) {
-            const rad = (angleDeg * Math.PI) / 180;
-            const tx = Math.cos(rad) * customRadius, ty = Math.sin(rad) * customRadius;
-            const pairRotation = angleDeg + 90; 
-            const symbolHtml = symbolType === 'x' ? getCrossSVG(color) : getCircleSVG(color);
-            const offset = 8;
-            return `<g transform="translate(${tx}, ${ty}) rotate(${pairRotation})"><g transform="translate(-${offset}, 0)">${symbolHtml}</g><g transform="translate(${offset}, 0)">${symbolHtml}</g></g>`;
-        }
-
-        function getBondHtml(angleDeg, sym1Type, sym2Type, molColor, atomLabel) {
-            const rad = (angleDeg * Math.PI) / 180;
-            const vec = { x: Math.cos(rad), y: Math.sin(rad) };
-            const pRadius = (atomLabel === 'H') ? HYDROGEN_RADIUS : PERIPHERAL_RADIUS;
-            const distToPeripheral = MAIN_RADIUS + pRadius - OVERLAP_DEPTH;
-            const atomX = vec.x * distToPeripheral, atomY = vec.y * distToPeripheral;
-            const lensCenterDist = MAIN_RADIUS - (OVERLAP_DEPTH / 2);
-            const sharedX = vec.x * lensCenterDist, sharedY = vec.y * lensCenterDist;
-            const spacing = 8;
-
-            const getSym = (type, color) => {
-                if (type === 'x') return getCrossSVG(color);
-                if (type === '•' || type === 'dot') return getDotSVG(color);
-                return getCircleSVG(color);
-            };
-
-            let lonePairs = '';
-            if (atomLabel === 'Cl' || atomLabel === 'F') {
-                const baseAngle = (angleDeg + 180) % 360;
-                lonePairs = getLonePairHtml(baseAngle + 90, molColor, 'o', pRadius) + getLonePairHtml(baseAngle + 180, molColor, 'o', pRadius) + getLonePairHtml(baseAngle + 270, molColor, 'o', pRadius);
-            }
-
-            return `<g>
-                <g transform="translate(${atomX}, ${atomY})">
-                    <circle cx="0" cy="0" r="${pRadius}" fill="none" stroke="${molColor}" stroke-width="1.5" />
-                    <text x="0" y="5" text-anchor="middle" class="atom-label" style="font-size:0.9rem" fill="${molColor}">${atomLabel}</text>
-                    ${lonePairs}
-                </g>
-                <g transform="translate(${sharedX}, ${sharedY}) rotate(${angleDeg + 90})">
-                    <g transform="translate(-${spacing}, 0)">${getSym(sym1Type, molColor)}</g>
-                    <g transform="translate(${spacing}, 0)">${getSym(sym2Type, molColor)}</g>
-                </g></g>`;
-        }
-
-        function getLonePairSymbols(angleDeg, color, highlight = false, isDative = false) {
-            const rad = (angleDeg * Math.PI) / 180;
-            const dist = isDative ? (MAIN_RADIUS - (OVERLAP_DEPTH / 2)) : MAIN_RADIUS;
-            const tx = Math.cos(rad) * dist, ty = Math.sin(rad) * dist;
-            const offset = 8;
-            const pairRotation = angleDeg + 90;
-
-            return `<g transform="translate(${tx}, ${ty}) rotate(${pairRotation})">
-                <g transform="translate(-${offset}, 0)">${getCrossSVG(color)}</g>
-                <g transform="translate(${offset}, 0)">${getCrossSVG(color)}</g>
-                ${highlight ? `<circle cx="0" cy="0" r="32" fill="none" stroke="${color}" stroke-width="2.5" class="highlight-pulse" />` : ''}
-            </g>`;
-        }
-
-        const cases = {
-            nh3bf3: {
-                name: "NH₃BF₃", 
-                donor: { en: "Nitrogen", zh: "氮" },
-                dMol: "NH₃", 
-                acceptor: { en: "Boron", zh: "硼" }, 
-                aMol: "BF₃", 
-                final: "NH₃BF₃", 
-                octet: "octet", 
-                charge: null,
-                setup: (groups, step) => {
-                    const isMerged = step === 2;
-                    const dX = isMerged ? 400 - (MAIN_RADIUS - OVERLAP_DEPTH/2) : 220;
-                    const aX = isMerged ? 400 + (MAIN_RADIUS - OVERLAP_DEPTH/2) : 580;
-                    const cy = 225;
-
-                    groups.donor.innerHTML = getAtomHtml(DONOR_MOL_COLOR, 'N') + getBondHtml(270, 'x', 'o', DONOR_MOL_COLOR, 'H') + getBondHtml(180, 'x', 'o', DONOR_MOL_COLOR, 'H') + getBondHtml(90, 'x', 'o', DONOR_MOL_COLOR, 'H');
-                    const box = (step === 1) ? `<rect x="-105" y="-20" width="40" height="40" fill="none" stroke="${ACCEPTOR_MOL_COLOR}" stroke-width="2" stroke-dasharray="4" class="highlight-pulse" />` : '';
-                    groups.acceptor.innerHTML = getAtomHtml(ACCEPTOR_MOL_COLOR, 'B') + getBondHtml(270, 'dot', 'o', ACCEPTOR_MOL_COLOR, 'F') + getBondHtml(0, 'dot', 'o', ACCEPTOR_MOL_COLOR, 'F') + getBondHtml(90, 'dot', 'o', ACCEPTOR_MOL_COLOR, 'F') + box;
-                    groups.lonePair.innerHTML = getLonePairSymbols(0, DATIVE_COLOR, step === 0, isMerged);
-
-                    groups.donor.style.transform = `translate(${dX}px, ${cy}px)`;
-                    groups.acceptor.style.transform = `translate(${aX}px, ${cy}px)`;
-                    groups.lonePair.style.transform = `translate(${dX}px, ${cy}px)`;
-                },
-                struct: (step) => renderRefinedStruct(step, 'N', 'B', ['H','H','H'], ['F','F','F'], DATIVE_COLOR)
-            },
-            alcl4: {
-                name: "AlCl₄⁻", 
-                donor: { en: "Chlorine", zh: "氯" }, 
-                dMol: "Cl⁻", 
-                acceptor: { en: "Aluminium", zh: "鋁" }, 
-                aMol: "AlCl₃", 
-                final: "AlCl₄⁻", 
-                octet: "octet", 
-                charge: '-',
-                setup: (groups, step) => {
-                    const isMerged = step === 2;
-                    const dX = isMerged ? 400 - (MAIN_RADIUS - OVERLAP_DEPTH/2) : 220;
-                    const aX = isMerged ? 400 + (MAIN_RADIUS - OVERLAP_DEPTH/2) : 580;
-                    const cy = 225;
-
-                    let dBrackets = (step < 2) ? getInternalBrackets(ION_RADIUS, '-') : '';
-                    let combinedBrackets = isMerged ? getInternalBrackets(MAIN_RADIUS, '-', true) : '';
-
-                    groups.donor.innerHTML = dBrackets + getAtomHtml(DONOR_MOL_COLOR, 'Cl', ION_RADIUS) + getLonePairHtml(270, DONOR_MOL_COLOR, 'x', ION_RADIUS) + getLonePairHtml(180, DONOR_MOL_COLOR, 'x', ION_RADIUS) + getLonePairHtml(90, DONOR_MOL_COLOR, 'x', ION_RADIUS);
-                    const box = (step === 1) ? `<rect x="-105" y="-20" width="40" height="40" fill="none" stroke="${ACCEPTOR_MOL_COLOR}" stroke-width="2" stroke-dasharray="4" class="highlight-pulse" />` : '';
-                    groups.acceptor.innerHTML = combinedBrackets + getAtomHtml(ACCEPTOR_MOL_COLOR, 'Al') + getBondHtml(270, 'dot', 'o', ACCEPTOR_MOL_COLOR, 'Cl') + getBondHtml(0, 'dot', 'o', ACCEPTOR_MOL_COLOR, 'Cl') + getBondHtml(90, 'dot', 'o', ACCEPTOR_MOL_COLOR, 'Cl') + box;
-                    groups.lonePair.innerHTML = getLonePairSymbols(0, DATIVE_COLOR, step === 0, isMerged);
-
-                    groups.donor.style.transform = `translate(${dX}px, ${cy}px)`;
-                    groups.acceptor.style.transform = `translate(${aX}px, ${cy}px)`;
-                    groups.lonePair.style.transform = `translate(${dX}px, ${cy}px)`;
-                },
-                struct: (step) => renderRefinedStruct(step, 'Cl', 'Al', [], ['Cl','Cl','Cl'], DATIVE_COLOR, true, '-', true, false)
-            },
-            h3o: {
-                name: "H₃O⁺", 
-                donor: { en: "Oxygen", zh: "氧" }, 
-                dMol: "H₂O", 
-                acceptor: { en: "Hydrogen", zh: "氫" }, 
-                aMol: "H⁺", 
-                final: "H₃O⁺", 
-                octet: "duplet", 
-                charge: '+',
-                setup: (groups, step) => {
-                    const isMerged = step === 2;
-                    const dX = isMerged ? 400 - (MAIN_RADIUS - OVERLAP_DEPTH/2) : 220;
-                    const aX = isMerged ? 400 + (HYDROGEN_RADIUS - OVERLAP_DEPTH/2) : 580;
-                    const cy = 225;
-
-                    let aBrackets = (step < 2) ? getInternalBrackets(HYDROGEN_RADIUS, '+') : '';
-                    let combinedBrackets = isMerged ? getInternalBrackets(MAIN_RADIUS, '+', true) : '';
-
-                    groups.donor.innerHTML = combinedBrackets + getAtomHtml(DONOR_MOL_COLOR, 'O') + getBondHtml(180, 'x', 'o', DONOR_MOL_COLOR, 'H') + getBondHtml(90, 'x', 'o', DONOR_MOL_COLOR, 'H') + getLonePairHtml(270, DONOR_MOL_COLOR, 'x', MAIN_RADIUS);
-                    const box = (step === 1) ? `<circle cx="-25" cy="0" r="32" fill="none" stroke="${DATIVE_COLOR}" stroke-width="2" stroke-dasharray="4" class="highlight-pulse" />` : '';
-                    groups.acceptor.innerHTML = aBrackets + `<circle cx="0" cy="0" r="${HYDROGEN_RADIUS}" fill="none" stroke="${ACCEPTOR_MOL_COLOR}" stroke-width="2" stroke-dasharray="4" /><text x="0" y="8" text-anchor="middle" class="atom-label" fill="${ACCEPTOR_MOL_COLOR}">H</text>${box}`;
-                    groups.lonePair.innerHTML = getLonePairSymbols(0, DATIVE_COLOR, step === 0, isMerged);
-
-                    groups.donor.style.transform = `translate(${dX}px, ${cy}px)`;
-                    groups.acceptor.style.transform = `translate(${aX}px, ${cy}px)`;
-                    groups.lonePair.style.transform = `translate(${dX}px, ${cy}px)`;
-                },
-                struct: (step) => renderRefinedStruct(step, 'O', 'H', ['H','H'], [], DATIVE_COLOR, true, '+', false, true)
-            },
-            nh4: {
-                name: "NH₄⁺", 
-                donor: { en: "Nitrogen", zh: "氮" }, 
-                dMol: "NH₃", 
-                acceptor: { en: "Hydrogen", zh: "氫" }, 
-                aMol: "H⁺", 
-                final: "NH₄⁺", 
-                octet: "duplet", 
-                charge: '+',
-                setup: (groups, step) => {
-                    const isMerged = step === 2;
-                    const dX = isMerged ? 400 - (MAIN_RADIUS - OVERLAP_DEPTH/2) : 220;
-                    const aX = isMerged ? 400 + (HYDROGEN_RADIUS - OVERLAP_DEPTH/2) : 580;
-                    const cy = 225;
-
-                    let aBrackets = (step < 2) ? getInternalBrackets(HYDROGEN_RADIUS, '+') : '';
-                    let combinedBrackets = isMerged ? getInternalBrackets(MAIN_RADIUS, '+', true) : '';
-
-                    groups.donor.innerHTML = combinedBrackets + getAtomHtml(DONOR_MOL_COLOR, 'N') + getBondHtml(270, 'x', 'o', DONOR_MOL_COLOR, 'H') + getBondHtml(180, 'x', 'o', DONOR_MOL_COLOR, 'H') + getBondHtml(90, 'x', 'o', DONOR_MOL_COLOR, 'H');
-                    const box = (step === 1) ? `<circle cx="-25" cy="0" r="32" fill="none" stroke="${DATIVE_COLOR}" stroke-width="2" stroke-dasharray="4" class="highlight-pulse" />` : '';
-                    groups.acceptor.innerHTML = aBrackets + `<circle cx="0" cy="0" r="${HYDROGEN_RADIUS}" fill="none" stroke="${ACCEPTOR_MOL_COLOR}" stroke-width="2" stroke-dasharray="4" /><text x="0" y="8" text-anchor="middle" class="atom-label" fill="${ACCEPTOR_MOL_COLOR}">H</text>${box}`;
-                    groups.lonePair.innerHTML = getLonePairSymbols(0, DATIVE_COLOR, step === 0, isMerged);
-
-                    groups.donor.style.transform = `translate(${dX}px, ${cy}px)`;
-                    groups.acceptor.style.transform = `translate(${aX}px, ${cy}px)`;
-                    groups.lonePair.style.transform = `translate(${dX}px, ${cy}px)`;
-                },
-                struct: (step) => renderRefinedStruct(step, 'N', 'H', ['H','H','H'], [], DATIVE_COLOR, true, '+', false, true)
-            }
+        const DATA = {
+            'C': { sym: 'C', name: 'Carbon', zh: '碳', start: '2, 4', full: '2, 8', needs: 4 },
+            'O': { sym: 'O', name: 'Oxygen', zh: '氧', start: '2, 6', full: '2, 8', needs: 2 },
+            'H': { sym: 'H', name: 'Hydrogen', zh: '氫', start: '1', full: '2', needs: 1 },
+            'N': { sym: 'N', name: 'Nitrogen', zh: '氮', start: '2, 5', full: '2, 8', needs: 3 },
+            'S': { sym: 'S', name: 'Sulfur', zh: '硫', start: '2, 8, 6', full: '2, 8, 8', needs: 2 },
+            'Cl': { sym: 'Cl', name: 'Chlorine', zh: '氯', start: '2, 8, 7', full: '2, 8, 8', needs: 1 },
+            'F': { sym: 'F', name: 'Fluorine', zh: '氟', start: '2, 7', full: '2, 8', needs: 1 }
         };
 
-        function renderRefinedStruct(step, dSym, aSym, dNeighbors, aNeighbors, arrowColor, isIon=false, charge='', dIsIon=false, aIsIon=false) {
-            const isMerged = step === 2;
-            const cx = 130, cy = 110, unit = 32;
-            const dX = isMerged ? -20 : -38, aX = isMerged ? 20 : 38;
-
-            const drawBonds = (neighbors, side, molColor) => {
-                let html = '';
-                const positions = neighbors.length === 3 ? [{x:0, y:-12, dx:0, dy:-unit+14},{x:side==='L'?-12:12, y:0, dx:side==='L'?-unit+14:unit-14, dy:0},{x:0, y:12, dx:0, dy:unit-14}] 
-                    : neighbors.length === 2 ? [{x:side==='L'?-12:12, y:0, dx:side==='L'?-unit+14:unit-14, dy:0},{x:0, y:12, dx:0, dy:unit-14}] 
-                    : neighbors.length === 1 ? [{x:side==='L'?-12:12, y:0, dx:side==='L'?-unit+14:unit-14, dy:0}] : [];
-                neighbors.forEach((sym, i) => {
-                    const p = positions[i];
-                    html += `<line x1="${p.x}" y1="${p.y}" x2="${p.x+p.dx}" y2="${p.y+p.dy}" class="struct-line" /><text x="${p.x+p.dx+(p.dx>0?8:(p.dx<0?-8:0))}" y="${p.y+p.dy+(p.dy>0?14:(p.dy<0?-6:7))}" text-anchor="middle" class="struct-text" style="fill:${molColor}">${sym}</text>`;
-                });
-                return html;
-            };
-
-            const atomBracket = (sign) => {
-                const bw=22, bh=24;
-                return `<g><path d="M -${bw-4},-${bh} L -${bw},-${bh} L -${bw},${bh} L -${bw-4},${bh}" class="struct-bracket" /><path d="M ${bw-4},-${bh} L ${bw},-${bh} L ${bw},${bh} L ${bw-4},${bh}" class="struct-bracket" /><text x="${bw+6}" y="-${bh-12}" class="struct-charge">${sign}</text></g>`;
-            };
-
-            const lonePairX = (x, y, color) => {
-                const offset = 5;
-                return `<g transform="translate(${x},${y})"><g transform="translate(0,-${offset})">${getCrossSVG(color, 3, 2)}</g><g transform="translate(0,${offset})">${getCrossSVG(color, 3, 2)}</g></g>`;
-            };
-
-            return `
-            <svg width="260" height="220" viewBox="0 0 260 220">
-                <defs><marker id="arr" markerWidth="6" markerHeight="6" refX="4" refY="3" orient="auto"><polygon points="0 0, 4 3, 0 6" fill="${arrowColor}"/></marker></defs>
-                <g transform="translate(${cx}, ${cy})">
-                    ${(isMerged && isIon) ? `<g><path d="M -85,-75 L -95,-75 L -95,80 L -85,80" class="struct-bracket" /><path d="M 85,-75 L 95,-75 L 95,80 L 85,80" class="struct-bracket" /><text x="100" y="-60" class="ion-charge" style="fill:#000">${charge}</text></g>` : ''}
-                    <g transform="translate(${dX}, 0)"><text x="0" y="7" text-anchor="middle" class="struct-text" style="fill:${DONOR_MOL_COLOR}">${dSym}</text>${drawBonds(dNeighbors, 'L', DONOR_MOL_COLOR)}${(!isMerged) ? lonePairX(15, 0, arrowColor) : ''}${(!isMerged && dIsIon) ? atomBracket(charge) : ''}</g>
-                    <g transform="translate(${aX}, 0)"><text x="0" y="7" text-anchor="middle" class="struct-text" style="fill:${ACCEPTOR_MOL_COLOR}">${aSym}</text>${drawBonds(aNeighbors, 'R', ACCEPTOR_MOL_COLOR)}${(!isMerged && aIsIon) ? atomBracket(charge) : ''}</g>
-                    ${isMerged ? `<line x1="${dX+10}" y1="0" x2="${aX-8}" y2="0" stroke="${arrowColor}" stroke-width="2.5" marker-end="url(#arr)"/>` : ''}
-                </g>
-            </svg>`;
-        }
-
-        let currentKey = 'nh3bf3', currentStep = 0;
-        const caseSelector = document.getElementById('case-selector');
-        const structContainer = document.getElementById('struct-svg-container');
-        const guidanceText = document.getElementById('guidance-text');
-        const svgGroups = { donor: document.getElementById('donor-group'), acceptor: document.getElementById('acceptor-group'), lonePair: document.getElementById('lone-pair-group') };
-
-        function formatChem(str) { return str.replace(/(\d+)/g, '<sub>$1</sub>').replace(/([-+])/, '<sup>$1</sup>'); }
-
-        function renderSelector() {
-            caseSelector.innerHTML = '';
-            Object.keys(cases).forEach(key => {
-                const btn = document.createElement('button');
-                btn.className = "chem-label w-full text-left px-4 py-2 rounded-lg border border-slate-200 hover:bg-slate-50 transition-all font-medium text-slate-700 active:scale-95";
-                btn.innerHTML = formatChem(cases[key].name);
-                btn.onclick = () => { currentKey = key; currentStep = 0; update(); };
-                caseSelector.appendChild(btn);
-            });
-        }
-
-        function update() {
-            const c = cases[currentKey];
-            const text = i18n[currentLang];
-            
-            // UI Static Labels
-            document.getElementById('ui-title').innerText = text.title;
-            document.getElementById('ui-subtitle').innerText = text.subtitle;
-            document.getElementById('ui-select-example').innerText = text.selectExample;
-            document.getElementById('ui-struct-label').innerText = text.structLabel;
-            document.getElementById('prev-btn').innerText = text.prev;
-            document.getElementById('next-btn').innerText = text.next;
-            document.getElementById('lang-text').innerText = text.toggleTo;
-
-            // Visual Content
-            c.setup(svgGroups, currentStep);
-            structContainer.innerHTML = c.struct(currentStep);
-
-            // Guidance Generation
-            let msg = "";
-            const donorName = c.donor[currentLang];
-            const acceptorName = c.acceptor[currentLang];
-            const octetType = text[c.octet];
-
-            if (currentLang === 'en') {
-                msg = currentStep === 0 ? `${donorName} in ${c.dMol} contains lone pair electron.` : 
-                      currentStep === 1 ? `While ${acceptorName} in ${c.aMol} outermost electron shell is not fully filled, which has a vacant site to accept the electron.` : 
-                      `${acceptorName} in ${c.aMol} accepts the lone pair electron from ${donorName} atom in ${c.dMol} to form dative covalent bond, so that ${acceptorName.toLowerCase()} atom in ${c.final} attains a stable ${octetType} structure.`;
-            } else {
-                msg = currentStep === 0 ? `${c.dMol} 中的 ${donorName} 含有孤電子對。` : 
-                      currentStep === 1 ? `而 ${c.aMol} 中的 ${acceptorName} 最外層電子殼未填滿，具有空位可接收電子。` : 
-                      `${c.aMol} 中的 ${acceptorName} 接收來自 ${c.dMol} 中 ${donorName} 的孤電子對，形成配位共價鍵，使 ${c.final} 中的 ${acceptorName} 原子達到穩定的 ${octetType} 結構。`;
-            }
-
-            guidanceText.innerText = msg;
-            document.getElementById('step-indicator').innerText = `${text.step} ${currentStep + 1} / 3`;
-            document.getElementById('prev-btn').disabled = currentStep === 0;
-            document.getElementById('next-btn').disabled = currentStep === 2;
-
-            // Update button states
-            Array.from(caseSelector.children).forEach(b => {
-                const isActive = b.innerHTML === formatChem(c.name);
-                b.classList.toggle('bg-blue-50', isActive); b.classList.toggle('border-blue-300', isActive);
-            });
-        }
-
-        // Event Listeners
-        document.getElementById('lang-toggle').onclick = () => {
-            currentLang = currentLang === 'en' ? 'zh' : 'en';
-            update();
-        };
-        document.getElementById('prev-btn').onclick = () => { if(currentStep > 0) { currentStep--; update(); }};
-        document.getElementById('next-btn').onclick = () => { if(currentStep < 2) { currentStep++; update(); }};
+        const PAIRS = [['C', 'O'], ['H', 'O'], ['N', 'H'], ['S', 'Cl'], ['H', 'F'], ['C', 'Cl'], ['C', 'H']];
+        const PREFIXES_EN = ["", "mono", "di", "tri", "tetra", "penta", "hexa"];
+        const PREFIXES_ZH = ["", "一", "二", "三", "四", "五", "六"];
         
-        window.onload = () => {
-            renderSelector();
-            update();
+        const SPECIAL_NAMES = { 
+            "H2O": { en: "Water", zh: "水" },
+            "H2O2": { en: "Hydrogen peroxide", zh: "過氧化氫" },
+            "NH3": { en: "Ammonia", zh: "氨" }, 
+            "CH4": { en: "Methane", zh: "甲烷" }, 
+            "HF": { en: "Hydrogen fluoride", zh: "氟化氫" }, 
+            "CCl4": { en: "Carbon tetrachloride", zh: "四氯化碳" }
         };
+
+        let currentPair = null;
+        let currentStep = 1;
+        let userInputs = { el1: null, el2: null };
+        let crossInputs = { sub1: "", sub2: "" };
+        let simplifiedInputs = { sub1: "", sub2: "" };
+        let isAnimating = false;
+        let showStep2Values = false;
+
+        function toggleLanguage() {
+            currentLang = currentLang === 'en' ? 'zh' : 'en';
+            document.getElementById('lang-text').innerText = currentLang === 'en' ? '繁體中文' : 'English';
+            updateStaticUI();
+            if (currentPair) {
+                renderStep();
+            } else {
+                renderSelectionScreen();
+            }
+        }
+
+        function updateStaticUI() {
+            const t = TRANSLATIONS[currentLang];
+            document.getElementById('ui-title').innerText = t.title;
+            document.getElementById('ui-subtitle').innerText = t.subtitle;
+            document.getElementById('ui-choose').innerText = t.choose;
+            document.getElementById('ui-back-change').innerText = t.backChange;
+            document.getElementById('ui-back').innerText = t.back;
+        }
+
+        function renderSelectionScreen() {
+            const list = document.getElementById('pair-list');
+            list.innerHTML = '';
+            const t = TRANSLATIONS[currentLang];
+            PAIRS.forEach(pair => {
+                const btn = document.createElement('button');
+                btn.className = "p-4 border-2 border-slate-100 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition text-left flex justify-between items-center group";
+                btn.onclick = () => startSimulation(pair);
+                btn.innerHTML = `<span class="text-lg font-bold text-slate-700">${pair[0]} & ${pair[1]}</span><span class="opacity-0 group-hover:opacity-100 text-blue-500 text-sm font-bold transition">${t.start}</span>`;
+                list.appendChild(btn);
+            });
+        }
+
+        function init() {
+            updateStaticUI();
+            renderSelectionScreen();
+        }
+
+        function startSimulation(pair) {
+            currentPair = [...pair].sort((a, b) => ELEMENT_ORDER.indexOf(a) - ELEMENT_ORDER.indexOf(b)).map(sym => DATA[sym]);
+            currentStep = 1;
+            userInputs = { el1: null, el2: null };
+            crossInputs = { sub1: "", sub2: "" };
+            simplifiedInputs = { sub1: "", sub2: "" };
+            isAnimating = false;
+            showStep2Values = false;
+            document.getElementById('selection-screen').classList.add('hidden');
+            document.getElementById('step-container').classList.remove('hidden');
+            renderStep();
+        }
+
+        function resetSim() {
+            document.getElementById('selection-screen').classList.remove('hidden');
+            document.getElementById('step-container').classList.add('hidden');
+            renderSelectionScreen();
+        }
+
+        function nextStep() {
+            if (isAnimating) return;
+            const t = TRANSLATIONS[currentLang];
+            const [el1, el2] = currentPair;
+            const gcd = (a, b) => b === 0 ? a : gcd(b, a % b);
+            const commonFactor = gcd(el1.needs, el2.needs);
+            
+            if (currentStep === 1) {
+                if (userInputs.el1 === el1.needs && userInputs.el2 === el2.needs) {
+                    triggerFlyToHeaders();
+                } else {
+                    shakeGuidance(t.shakeS1);
+                }
+                return;
+            }
+
+            if (currentStep === 2) {
+                if (parseInt(crossInputs.sub1) === el2.needs && parseInt(crossInputs.sub2) === el1.needs) {
+                    triggerCrossAnimation();
+                } else {
+                    shakeGuidance(t.shakeS2);
+                }
+                return;
+            }
+
+            if (currentStep === 3) {
+                const correctSub1 = el2.needs / commonFactor;
+                const correctSub2 = el1.needs / commonFactor;
+                
+                const val1 = (simplifiedInputs.sub1 === "" || simplifiedInputs.sub1 === "0") ? 1 : parseInt(simplifiedInputs.sub1);
+                const val2 = (simplifiedInputs.sub2 === "" || simplifiedInputs.sub2 === "0") ? 1 : parseInt(simplifiedInputs.sub2);
+
+                const isSub1Valid = validateOneAtEnd('sub1', simplifiedInputs.sub1, correctSub1);
+                const isSub2Valid = validateOneAtEnd('sub2', simplifiedInputs.sub2, correctSub2);
+
+                if (isSub1Valid && isSub2Valid) {
+                    currentStep++;
+                    renderStep();
+                } else {
+                    shakeGuidance(t.shakeS3);
+                }
+                return;
+            }
+
+            if (currentStep < 5) {
+                currentStep++;
+                renderStep();
+            } else {
+                resetSim();
+            }
+        }
+
+        function validateOneAtEnd(key, currentVal, correctVal) {
+            const inputEl = document.getElementById('sim-input-' + key);
+            const container = inputEl.parentElement;
+            
+            if (currentVal === "1") {
+                const strike = document.createElement('div');
+                strike.className = "strike-line";
+                container.appendChild(strike);
+                inputEl.classList.add('border-red-400', 'text-red-600', 'bg-red-50');
+                inputEl.classList.remove('border-blue-200', 'text-blue-600', 'bg-blue-50');
+                
+                setTimeout(() => {
+                    strike.remove();
+                    simplifiedInputs[key] = "";
+                    inputEl.value = "";
+                    inputEl.classList.remove('border-red-400', 'text-red-600', 'bg-red-50');
+                    inputEl.classList.add('border-blue-200', 'text-blue-600', 'bg-blue-50');
+                    updateNextBtnState();
+                }, 800);
+                return false;
+            }
+
+            const numVal = (currentVal === "" || currentVal === "0") ? 1 : parseInt(currentVal);
+            if (numVal !== correctVal) {
+                inputEl.classList.add('border-red-400', 'text-red-600', 'bg-red-50');
+                inputEl.classList.remove('border-blue-200', 'text-blue-600', 'bg-blue-50');
+                return false;
+            }
+            return true;
+        }
+
+        function triggerFlyToHeaders() {
+            isAnimating = true;
+            const [el1, el2] = currentPair;
+            const start1 = document.querySelector('[data-correct-btn="0"]');
+            const start2 = document.querySelector('[data-correct-btn="1"]');
+            const sRect1 = start1.getBoundingClientRect();
+            const sRect2 = start2.getBoundingClientRect();
+            currentStep = 2;
+            showStep2Values = false; 
+            renderStep();
+            setTimeout(() => {
+                const target1 = document.getElementById('target-val-1');
+                const target2 = document.getElementById('target-val-2');
+                const tRect1 = target1.getBoundingClientRect();
+                const tRect2 = target2.getBoundingClientRect();
+                const createFlyer = (sRect, tRect, val) => {
+                    const el = document.createElement('div');
+                    el.className = "text-2xl font-bold text-white bg-green-500 px-4 py-2 rounded-lg move-num flex items-center justify-center";
+                    el.style.top = sRect.top + 'px'; el.style.left = sRect.left + 'px';
+                    el.style.width = sRect.width + 'px'; el.style.height = sRect.height + 'px';
+                    el.style.setProperty('--translate-path', `translate(${tRect.left - sRect.left}px, ${tRect.top - sRect.top}px)`);
+                    el.innerText = val;
+                    document.body.appendChild(el);
+                    return el;
+                };
+                const f1 = createFlyer(sRect1, tRect1, el1.needs);
+                const f2 = createFlyer(sRect2, tRect2, el2.needs);
+                setTimeout(() => {
+                    f1.remove(); f2.remove();
+                    showStep2Values = true;
+                    target1.classList.remove('opacity-0');
+                    target2.classList.remove('opacity-0');
+                    isAnimating = false;
+                    updateNextBtnState();
+                }, 1500);
+            }, 100);
+        }
+
+        function triggerCrossAnimation() {
+            isAnimating = true;
+            const t1 = document.getElementById('target-val-1'), t2 = document.getElementById('target-val-2');
+            const d1 = document.getElementById('res-sub1'), d2 = document.getElementById('res-sub2');
+            const r1 = t1.getBoundingClientRect(), r2 = t2.getBoundingClientRect();
+            const dr1 = d2.getBoundingClientRect(), dr2 = d1.getBoundingClientRect();
+            const createCrosser = (rect, dRect, val) => {
+                const el = document.createElement('div');
+                el.className = "text-3xl font-bold text-blue-600 move-num fixed flex items-center justify-center";
+                el.style.top = rect.top + 'px'; el.style.left = rect.left + 'px';
+                el.style.width = rect.width + 'px'; el.style.height = rect.height + 'px';
+                el.style.setProperty('--translate-path', `translate(${dRect.left - rect.left}px, ${dRect.top - rect.top}px)`);
+                el.innerText = val;
+                document.body.appendChild(el);
+                return el;
+            };
+            const f1 = createCrosser(r1, dr1, t1.innerText);
+            const f2 = createCrosser(r2, dr2, t2.innerText);
+            setTimeout(() => {
+                f1.remove(); f2.remove();
+                document.getElementById('input-sub1-container').classList.add('hidden');
+                document.getElementById('input-sub2-container').classList.add('hidden');
+                d1.classList.remove('opacity-0'); d2.classList.remove('opacity-0');
+                isAnimating = false;
+                currentStep = 3;
+                setTimeout(renderStep, 500);
+            }, 1500);
+        }
+
+        function checkInput(elIdx, val, btn) {
+            const target = currentPair[elIdx].needs;
+            const key = elIdx === 0 ? 'el1' : 'el2';
+            btn.parentElement.querySelectorAll('button').forEach(b => {
+                b.className = "py-2 border-2 rounded-lg font-bold transition-all bg-white text-slate-600 border-slate-200 hover:border-blue-400";
+                b.removeAttribute('data-correct-btn');
+            });
+            if (val === target) {
+                userInputs[key] = val;
+                btn.className = "py-2 border-2 rounded-lg font-bold transition-all bg-green-500 text-white border-green-600";
+                btn.setAttribute('data-correct-btn', elIdx);
+            } else {
+                userInputs[key] = null;
+                btn.className = "py-2 border-2 rounded-lg font-bold transition-all bg-red-100 border-red-400 text-red-600";
+            }
+            updateNextBtnState();
+        }
+
+        function stepVal(step, key, delta) {
+            if (step === 2) {
+                let current = parseInt(crossInputs[key]) || 0;
+                let next = Math.max(0, Math.min(4, current + delta));
+                crossInputs[key] = next === 0 ? "" : next.toString();
+                const inputEl = document.getElementById('input-' + key);
+                if (inputEl) inputEl.value = crossInputs[key];
+            } else if (step === 3) {
+                let current = parseInt(simplifiedInputs[key]) || 0;
+                let next = Math.max(0, Math.min(4, current + delta));
+                const valStr = next === 0 ? "" : next.toString();
+                simplifiedInputs[key] = valStr;
+                const inputEl = document.getElementById('sim-input-' + key);
+                if (inputEl) {
+                    inputEl.value = valStr;
+                    inputEl.className = "input-box w-14 h-14 text-center text-3xl font-bold border-2 border-blue-200 rounded-xl text-blue-600 bg-blue-50 transition-all select-none pointer-events-none";
+                }
+            }
+            updateNextBtnState();
+        }
+
+        function updateNextBtnState() {
+            const btn = document.getElementById('next-btn');
+            let active = false;
+            if (currentStep === 1) active = userInputs.el1 !== null && userInputs.el2 !== null;
+            else if (currentStep === 2) active = (crossInputs.sub1 !== "" && crossInputs.sub2 !== "") && showStep2Values;
+            else if (currentStep === 3) active = true;
+            else active = true;
+            btn.style.opacity = active ? '1' : '0.5';
+            btn.disabled = !active;
+        }
+
+        function prevStep() {
+            if (isAnimating) return;
+            if (currentStep > 1) {
+                currentStep--;
+                showStep2Values = true;
+                renderStep();
+            }
+        }
+
+        function shakeGuidance(text) {
+            const guidance = document.getElementById('guidance-box');
+            guidance.classList.add('shake');
+            setTimeout(() => guidance.classList.remove('shake'), 400);
+            document.getElementById('guidance-text').innerText = text;
+        }
+
+        function renderStep() {
+            const display = document.getElementById('display-area'), guidance = document.getElementById('guidance-text');
+            const indicator = document.getElementById('step-indicator'), nextBtnText = document.getElementById('next-btn-text'), prevBtn = document.getElementById('prev-btn');
+            const t = TRANSLATIONS[currentLang];
+            
+            indicator.innerText = `${t.step} ${currentStep} ${t.of} 5`;
+            display.innerHTML = '';
+            prevBtn.style.visibility = (currentStep === 1) ? 'hidden' : 'visible';
+            const [el1, el2] = currentPair;
+
+            if (currentStep === 1) {
+                nextBtnText.innerText = t.checkAnswer;
+                guidance.innerText = t.guidanceS1;
+                display.innerHTML = `<div class="flex gap-4 md:gap-8 items-start fade-in">${[el1, el2].map((el, idx) => `<div class="text-center p-4 md:p-6 bg-slate-50 rounded-2xl border border-slate-100 shadow-sm w-36 md:w-44"><div class="w-10 h-10 md:w-12 md:h-12 bg-slate-800 text-white rounded-full flex items-center justify-center text-lg md:text-xl font-bold mx-auto mb-4">${el.sym}</div><div class="mb-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider">${t.startConf}: <span class="font-mono text-slate-700">${el.start}</span></div><div class="mb-4 text-[10px] font-bold text-blue-500 uppercase tracking-wider">${t.targetConf}: <span class="font-mono text-blue-600">${el.full}</span></div><div class="pt-4 border-t border-slate-200"><p class="text-[10px] md:text-xs font-bold text-slate-500 mb-2 uppercase">${t.missing}</p><div class="grid grid-cols-2 gap-2">${[1, 2, 3, 4].map(num => `<button onclick="checkInput(${idx}, ${num}, this)" class="py-2 md:py-3 border-2 rounded-lg font-bold transition-all ${userInputs[idx === 0 ? 'el1' : 'el2'] === num ? 'bg-green-500 text-white border-green-600' : 'bg-white text-slate-600 border-slate-200 hover:border-blue-400'}" ${userInputs[idx === 0 ? 'el1' : 'el2'] === num ? `data-correct-btn="${idx}"` : ''}>${num}</button>`).join('')}</div></div></div>`).join('')}</div>`;
+            } else if (currentStep === 2) {
+                nextBtnText.innerText = t.checkCross;
+                guidance.innerText = t.guidanceS2;
+                display.innerHTML = `
+                <div class="relative w-full max-w-[500px] h-80 flex flex-col items-center fade-in">
+                    <div class="flex justify-between w-full px-12 mb-12">
+                        <div class="text-center">
+                            <div class="text-[10px] font-bold text-slate-400 uppercase mb-1">${el1.sym} ${t.needsLabel}</div>
+                            <div id="target-val-1" class="text-3xl font-bold text-blue-600 h-10 w-10 flex items-center justify-center mx-auto transition-opacity duration-300 ${showStep2Values ? '' : 'opacity-0'}">${el1.needs}</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-[10px] font-bold text-slate-400 uppercase mb-1">${el2.sym} ${t.needsLabel}</div>
+                            <div id="target-val-2" class="text-3xl font-bold text-blue-600 h-10 w-10 flex items-center justify-center mx-auto transition-opacity duration-300 ${showStep2Values ? '' : 'opacity-0'}">${el2.needs}</div>
+                        </div>
+                    </div>
+                    <div class="absolute inset-0 pointer-events-none opacity-20 pt-16 z-0">
+                        <svg width="100%" height="100%" viewBox="0 0 500 320">
+                            <line x1="125" y1="45" x2="375" y2="245" stroke="#3b82f6" stroke-width="4" stroke-dasharray="8 8" />
+                            <line x1="375" y1="45" x2="125" y2="245" stroke="#3b82f6" stroke-width="4" stroke-dasharray="8 8" />
+                        </svg>
+                    </div>
+                    <div class="mt-8 w-full flex justify-between px-6 z-10">
+                        <div class="flex items-baseline gap-2">
+                            <span class="text-6xl md:text-7xl font-bold text-slate-800">${el1.sym}</span>
+                            <div class="relative w-14 h-14 md:w-16 md:h-16 flex items-center justify-center">
+                                <div id="input-sub1-container" class="step-input-wrapper ${crossInputs.sub1 && crossInputs.sub2 && !showStep2Values ? 'hidden' : ''}">
+                                    <input type="number" id="input-sub1" placeholder=" " value="${crossInputs.sub1}" 
+                                        readonly
+                                        class="w-12 h-12 md:w-14 md:h-14 text-center text-2xl md:text-3xl font-bold border-2 border-blue-200 rounded-xl text-blue-600 bg-blue-50 transition-all select-none pointer-events-none">
+                                    <div class="step-controls">
+                                        <button onclick="stepVal(2, 'sub1', 1)" class="step-arrow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m18 15-6-6-6 6"/></svg></button>
+                                        <button onclick="stepVal(2, 'sub1', -1)" class="step-arrow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m6 9 6 6 6-6"/></svg></button>
+                                    </div>
+                                </div>
+                                <span id="res-sub1" class="text-4xl md:text-5xl font-bold text-blue-600 opacity-0 leading-none">${el2.needs}</span>
+                            </div>
+                        </div>
+                        <div class="flex items-baseline gap-2">
+                            <span class="text-6xl md:text-7xl font-bold text-slate-800">${el2.sym}</span>
+                            <div class="relative w-14 h-14 md:w-16 md:h-16 flex items-center justify-center">
+                                <div id="input-sub2-container" class="step-input-wrapper ${crossInputs.sub1 && crossInputs.sub2 && !showStep2Values ? 'hidden' : ''}">
+                                    <input type="number" id="input-sub2" placeholder=" " value="${crossInputs.sub2}" 
+                                        readonly
+                                        class="w-12 h-12 md:w-14 md:h-14 text-center text-2xl md:text-3xl font-bold border-2 border-blue-200 rounded-xl text-blue-600 bg-blue-50 transition-all select-none pointer-events-none">
+                                    <div class="step-controls">
+                                        <button onclick="stepVal(2, 'sub2', 1)" class="step-arrow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m18 15-6-6-6 6"/></svg></button>
+                                        <button onclick="stepVal(2, 'sub2', -1)" class="step-arrow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m6 9 6 6 6-6"/></svg></button>
+                                    </div>
+                                </div>
+                                <span id="res-sub2" class="text-4xl md:text-5xl font-bold text-blue-600 opacity-0 leading-none">${el1.needs}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+            } else if (currentStep === 3) {
+                nextBtnText.innerText = t.simplifyCheck;
+                guidance.innerText = t.guidanceS3;
+                display.innerHTML = `
+                <div class="flex flex-col items-center gap-6 md:gap-10 fade-in py-6 md:py-10 w-full">
+                    <div class="formula-step-3 text-4xl md:text-6xl font-bold">
+                        <div class="text-slate-400 shrink-0">${el1.sym}<sub>${el2.needs}</sub>${el2.sym}<sub>${el1.needs}</sub></div>
+                        <div class="text-slate-300 arrow mx-2">→</div>
+                        <div class="flex items-baseline gap-4 md:gap-6">
+                            <div class="flex items-baseline gap-1 md:gap-2">
+                                <span>${el1.sym}</span>
+                                <div class="step-input-wrapper strike-container">
+                                    <input type="number" id="sim-input-sub1" placeholder=" " value="${simplifiedInputs.sub1}" 
+                                        readonly
+                                        class="input-box w-12 h-12 md:w-14 md:h-14 text-center text-2xl md:text-3xl font-bold border-2 border-blue-200 rounded-xl text-blue-600 bg-blue-50 transition-all select-none pointer-events-none">
+                                    <div class="step-controls">
+                                        <button onclick="stepVal(3, 'sub1', 1)" class="step-arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m18 15-6-6-6 6"/></svg></button>
+                                        <button onclick="stepVal(3, 'sub1', -1)" class="step-arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m6 9 6 6 6-6"/></svg></button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex items-baseline gap-1 md:gap-2">
+                                <span>${el2.sym}</span>
+                                <div class="step-input-wrapper strike-container">
+                                    <input type="number" id="sim-input-sub2" placeholder=" " value="${simplifiedInputs.sub2}" 
+                                        readonly
+                                        class="input-box w-12 h-12 md:w-14 md:h-14 text-center text-2xl md:text-3xl font-bold border-2 border-blue-200 rounded-xl text-blue-600 bg-blue-50 transition-all select-none pointer-events-none">
+                                    <div class="step-controls">
+                                        <button onclick="stepVal(3, 'sub2', 1)" class="step-arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m18 15-6-6-6 6"/></svg></button>
+                                        <button onclick="stepVal(3, 'sub2', -1)" class="step-arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m6 9 6 6 6-6"/></svg></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-center px-4">
+                        <p class="text-xs md:text-sm text-slate-500 italic mb-2">${t.tipSimplify}</p>
+                        <div class="bg-red-50 text-red-700 text-[10px] md:text-xs font-bold px-3 py-1 rounded-full border border-red-100 inline-block uppercase tracking-wider">${t.dontLeaveOne}</div>
+                    </div>
+                </div>`;
+            } else if (currentStep === 4) {
+                nextBtnText.innerText = t.getName;
+                const gcd = (a, b) => b === 0 ? a : gcd(b, a % b), cf = gcd(el1.needs, el2.needs);
+                const s1 = el2.needs / cf, s2 = el1.needs / cf;
+                guidance.innerText = t.finishedFormula;
+                display.innerHTML = `<div class="text-center fade-in py-12"><div class="text-7xl md:text-8xl font-extrabold text-slate-800 tracking-tighter">${el1.sym}${s1 === 1 ? '' : `<sub class="text-4xl md:text-5xl">${s1}</sub>`}${el2.sym}${s2 === 1 ? '' : `<sub class="text-4xl md:text-5xl">${s2}</sub>`}</div></div>`;
+            } else if (currentStep === 5) {
+                nextBtnText.innerText = t.finish;
+                const gcd = (a, b) => b === 0 ? a : gcd(b, a % b), cf = gcd(el1.needs, el2.needs);
+                const s1 = el2.needs / cf, s2 = el1.needs / cf;
+                const formula = `${el1.sym}${s1 === 1 ? '' : s1}${el2.sym}${s2 === 1 ? '' : s2}`;
+                
+                let finalName = "";
+                if (SPECIAL_NAMES[formula]) {
+                    finalName = SPECIAL_NAMES[formula][currentLang];
+                } else {
+                    if (currentLang === 'en') {
+                        const prefix1 = s1 > 1 ? PREFIXES_EN[s1] : "";
+                        let p2 = PREFIXES_EN[s2], root2 = el2.sym === 'O' ? 'oxide' : el2.sym === 'Cl' ? 'chloride' : el2.sym === 'F' ? 'fluoride' : el2.sym === 'S' ? 'sulfide' : el2.sym === 'H' ? 'hydride' : el2.name.toLowerCase() + 'ide';
+                        if (p2 === 'mono' && root2 === 'oxide') p2 = 'mon';
+                        else if ((p2.endsWith('a') || p2.endsWith('o')) && root2.startsWith('o')) p2 = p2.slice(0, -1);
+                        finalName = (prefix1 + el1.name.toLowerCase()).replace(/^\w/, c => c.toUpperCase()) + " " + p2 + root2;
+                    } else {
+                        // Traditional Chinese Naming: [Prefix][Element2]化[Prefix][Element1]
+                        const p1 = s1 > 1 ? PREFIXES_ZH[s1] : "";
+                        const p2 = s2 > 1 ? PREFIXES_ZH[s2] : "";
+                        const root2 = el2.sym === 'O' ? '氧' : el2.sym === 'Cl' ? '氯' : el2.sym === 'F' ? '氟' : el2.sym === 'S' ? '硫' : el2.sym === 'H' ? '氫' : el2.zh;
+                        finalName = `${p2}${root2}化${p1}${el1.zh}`;
+                    }
+                }
+
+                guidance.innerText = t.finalResult;
+                display.innerHTML = `
+                    <div class="w-full flex flex-col items-center gap-6 md:gap-8 py-2 md:py-4">
+                        <div class="w-full text-center bg-slate-900 text-white p-6 md:p-8 rounded-2xl shadow-xl fade-in max-w-md">
+                            <div class="text-4xl md:text-5xl font-bold mb-4">${formula.replace(/(\d+)/g, '<sub>$1</sub>')}</div>
+                            <div class="text-xl md:text-2xl font-semibold text-blue-300 border-t border-slate-700 pt-4">${finalName}</div>
+                        </div>
+                        <div class="bg-amber-50 p-4 md:p-6 rounded-2xl border border-amber-200 text-[10px] md:text-sm max-w-lg w-full">
+                            <h4 class="font-bold text-amber-800 uppercase mb-3 border-b border-amber-200 pb-1">${t.namingRules}</h4>
+                            <ul class="space-y-3 md:space-y-4 text-amber-900">
+                                <li class="flex gap-2"><span>1.</span> <span>${t.rule1}</span></li>
+                                <li class="flex gap-2"><span>2.</span> <span>${t.rule2}</span></li>
+                                <li class="flex gap-2"><span>3.</span> <span>${t.rule3}</span></li>
+                            </ul>
+                            <div class="mt-4 pt-4 border-t border-amber-200 italic text-amber-800">
+                                ${t.ruleNote}
+                            </div>
+                        </div>
+                    </div>`;
+            }
+            updateNextBtnState();
+        }
+        window.onload = init;
     </script>
 </body>
 </html>

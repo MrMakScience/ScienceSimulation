@@ -83,7 +83,6 @@
         .step-arrow:hover { background: #cbd5e1; color: #1e293b; }
         .step-arrow:active { transform: scale(0.9); }
 
-        /* Responsive adjustments for Step 3 formula visibility */
         .formula-step-3 {
             display: flex;
             align-items: center;
@@ -102,9 +101,9 @@
     </style>
 </head>
 <body class="p-4 md:p-8">
-    <div class="max-w-3xl mx-auto relative">
-        <!-- Language Switcher -->
-        <div class="absolute -top-4 right-0 z-[100]">
+    <div class="max-w-3xl mx-auto">
+        <!-- Language Switcher - Placed at the top right of the container, before the header -->
+        <div class="flex justify-end mb-6">
             <button onclick="toggleLanguage()" class="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-full shadow-sm hover:bg-slate-50 transition-colors text-slate-600 font-medium text-sm">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
                 <span id="lang-text">繁體中文</span>
@@ -150,7 +149,7 @@
         </div>
     </div>
 
-    <script>
+      <script>
         const ELEMENT_ORDER = ['B', 'Si', 'C', 'P', 'N', 'H', 'S', 'I', 'Br', 'Cl', 'O', 'F'];
         
         let currentLang = 'en';
