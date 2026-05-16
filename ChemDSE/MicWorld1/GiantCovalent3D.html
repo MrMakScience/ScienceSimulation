@@ -37,6 +37,14 @@
             flex-shrink: 0;
         }
 
+        /* Language Button Container - Fixed Top Left for ALL devices */
+        .lang-btn-container {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 50; /* Ensure it stays above canvas and legend */
+        }
+
         /* Mobile Layout */
         @media (max-width: 768px) {
             .app-container {
@@ -67,6 +75,11 @@
                 scale: 0.85;
                 transform-origin: top right;
             }
+            
+            .lang-btn-container {
+                top: 10px;
+                left: 10px;
+            }
         }
 
         .legend-panel {
@@ -79,7 +92,26 @@
             border: 1px solid #444;
             z-index: 5;
             min-width: 180px;
+            display: flex;
+            flex-direction: column;
         }
+
+        .lang-btn {
+            background: rgba(59, 130, 246, 0.2);
+            border: 1px solid rgba(59, 130, 246, 0.5);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 14px;
+            backdrop-filter: blur(4px);
+            transition: all 0.2s;
+        }
+
+        .lang-btn:hover { background: rgba(59, 130, 246, 0.4); }
 
         .legend-item { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 13px; }
         .swatch { width: 16px; height: 16px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.2); }
@@ -102,14 +134,22 @@
 
     <div class="app-container">
         <div id="canvas-container">
+            <!-- Language Button -->
+            <div class="lang-btn-container" id="lang-ctrl">
+                <button class="lang-btn" onclick="toggleLanguage()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                    <span id="lang-label">繁體中文</span>
+                </button>
+            </div>
+
             <div class="legend-panel" id="legend">
-                <h3 class="text-xs font-bold uppercase text-gray-400 mb-3 tracking-widest">Key</h3>
+                <h3 class="text-xs font-bold uppercase text-gray-400 mb-3 tracking-widest" id="key-title">Key</h3>
                 <div id="legend-content"></div>
             </div>
         </div>
 
         <div class="ui-sidebar">
-            <h1 class="text-xl font-bold mb-4">Structure Inspector</h1>
+            <h1 class="text-xl font-bold mb-4" id="ui-main-title">Structure Inspector</h1>
             
             <div class="flex flex-col gap-2 mb-6">
                 <button onclick="switchStructure('diamond')" id="btn-diamond" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded text-left font-medium">Diamond (C)</button>
@@ -121,10 +161,10 @@
                 <button onclick="toggleFocus()" id="btn-focus" class="bg-amber-600 hover:bg-amber-500 px-4 py-3 rounded font-bold uppercase tracking-wide shadow-lg">
                     Focus Mode: OFF
                 </button>
-                <p class="text-[11px] text-gray-400 mt-2 italic leading-tight">Focus mode shows the only parts you need to draw in the assessment.</p>
+                <p class="text-[11px] text-gray-400 mt-2 italic leading-tight" id="focus-hint">Focus mode shows the only parts you need to draw in the assessment.</p>
             </div>
 
-            <button onclick="resetToOriginal()" class="w-full bg-white text-black hover:bg-gray-200 font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 mb-6 shadow-md">
+            <button onclick="resetToOriginal()" class="w-full bg-white text-black hover:bg-gray-200 font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 mb-6 shadow-md" id="btn-reset">
                 RESET VIEW
             </button>
 
@@ -134,7 +174,7 @@
             </div>
 
             <div class="p-4 bg-blue-900/40 border border-blue-500/50 rounded-lg guide-glow">
-                <p class="text-[11px] leading-tight text-blue-50"><span class="font-black text-white uppercase">Interaction:</span> Drag to rotate. Pinch/Scroll to zoom.</p>
+                <p class="text-[11px] leading-tight text-blue-50" id="interaction-hint"><span class="font-black text-white uppercase">Interaction:</span> Drag to rotate. Pinch/Scroll to zoom.</p>
             </div>
         </div>
     </div>
@@ -143,11 +183,11 @@
         let scene, camera, renderer, currentGroup;
         let isFocusMode = false;
         let isDragging = false;
+        let currentLang = 'en'; 
         let previousMouse = { x: 0, y: 0 };
         let initialPinchDistance = null;
         let currentType = 'diamond';
 
-        // Reset offsetY to 0 to keep models centered in the viewport
         const ORIENTATIONS = {
             diamond: { x: -1.86, y: -3.81, offsetY: 0 },
             graphite: { x: -1.00, y: -3.18, offsetY: 0 },
@@ -158,39 +198,89 @@
         const QUARTZ_ATOM_SCALE = 0.22; 
         const BOND_RADIUS = 0.035; 
 
+        const translations = {
+            en: {
+                mainTitle: "Structure Inspector",
+                key: "Key",
+                focusOff: "Focus Mode: OFF",
+                focusOn: "Focus Mode: ON",
+                focusHint: "Focus mode shows the only parts you need to draw in the assessment.",
+                reset: "RESET VIEW",
+                interaction: "Interaction: Drag to rotate. Pinch/Scroll to zoom.",
+                langToggle: "繁體中文",
+                diamond: "Diamond (C)",
+                graphite: "Graphite (C)",
+                quartz: "Quartz (SiO₂)",
+                cAtom: "Carbon Atom",
+                cCovalent: "C-C Covalent Bond",
+                vdw: "Van der Waals Force",
+                siAtom: "Silicon (Si) Atom",
+                oAtom: "Oxygen (O) Atom",
+                siOCovalent: "Si-O Covalent Bond"
+            },
+            zh: {
+                mainTitle: "結構檢視器",
+                key: "圖例",
+                focusOff: "重點模式: 關閉",
+                focusOn: "重點模式: 開啟",
+                focusHint: "重點模式僅顯示在測驗/考試中需要繪畫的部分。",
+                reset: "重置視角",
+                interaction: "互動說明: 拖動以旋轉。縮放以放大/縮小。",
+                langToggle: "English",
+                diamond: "鑽石 (C)",
+                graphite: "石墨 (C)",
+                quartz: "石英 (SiO₂)",
+                cAtom: "碳原子",
+                cCovalent: "C-C 共價鍵",
+                vdw: "范德華力",
+                siAtom: "矽 (Si) 原子",
+                oAtom: "氧 (O) 原子",
+                siOCovalent: "Si-O 共價鍵"
+            }
+        };
+
         const structures = {
             diamond: {
-                title: "Diamond (C)",
-                desc: "Strong covalent bond between C atoms within the whole network.\nEach C atom forms 4 covalent bonds.",
+                title: { en: "Diamond (C)", zh: "鑽石 (C)" },
+                desc: { 
+                    en: "Strong covalent bond between C atoms within the whole network.\nEach C atom forms 4 covalent bonds.",
+                    zh: "整個網絡中的碳原子之間存在強共價鍵。\n每個碳原子形成4個共價鍵。"
+                },
                 color: 0x666666,
                 bondColor: 0x999999,
                 legend: [
-                    { type: 'atom', label: 'Carbon Atom', color: '#666666' },
-                    { type: 'bond', label: 'C-C Covalent Bond', color: '#999999' }
+                    { type: 'atom', labelKey: 'cAtom', color: '#666666' },
+                    { type: 'bond', labelKey: 'cCovalent', color: '#999999' }
                 ]
             },
             graphite: {
-                title: "Graphite (C)",
-                desc: "Strong covalent bond between C atoms within the Graphene layer.\nWeak van der Waals' force between the graphene layer.\nEach C atom forms 3 covalent bond. The remain unpaired electron become delocalized.",
+                title: { en: "Graphite (C)", zh: "石墨 (C)" },
+                desc: {
+                    en: "Strong covalent bond between C atoms within the Graphene layer.\nWeak van der Waals' force between the graphene layer.\nEach C atom forms 3 covalent bond. The remain unpaired electron become delocalized.",
+                    zh: "石墨烯層內的碳原子之間存在強大的共價鍵。\n石墨烯層之間存在微弱的范德華力。\n每個碳原子形成3個共價鍵。剩餘的未成對電子變成離域電子。"
+                },
                 color: 0x333333,
                 bondColor: 0x888888,
                 vdwColor: 0xffffff,
                 legend: [
-                    { type: 'atom', label: 'Carbon Atom', color: '#333333' },
-                    { type: 'bond', label: 'C-C Covalent Bond', color: '#888888' },
-                    { type: 'vdw', label: 'Van der Waals Force', color: '#ffffff' }
+                    { type: 'atom', labelKey: 'cAtom', color: '#333333' },
+                    { type: 'bond', labelKey: 'cCovalent', color: '#888888' },
+                    { type: 'vdw', labelKey: 'vdw', color: '#ffffff' }
                 ]
             },
             quartz: {
-                title: "Quartz (SiO₂)",
-                desc: "Each Si atom forms covalent bond with with 4 O atoms, while each O atom forms covalent bond with 2 Si atoms, which have the ratio Si:O = 1:2.",
+                title: { en: "Quartz (SiO₂)", zh: "石英 (SiO₂)" },
+                desc: {
+                    en: "Each Si atom forms covalent bond with with 4 O atoms, while each O atom forms covalent bond with 2 Si atoms, which have the ratio Si:O = 1:2.",
+                    zh: "每個矽原子與4個氧原子形成共價鍵，而每個氧原子與2個矽原子形成共價鍵，其矽氧比例為 Si:O = 1:2。"
+                },
                 siColor: 0x94a3b8,
                 oColor: 0xef4444,
                 bondColor: 0xcccccc,
                 legend: [
-                    { type: 'atom', label: 'Silicon (Si) Atom', color: '#94a3b8' },
-                    { type: 'atom', label: 'Oxygen (O) Atom', color: '#ef4444' },
-                    { type: 'bond', label: 'Si-O Covalent Bond', color: '#cccccc' }
+                    { type: 'atom', labelKey: 'siAtom', color: '#94a3b8' },
+                    { type: 'atom', labelKey: 'oAtom', color: '#ef4444' },
+                    { type: 'bond', labelKey: 'siOCovalent', color: '#cccccc' }
                 ]
             }
         };
@@ -233,13 +323,41 @@
             animate();
         }
 
+        function toggleLanguage() {
+            currentLang = currentLang === 'en' ? 'zh' : 'en';
+            updateUI();
+        }
+
+        function updateUI() {
+            const t = translations[currentLang];
+            document.getElementById('ui-main-title').innerText = t.mainTitle;
+            document.getElementById('key-title').innerText = t.key;
+            document.getElementById('focus-hint').innerText = t.focusHint;
+            document.getElementById('btn-reset').innerText = t.reset;
+            document.getElementById('interaction-hint').innerHTML = `<span class="font-black text-white uppercase">${currentLang === 'en' ? 'Interaction:' : '交互說明:'}</span> ${t.interaction}`;
+            document.getElementById('lang-label').innerText = t.langToggle;
+            
+            document.getElementById('btn-diamond').innerText = t.diamond;
+            document.getElementById('btn-graphite').innerText = t.graphite;
+            document.getElementById('btn-quartz').innerText = t.quartz;
+
+            document.getElementById('btn-focus').innerText = isFocusMode ? t.focusOn : t.focusOff;
+
+            const config = structures[currentType];
+            document.getElementById('info-title').innerText = config.title[currentLang];
+            document.getElementById('info-desc').innerText = config.desc[currentLang];
+
+            updateLegend(currentType);
+        }
+
         function updateLegend(type) {
+            const t = translations[currentLang];
             const content = structures[type].legend.map(item => {
                 let swatchHtml = '';
                 if (item.type === 'atom') swatchHtml = `<div class="swatch" style="background-color: ${item.color}"></div>`;
                 else if (item.type === 'bond') swatchHtml = `<div class="swatch-bond" style="background-color: ${item.color}"></div>`;
                 else if (item.type === 'vdw') swatchHtml = `<div class="swatch-vdw"></div>`;
-                return `<div class="legend-item">${swatchHtml}<span>${item.label}</span></div>`;
+                return `<div class="legend-item">${swatchHtml}<span>${t[item.labelKey]}</span></div>`;
             }).join('');
             document.getElementById('legend-content').innerHTML = content;
         }
@@ -275,12 +393,10 @@
         function switchStructure(type) {
             currentType = type;
             const config = structures[type];
-            document.getElementById('info-title').innerText = config.title;
-            document.getElementById('info-desc').innerText = config.desc;
             ['diamond', 'graphite', 'quartz'].forEach(t => document.getElementById('btn-' + t).classList.remove('active-btn'));
             document.getElementById('btn-' + type).classList.add('active-btn');
             
-            updateLegend(type);
+            updateUI();
             clearScene();
 
             if (type === 'diamond') buildDiamond();
@@ -297,7 +413,7 @@
             const def = ORIENTATIONS[currentType];
             currentGroup.rotation.x = def.x;
             currentGroup.rotation.y = def.y;
-            currentGroup.position.y = 0; // Centered vertically
+            currentGroup.position.y = 0; 
         }
 
         function buildDiamond() {
@@ -423,14 +539,11 @@
             camera.aspect = container.clientWidth / container.clientHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(container.clientWidth, container.clientHeight);
-            resetToOriginal();
         }
 
         function toggleFocus() {
             isFocusMode = !isFocusMode;
-            document.getElementById('btn-focus').innerText = `Focus Mode: ${isFocusMode ? 'ON' : 'OFF'}`;
-            document.getElementById('btn-focus').classList.toggle('bg-green-600', isFocusMode);
-            document.getElementById('btn-focus').classList.toggle('bg-amber-600', !isFocusMode);
+            updateUI();
             switchStructure(currentType);
         }
 
