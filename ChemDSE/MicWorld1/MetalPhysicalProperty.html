@@ -83,14 +83,23 @@
 </head>
 <body class="flex flex-col items-center py-8 px-4">
 
-    <div class="max-w-4xl w-full bg-white rounded-2xl shadow-xl p-6 space-y-6 mb-8">
-        <header class="text-center">
-            <h1 class="text-3xl font-bold text-slate-800">Metallic Bonding Properties</h1>
-            <div class="flex justify-center mt-4 border-b flex-wrap">
-                <button id="tabMalleability" class="px-6 py-2 font-bold border-b-4 border-blue-600 text-blue-600 transition-all">Malleability</button>
-                <button id="tabDuctility" class="px-6 py-2 font-bold border-b-4 border-transparent text-slate-400 hover:text-slate-600 transition-all">Ductility</button>
-                <button id="tabConductivity" class="px-6 py-2 font-bold border-b-4 border-transparent text-slate-400 hover:text-slate-600 transition-all">Electrical Conductivity</button>
-                <button id="tabThermal" class="px-6 py-2 font-bold border-b-4 border-transparent text-slate-400 hover:text-slate-600 transition-all">Thermal Conductivity</button>
+    <div class="max-w-4xl w-full bg-white rounded-2xl shadow-xl p-6 space-y-6 mb-8 relative">
+        <header class="text-center pt-8 md:pt-4">
+            <!-- Language Toggle at Top Right -->
+            <div class="absolute top-4 right-4 z-20">
+                <button id="langToggle" class="p-2 px-3 rounded-full bg-slate-50 hover:bg-slate-100 transition-colors border border-slate-200 flex items-center gap-2 text-sm font-bold text-slate-700 shadow-sm" title="Switch Language">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                    <span id="langText">繁體中文</span>
+                </button>
+            </div>
+            
+            <h1 id="mainTitle" class="text-2xl md:text-3xl font-bold text-slate-800">Metallic Bonding Properties</h1>
+            
+            <div class="flex justify-center mt-6 border-b flex-wrap">
+                <button id="tabMalleability" class="px-4 md:px-6 py-2 font-bold border-b-4 border-blue-600 text-blue-600 transition-all">Malleability</button>
+                <button id="tabDuctility" class="px-4 md:px-6 py-2 font-bold border-b-4 border-transparent text-slate-400 hover:text-slate-600 transition-all">Ductility</button>
+                <button id="tabConductivity" class="px-4 md:px-6 py-2 font-bold border-b-4 border-transparent text-slate-400 hover:text-slate-600 transition-all text-sm md:text-base">Electrical Conductivity</button>
+                <button id="tabThermal" class="px-4 md:px-6 py-2 font-bold border-b-4 border-transparent text-slate-400 hover:text-slate-600 transition-all text-sm md:text-base">Thermal Conductivity</button>
             </div>
         </header>
 
@@ -164,16 +173,114 @@
         const rightAssets = document.getElementById('rightDuctilityAssets');
         const terminals = document.getElementById('terminals');
         const burner = document.getElementById('burner');
+        const langToggle = document.getElementById('langToggle');
+        const langText = document.getElementById('langText');
+        const mainTitle = document.getElementById('mainTitle');
 
         let currentMode = 'malleability'; 
+        let currentLang = 'en'; // 'en' or 'zh'
         let width, height;
         let ions = [];
         let electrons = [];
         let isConducting = false;
         let isHeating = false;
         let pullCount = 0;
+
+        const translations = {
+            en: {
+                title: "Metallic Bonding Properties",
+                nextLang: "繁體中文",
+                tabs: ["Malleability", "Ductility", "Electrical Conductivity", "Thermal Conductivity"],
+                reset: "Reset Simulation",
+                pull: "Pull Metal",
+                voltageOff: "Apply Voltage: OFF",
+                voltageOn: "Apply Voltage: ON",
+                heatOff: "Apply Heat: OFF",
+                heatOn: "Apply Heat: ON",
+                clang: "CLANG!",
+                modes: {
+                    malleability: {
+                        title: "Malleability Simulation",
+                        list: [
+                            "<strong>Click</strong> to hammer the metal gently.",
+                            "The ions slide over each other without breaking the non-directional metallic bond.",
+                            "The sea of delocalized electrons moves and forms metallic bond again in the new shape."
+                        ]
+                    },
+                    ductility: {
+                        title: "Ductility Simulation",
+                        list: [
+                            "<strong>Click 'Pull Metal'</strong> to stretch.",
+                            "Observe the lattice thinning into a wire shape.",
+                            "Electrons follow the shifting lattice."
+                        ]
+                    },
+                    conductivity: {
+                        title: "Electrical Conductivity Simulation",
+                        list: [
+                            "<strong>Apply Voltage</strong> to see drift.",
+                            "Delocalized electrons move toward positive (+).",
+                            "The sea flows between the gaps in the fixed lattice."
+                        ]
+                    },
+                    thermal: {
+                        title: "Thermal Conductivity Simulation",
+                        list: [
+                            "<strong>Apply Heat</strong> to the metal block.",
+                            "Delocalized electrons can propagate kinetic energy quickly to other particles due to its small size and mobility.",
+                            "Observe the <strong>ions vibrate</strong> as they absorb thermal energy."
+                        ]
+                    }
+                }
+            },
+            zh: {
+                title: "金屬鍵特性模擬",
+                nextLang: "English",
+                tabs: ["展性", "延性", "導電性", "導熱性"],
+                reset: "重設模擬",
+                pull: "拉伸金屬",
+                voltageOff: "施加電壓：關閉",
+                voltageOn: "施加電壓：開啟",
+                heatOff: "施加熱能：關閉",
+                heatOn: "施加熱能：開啟",
+                clang: "噹！",
+                modes: {
+                    malleability: {
+                        title: "金屬展性模擬",
+                        list: [
+                            "<strong>點擊</strong> 畫布來輕敲金屬。",
+                            "金屬陽離子在不破壞非方向性金屬鍵的情況下互相滑動。",
+                            "離域電子海會移動並在新的形狀中重新形成金屬鍵。"
+                        ]
+                    },
+                    ductility: {
+                        title: "金屬延性模擬",
+                        list: [
+                            "<strong>點擊「拉伸金屬」</strong> 按鈕。",
+                            "觀察金屬晶格如何變細並形成絲狀。",
+                            "自由電子隨着移動的晶格分佈。"
+                        ]
+                    },
+                    conductivity: {
+                        title: "導電性模擬",
+                        list: [
+                            "<strong>施加電壓</strong> 觀察電子漂移。",
+                            "離域電子向正極 (+) 移動。",
+                            "電子海在固定的晶格間隙中流動。"
+                        ]
+                    },
+                    thermal: {
+                        title: "導熱性模擬",
+                        list: [
+                            "對金屬塊 <strong>施加熱能</strong>。",
+                            "離域電子體積小且具流動性，能迅速將動能傳遞給其他微粒。",
+                            "觀察 <strong>金屬離子</strong> 在吸收熱能時劇烈振動。"
+                        ]
+                    }
+                }
+            }
+        };
         
-        // Adaptive scaling for mobile devices
         const isMobile = window.innerWidth < 640;
         const ION_RADIUS = isMobile ? 14 : 20;
         const COLLISION_RADIUS = isMobile ? 28 : 40;
@@ -185,7 +292,6 @@
         function playClingSound() {
             if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             const now = audioCtx.currentTime;
-
             const bufferSize = audioCtx.sampleRate * 0.05;
             const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
             const data = buffer.getChannelData(0);
@@ -222,22 +328,15 @@
 
         class Ion {
             constructor(x, y) {
-                this.x = x;
-                this.y = y;
-                this.vx = 0;
-                this.vy = 0;
-                this.baseX = x;
-                this.baseY = y;
+                this.x = x; this.y = y;
+                this.vx = 0; this.vy = 0;
+                this.baseX = x; this.baseY = y;
                 this.temp = 0; 
             }
-
             update() {
                 if (currentMode === 'conductivity') {
-                    this.x = this.baseX;
-                    this.y = this.baseY;
-                    return;
+                    this.x = this.baseX; this.y = this.baseY; return;
                 }
-
                 if (currentMode === 'thermal') {
                     this.temp *= 0.995;
                     const vib = this.temp * (isMobile ? 4 : 6);
@@ -245,18 +344,13 @@
                     this.y = this.baseY + (Math.random() - 0.5) * vib;
                     return; 
                 }
-
-                this.x += this.vx;
-                this.y += this.vy;
-                this.vx *= 0.85; 
-                this.vy *= 0.85;
-
+                this.x += this.vx; this.y += this.vy;
+                this.vx *= 0.85; this.vy *= 0.85;
                 if (currentMode === 'ductility') {
                     const centerY = height / 2;
                     const neckingIntensity = Math.min(0.02, pullCount * 0.002);
                     this.vy += (centerY - this.y) * neckingIntensity;
                 }
-
                 for (let other of ions) {
                     if (other === this) continue;
                     const dx = other.x - this.x;
@@ -274,25 +368,17 @@
                 this.x = Math.max(ION_RADIUS, Math.min(width - ION_RADIUS, this.x));
                 this.y = Math.max(ION_RADIUS, Math.min(height - ION_RADIUS, this.y));
             }
-
             draw() {
                 const grad = ctx.createRadialGradient(this.x, this.y, 5, this.x, this.y, ION_RADIUS);
                 if (currentMode === 'thermal') {
                     grad.addColorStop(0, `rgb(${236 + this.temp * 19}, ${240 - this.temp * 140}, ${241 - this.temp * 200})`);
                     grad.addColorStop(1, `rgb(${127 + this.temp * 100}, ${140 - this.temp * 60}, ${141 - this.temp * 80})`);
                 } else {
-                    grad.addColorStop(0, '#ecf0f1');
-                    grad.addColorStop(1, '#7f8c8d');
+                    grad.addColorStop(0, '#ecf0f1'); grad.addColorStop(1, '#7f8c8d');
                 }
-                
                 ctx.fillStyle = grad;
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, ION_RADIUS, 0, Math.PI * 2);
-                ctx.fill();
-                
-                ctx.strokeStyle = '#2c3e50';
-                ctx.lineWidth = 2;
-                ctx.beginPath();
+                ctx.beginPath(); ctx.arc(this.x, this.y, ION_RADIUS, 0, Math.PI * 2); ctx.fill();
+                ctx.strokeStyle = '#2c3e50'; ctx.lineWidth = 2; ctx.beginPath();
                 ctx.moveTo(this.x - 4, this.y); ctx.lineTo(this.x + 4, this.y);
                 ctx.moveTo(this.x, this.y - 4); ctx.lineTo(this.x, this.y + 4);
                 ctx.stroke();
@@ -307,13 +393,11 @@
                 this.vy = (Math.random() - 0.5) * 1.5;
                 this.ke = 0; 
             }
-
             update() {
                 if (currentMode === 'conductivity') {
                     if (isConducting) this.vx += 0.045; 
                     else { this.vx *= 0.97; this.vy *= 0.97; }
                 }
-
                 if (currentMode === 'thermal') {
                     if (isHeating) {
                         const distToBurner = Math.abs(this.x - burnerPos);
@@ -322,17 +406,14 @@
                     this.ke *= 0.9985;
                     for (let other of electrons) {
                         if (other === this) continue;
-                        const dx = other.x - this.x;
-                        const dy = other.y - this.y;
+                        const dx = other.x - this.x; const dy = other.y - this.y;
                         if (dx*dx + dy*dy < (isMobile ? 800 : 1600)) { 
                             const diff = (this.ke - other.ke) * 0.18;
-                            this.ke -= diff;
-                            other.ke += diff;
+                            this.ke -= diff; other.ke += diff;
                         }
                     }
                     ions.forEach(ion => {
-                        const dx = this.x - ion.x;
-                        const dy = this.y - ion.y;
+                        const dx = this.x - ion.x; const dy = this.y - ion.y;
                         if (dx*dx + dy*dy < (isMobile ? 300 : 600)) {
                             ion.temp += (this.ke - ion.temp) * 0.1;
                         }
@@ -340,69 +421,50 @@
                 } else this.ke = 0;
 
                 const speedFactor = 1 + this.ke * 6; 
-                this.x += this.vx * speedFactor; 
-                this.y += this.vy * speedFactor;
-
-                if (this.x > width + 10) this.x = -10;
-                if (this.x < -10) this.x = width + 10;
-                if (this.y > height + 10) this.y = -10;
-                if (this.y < -10) this.y = height + 10;
-
-                this.vx += (Math.random() - 0.5) * 0.15;
-                this.vy += (Math.random() - 0.5) * 0.15;
+                this.x += this.vx * speedFactor; this.y += this.vy * speedFactor;
+                if (this.x > width + 10) this.x = -10; if (this.x < -10) this.x = width + 10;
+                if (this.y > height + 10) this.y = -10; if (this.y < -10) this.y = height + 10;
+                this.vx += (Math.random() - 0.5) * 0.15; this.vy += (Math.random() - 0.5) * 0.15;
 
                 let closest = null, minDistSq = Infinity;
                 ions.forEach(ion => {
-                    const dx = this.x - ion.x;
-                    const dy = this.y - ion.y;
+                    const dx = this.x - ion.x; const dy = this.y - ion.y;
                     const d2 = dx*dx + dy*dy;
                     if (d2 < minDistSq) { minDistSq = d2; closest = ion; }
                     const repulseRadius = ION_RADIUS * 0.75;
                     if (d2 < repulseRadius * repulseRadius) {
                         const dist = Math.sqrt(d2) || 1;
                         const force = (repulseRadius - dist) * 0.05;
-                        this.vx += (dx / dist) * force;
-                        this.vy += (dy / dist) * force;
+                        this.vx += (dx / dist) * force; this.vy += (dy / dist) * force;
                     }
                 });
-
                 if (closest && Math.sqrt(minDistSq) > SPACING * 0.85) {
-                    this.vx += (closest.x - this.x) * 0.005;
-                    this.vy += (closest.y - this.y) * 0.005;
+                    this.vx += (closest.x - this.x) * 0.005; this.vy += (closest.y - this.y) * 0.005;
                 }
-
                 this.vx *= 0.985; this.vy *= 0.985;
                 const baseMax = isConducting ? 4.5 : 2.8;
                 const maxSpeed = baseMax * speedFactor;
                 const speedSq = this.vx*this.vx + this.vy*this.vy;
                 if (speedSq > maxSpeed*maxSpeed) {
-                    const s = Math.sqrt(speedSq);
-                    this.vx = (this.vx/s) * maxSpeed;
-                    this.vy = (this.vy/s) * maxSpeed;
+                    const s = Math.sqrt(speedSq); this.vx = (this.vx/s) * maxSpeed; this.vy = (this.vy/s) * maxSpeed;
                 }
             }
-
             draw() {
                 ctx.beginPath();
                 ctx.arc(this.x, this.y, ELECTRON_RADIUS + (this.ke * (isMobile ? 2 : 3)), 0, Math.PI * 2);
                 if (currentMode === 'thermal') {
-                    const r = 241 + (231 - 241) * this.ke;
-                    const g = 196 + (76 - 196) * this.ke;
-                    const b = 15 + (60 - 15) * this.ke;
+                    const r = 241 + (231 - 241) * this.ke; const g = 196 + (76 - 196) * this.ke; const b = 15 + (60 - 15) * this.ke;
                     ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
                     if (this.ke > 0.1) {
-                        ctx.shadowBlur = 3 + this.ke * 15;
-                        ctx.shadowColor = `rgba(231, 76, 60, ${this.ke})`;
+                        ctx.shadowBlur = 3 + this.ke * 15; ctx.shadowColor = `rgba(231, 76, 60, ${this.ke})`;
                     }
                 } else {
                     ctx.fillStyle = isConducting ? '#ffffff' : '#f1c40f';
                     if (isConducting) { ctx.shadowBlur = 8; ctx.shadowColor = '#fff'; }
                 }
-                ctx.fill();
-                ctx.shadowBlur = 0;
-                ctx.fillStyle = '#2c3e50';
-                ctx.font = `bold ${isMobile ? 7 : 10}px Arial`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-                ctx.fillText('−', this.x, this.y);
+                ctx.fill(); ctx.shadowBlur = 0;
+                ctx.fillStyle = '#2c3e50'; ctx.font = `bold ${isMobile ? 7 : 10}px Arial`; 
+                ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('−', this.x, this.y);
             }
         }
 
@@ -411,15 +473,12 @@
         function initSim() {
             ions = []; electrons = [];
             isConducting = false; isHeating = false; pullCount = 0;
-            
-            condBtn.innerText = "Apply Voltage: OFF";
+            const lang = translations[currentLang];
+            condBtn.innerText = lang.voltageOff;
             condBtn.className = "bg-amber-500 hover:bg-amber-600 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-lg " + (currentMode === 'conductivity' ? 'block' : 'hidden');
-            
-            heatBtn.innerText = "Apply Heat: OFF";
+            heatBtn.innerText = lang.heatOff;
             heatBtn.className = "bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-lg " + (currentMode === 'thermal' ? 'block' : 'hidden');
-            
-            terminals.classList.remove('voltage-on');
-            canvasWrapper.classList.remove('heating-on');
+            terminals.classList.remove('voltage-on'); canvasWrapper.classList.remove('heating-on');
 
             const midX = width / 2; const midY = height / 2;
             let rows, cols;
@@ -437,8 +496,7 @@
                     for (let c = 0; c < cols; c++) ions.push(new Ion(sx + c * SPACING, sy + r * SPACING));
                 }
                 if (currentMode === 'thermal') {
-                    burnerPos = sx + SPACING;
-                    burner.style.left = `${burnerPos - 50}px`;
+                    burnerPos = sx + SPACING; burner.style.left = `${burnerPos - 50}px`;
                 }
             } else { 
                 cols = 6; rows = 5; 
@@ -448,7 +506,6 @@
                     for (let c = 0; c < cols; c++) ions.push(new Ion(sx + c * SPACING, sy + r * SPACING));
                 }
             }
-
             const eCount = ions.length * E_PER_ION;
             for (let i = 0; i < eCount; i++) {
                 const randomIon = ions[Math.floor(Math.random() * ions.length)];
@@ -461,13 +518,13 @@
             if (currentMode !== 'ductility' || ions.length === 0) return;
             let minX = width, maxX = 0;
             ions.forEach(ion => { if (ion.x < minX) minX = ion.x; if (ion.x > maxX) maxX = ion.x; });
-            leftAssets.style.left = `${minX - 50}px`;
-            rightAssets.style.left = `${maxX - 20}px`;
+            leftAssets.style.left = `${minX - 50}px`; rightAssets.style.left = `${maxX - 20}px`;
         }
 
         function hammer(mx, my) {
             if (currentMode !== 'malleability') return;
             playClingSound();
+            feedback.innerText = translations[currentLang].clang;
             feedback.style.opacity = '1';
             setTimeout(() => feedback.style.opacity = '0', 500);
             ions.forEach(ion => {
@@ -476,60 +533,63 @@
                 const hammerRadius = isMobile ? 70 : 100;
                 if (d < hammerRadius) {
                     const f = (hammerRadius - d) / 20;
-                    ion.vx += (dx / d) * f;
-                    ion.vy += (dy / d) * f;
+                    ion.vx += (dx / d) * f; ion.vy += (dy / d) * f;
                 }
             });
         }
 
         function pull() {
             if (currentMode !== 'ductility') return;
-            pullCount++;
-            canvasWrapper.classList.add('pulling');
+            pullCount++; canvasWrapper.classList.add('pulling');
             setTimeout(() => canvasWrapper.classList.remove('pulling'), 200);
             ions.forEach(ion => ion.vx += (ion.x < width/2 ? -0.7 : 0.7));
         }
 
         function toggleVoltage() {
             isConducting = !isConducting;
+            const lang = translations[currentLang];
             if (isConducting) {
-                condBtn.innerText = "Apply Voltage: ON";
-                condBtn.classList.replace('bg-amber-500', 'bg-green-600');
-                terminals.classList.add('voltage-on');
+                condBtn.innerText = lang.voltageOn; condBtn.classList.replace('bg-amber-500', 'bg-green-600'); terminals.classList.add('voltage-on');
             } else {
-                condBtn.innerText = "Apply Voltage: OFF";
-                condBtn.classList.replace('bg-green-600', 'bg-amber-500');
-                terminals.classList.remove('voltage-on');
+                condBtn.innerText = lang.voltageOff; condBtn.classList.replace('bg-green-600', 'bg-amber-500'); terminals.classList.remove('voltage-on');
             }
         }
 
         function toggleHeat() {
             isHeating = !isHeating;
+            const lang = translations[currentLang];
             if (isHeating) {
-                heatBtn.innerText = "Apply Heat: ON";
-                heatBtn.classList.replace('bg-orange-600', 'bg-red-600');
-                canvasWrapper.classList.add('heating-on');
+                heatBtn.innerText = lang.heatOn; heatBtn.classList.replace('bg-orange-600', 'bg-red-600'); canvasWrapper.classList.add('heating-on');
             } else {
-                heatBtn.innerText = "Apply Heat: OFF";
-                heatBtn.classList.replace('bg-red-600', 'bg-orange-600');
-                canvasWrapper.classList.remove('heating-on');
+                heatBtn.innerText = lang.heatOff; heatBtn.classList.replace('bg-red-600', 'bg-orange-600'); canvasWrapper.classList.remove('heating-on');
             }
+        }
+
+        function updateUI() {
+            const lang = translations[currentLang];
+            mainTitle.innerText = lang.title;
+            langText.innerText = lang.nextLang;
+            resetBtn.innerText = lang.reset; actionBtn.innerText = lang.pull;
+            tabMall.innerText = lang.tabs[0]; tabDuct.innerText = lang.tabs[1];
+            tabCond.innerText = lang.tabs[2]; tabThermal.innerText = lang.tabs[3];
+            const modeData = lang.modes[currentMode];
+            panelTitle.innerText = modeData.title;
+            panelList.innerHTML = modeData.list.map(item => `<li>${item}</li>`).join('');
+            if (isConducting) condBtn.innerText = lang.voltageOn; else condBtn.innerText = lang.voltageOff;
+            if (isHeating) heatBtn.innerText = lang.heatOn; else heatBtn.innerText = lang.heatOff;
         }
 
         function animate() {
             ctx.clearRect(0, 0, width, height);
             for(let i=0; i<2; i++) ions.forEach(ion => ion.update());
             if (currentMode === 'ductility') updateDuctilityAssets();
-            
             ions.forEach(ion => {
                 const glowRadius = ION_RADIUS * 2.8;
                 const g = ctx.createRadialGradient(ion.x, ion.y, 0, ion.x, ion.y, glowRadius);
                 g.addColorStop(0, `rgba(52, 152, 219, ${currentMode === 'thermal' ? 0.15 + ion.temp * 0.1 : 0.15})`);
                 g.addColorStop(1, 'transparent');
-                ctx.fillStyle = g; ctx.beginPath();
-                ctx.arc(ion.x, ion.y, glowRadius, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = g; ctx.beginPath(); ctx.arc(ion.x, ion.y, glowRadius, 0, Math.PI*2); ctx.fill();
             });
-
             electrons.forEach(e => { e.update(); e.draw(); });
             ions.forEach(ion => ion.draw());
             requestAnimationFrame(animate);
@@ -538,55 +598,39 @@
         function setMode(mode) {
             currentMode = mode;
             [tabMall, tabDuct, tabCond, tabThermal].forEach(t => {
-                t.className = "px-6 py-2 font-bold border-b-4 border-transparent text-slate-400 hover:text-slate-600 transition-all";
+                t.className = "px-4 md:px-6 py-2 font-bold border-b-4 border-transparent text-slate-400 hover:text-slate-600 transition-all text-sm md:text-base";
             });
-            
-            actionBtn.classList.add('hidden');
-            condBtn.classList.add('hidden');
-            heatBtn.classList.add('hidden');
-            terminals.classList.add('hidden');
-            terminals.classList.remove('voltage-on');
-            terminals.style.opacity = '0';
-            canvas.classList.remove('hammer-cursor');
-            leftAssets.style.opacity = '0';
-            rightAssets.style.opacity = '0';
+            actionBtn.classList.add('hidden'); condBtn.classList.add('hidden'); heatBtn.classList.add('hidden');
+            terminals.classList.add('hidden'); terminals.classList.remove('voltage-on'); terminals.style.opacity = '0';
+            canvas.classList.remove('hammer-cursor'); leftAssets.style.opacity = '0'; rightAssets.style.opacity = '0';
             canvasWrapper.classList.remove('heating-on');
 
             if (mode === 'malleability') {
-                tabMall.className = "px-6 py-2 font-bold border-b-4 border-blue-600 text-blue-600 transition-all";
-                panelTitle.innerText = "Malleability Simulation";
-                panelList.innerHTML = `<li><strong>Click</strong> to hammer the metal gently.</li><li>The ions slide over each other without breaking the non-directional metallic bond.</li><li>The sea of delocalized electrons moves and forms metallic bond again in the new shape.</li>`;
+                tabMall.className = "px-4 md:px-6 py-2 font-bold border-b-4 border-blue-600 text-blue-600 transition-all text-sm md:text-base";
                 canvas.classList.add('hammer-cursor');
             } else if (mode === 'ductility') {
-                tabDuct.className = "px-6 py-2 font-bold border-b-4 border-blue-600 text-blue-600 transition-all";
-                panelTitle.innerText = "Ductility Simulation";
-                panelList.innerHTML = `<li><strong>Click 'Pull Metal'</strong> to stretch.</li><li>Observe the lattice thinning into a wire shape.</li><li>Electrons follow the shifting lattice.</li>`;
-                actionBtn.classList.remove('hidden');
-                leftAssets.style.opacity = '1'; rightAssets.style.opacity = '1';
+                tabDuct.className = "px-4 md:px-6 py-2 font-bold border-b-4 border-blue-600 text-blue-600 transition-all text-sm md:text-base";
+                actionBtn.classList.remove('hidden'); leftAssets.style.opacity = '1'; rightAssets.style.opacity = '1';
             } else if (mode === 'conductivity') {
-                tabCond.className = "px-6 py-2 font-bold border-b-4 border-blue-600 text-blue-600 transition-all";
-                panelTitle.innerText = "Electrical Conductivity Simulation";
-                panelList.innerHTML = `<li><strong>Apply Voltage</strong> to see drift.</li><li>Delocalized electrons move toward positive (+).</li><li>The sea flows between the gaps in the fixed lattice.</li>`;
-                condBtn.classList.remove('hidden');
-                terminals.classList.remove('hidden'); terminals.style.opacity = '1';
+                tabCond.className = "px-4 md:px-6 py-2 font-bold border-b-4 border-blue-600 text-blue-600 transition-all text-sm md:text-base";
+                condBtn.classList.remove('hidden'); terminals.classList.remove('hidden'); terminals.style.opacity = '1';
             } else if (mode === 'thermal') {
-                tabThermal.className = "px-6 py-2 font-bold border-b-4 border-blue-600 text-blue-600 transition-all";
-                panelTitle.innerText = "Thermal Conductivity Simulation";
-                panelList.innerHTML = `<li><strong>Apply Heat</strong> to the metal block.</li><li>Delocalized electrons can propagate kinetic energy quickly to other particles due to its small size and mobility.</li><li>Observe the <strong>ions vibrate</strong> as they absorb thermal energy.</li>`;
+                tabThermal.className = "px-4 md:px-6 py-2 font-bold border-b-4 border-blue-600 text-blue-600 transition-all text-sm md:text-base";
                 heatBtn.classList.remove('hidden');
             }
-            initSim();
+            updateUI(); initSim();
         }
 
+        langToggle.onclick = () => {
+            currentLang = currentLang === 'en' ? 'zh' : 'en';
+            updateUI();
+        };
         canvas.addEventListener('mousedown', (e) => {
-            const rect = canvas.getBoundingClientRect();
-            hammer(e.clientX - rect.left, e.clientY - rect.top);
+            const rect = canvas.getBoundingClientRect(); hammer(e.clientX - rect.left, e.clientY - rect.top);
         });
-
         canvas.addEventListener('touchstart', (e) => {
             if (currentMode !== 'malleability') return;
-            const rect = canvas.getBoundingClientRect();
-            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect(); const touch = e.touches[0];
             hammer(touch.clientX - rect.left, touch.clientY - rect.top);
         }, { passive: true });
         
@@ -594,20 +638,15 @@
         tabDuct.onclick = () => setMode('ductility');
         tabCond.onclick = () => setMode('conductivity');
         tabThermal.onclick = () => setMode('thermal');
-        actionBtn.onclick = pull;
-        condBtn.onclick = toggleVoltage;
-        heatBtn.onclick = toggleHeat;
-        resetBtn.onclick = initSim;
+        actionBtn.onclick = pull; condBtn.onclick = toggleVoltage; heatBtn.onclick = toggleHeat; resetBtn.onclick = initSim;
 
         window.onload = function () {
-            width = canvas.parentElement.clientWidth;
-            height = 400; canvas.width = width; canvas.height = height;
+            width = canvas.parentElement.clientWidth; height = 400; 
+            canvas.width = width; canvas.height = height;
             setMode('malleability'); animate();
         };
-
         window.addEventListener('resize', () => {
-            width = canvas.parentElement.clientWidth; canvas.width = width;
-            initSim();
+            width = canvas.parentElement.clientWidth; canvas.width = width; initSim();
         });
     </script>
 </body>
