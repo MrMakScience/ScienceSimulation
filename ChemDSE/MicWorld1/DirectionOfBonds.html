@@ -94,17 +94,25 @@
     </style>
 </head>
 <body class="p-4 md:p-8">
-    <div class="max-w-5xl mx-auto">
-        <header class="mb-8 text-center">
-            <h1 class="text-3xl font-bold text-slate-800">Ionic vs. Covalent Bond Directionality</h1>
-            <p class="text-slate-600 mt-2">Visualizing localized electron sharing vs. omnidirectional electrostatic forces</p>
+    <div class="max-w-5xl mx-auto relative">
+        <!-- Translation Button -->
+        <div class="absolute top-0 right-0">
+            <button id="langToggle" class="flex items-center gap-2 bg-white border border-slate-200 px-3 py-1.5 rounded-lg shadow-sm hover:bg-slate-50 transition-colors text-sm font-medium text-slate-700">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                <span id="langBtnText">Traditional Chinese</span>
+            </button>
+        </div>
+
+        <header class="mb-8 text-center pt-10 md:pt-0">
+            <h1 id="title" class="text-3xl font-bold text-slate-800">Ionic vs. Covalent Bond Directionality</h1>
+            <p id="subtitle" class="text-slate-600 mt-2">Visualizing localized electron sharing vs. omnidirectional electrostatic forces</p>
         </header>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <!-- Covalent Section -->
             <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                <h2 class="text-xl font-semibold mb-4 text-blue-700">Covalent Bond (Directional)</h2>
-                <div class="text-sm text-slate-600 mb-4">
+                <h2 id="covTitle" class="text-xl font-semibold mb-4 text-blue-700">Covalent Bond (Directional)</h2>
+                <div id="covDesc" class="text-sm text-slate-600 mb-4">
                     In H<sub>2</sub>, the bond is formed by sharing a <b>pair of electrons</b> 
                     (shown as <div class="electron-pair-stack"><div class="electron-circle">e<sup>-</sup></div><div class="electron-circle">e<sup>-</sup></div></div>) 
                     specifically between the two nuclei. The positive nuclei are being <b>pulled in a specific direction</b> toward the shared electrons.
@@ -113,47 +121,47 @@
                 <div class="mt-4 space-y-4">
                     <div class="legend-item">
                         <div class="key-nucleus">+</div> 
-                        <span>Hydrogen Nucleus (+)</span>
+                        <span id="keyH">Hydrogen Nucleus (+)</span>
                     </div>
                     <div class="legend-item">
                         <div class="electron-pair-stack">
                             <div class="electron-circle">e<sup>-</sup></div>
                             <div class="electron-circle">e<sup>-</sup></div>
                         </div>
-                        <span>Shared Electron Pair (Negative charges pulling Nuclei)</span>
+                        <span id="keyEPair">Shared Electron Pair (Negative charges pulling Nuclei)</span>
                     </div>
                 </div>
             </div>
 
             <!-- Ionic Section -->
             <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                <h2 class="text-xl font-semibold mb-4 text-emerald-700">Ionic Bond (Non-Directional)</h2>
-                <div class="text-sm text-slate-600 mb-4">
+                <h2 id="ionTitle" class="text-xl font-semibold mb-4 text-emerald-700">Ionic Bond (Non-Directional)</h2>
+                <div id="ionDesc" class="text-sm text-slate-600 mb-4">
                     The Na<sup>+</sup> ion is attracted by Cl<sup>-</sup> ions and repelled by Na<sup>+</sup> ions in <b>all directions</b> equally. There is no specific "axis" for the force.
                 </div>
                 <canvas id="ionicCanvas" class="w-full h-64 border border-slate-100"></canvas>
                 <div class="mt-4 space-y-4">
                     <div class="legend-item">
                         <div class="key-na">Na<sup>+</sup></div> 
-                        <span>Sodium Ion (Na<sup>+</sup>)</span>
+                        <span id="keyNa">Sodium Ion (Na<sup>+</sup>)</span>
                     </div>
                     <div class="legend-item">
                         <div class="key-cl">Cl<sup>-</sup></div> 
-                        <span>Chloride Ion (Cl<sup>-</sup>)</span>
+                        <span id="keyCl">Chloride Ion (Cl<sup>-</sup>)</span>
                     </div>
                     <div class="flex gap-4 pt-2">
-                        <div class="legend-item"><span class="text-red-500 font-bold">→</span> Attraction</div>
-                        <div class="legend-item"><span class="text-blue-500 font-bold">→</span> Repulsion</div>
+                        <div id="keyAttr" class="legend-item"><span class="text-red-500 font-bold">→</span> Attraction</div>
+                        <div id="keyRep" class="legend-item"><span class="text-blue-500 font-bold">→</span> Repulsion</div>
                     </div>
                 </div>
             </div>
         </div>
 
         <footer class="mt-8 p-6 bg-slate-800 text-white rounded-xl">
-            <h3 class="text-lg font-bold mb-2">Summary for Students</h3>
+            <h3 id="footerTitle" class="text-lg font-bold mb-2">Summary for Students</h3>
             <ul class="list-disc list-inside space-y-2 text-slate-300">
-                <li><span class="text-white font-medium">Covalent:</span> Directional. The nuclei are pulled specifically toward the center where the electrons are.</li>
-                <li><span class="text-white font-medium">Ionic:</span> Non-directional. Forces act like a field, pulling or pushing in every direction around the ion.</li>
+                <li><span id="sumCovLabel" class="text-white font-medium">Covalent:</span> <span id="sumCovText">Directional. The nuclei are pulled specifically toward the center where the electrons are.</span></li>
+                <li><span id="sumIonLabel" class="text-white font-medium">Ionic:</span> <span id="sumIonText">Non-directional. Forces act like a field, pulling or pushing in every direction around the ion.</span></li>
             </ul>
         </footer>
     </div>
@@ -166,6 +174,81 @@
 
         let time = 0;
         let ionsData = []; 
+        let currentLang = 'en';
+
+        const translations = {
+            en: {
+                btn: "Traditional Chinese",
+                title: "Ionic vs. Covalent Bond Directionality",
+                subtitle: "Visualizing localized electron sharing vs. omnidirectional electrostatic forces",
+                covTitle: "Covalent Bond (Directional)",
+                covDesc: "In H<sub>2</sub>, the bond is formed by sharing a <b>pair of electrons</b> specifically between the two nuclei. The positive nuclei are being <b>pulled in a specific direction</b> toward the shared electrons.",
+                keyH: "Hydrogen Nucleus (+)",
+                keyEPair: "Shared Electron Pair (Negative charges pulling Nuclei)",
+                ionTitle: "Ionic Bond (Non-Directional)",
+                ionDesc: "The Na<sup>+</sup> ion is attracted by Cl<sup>-</sup> ions and repelled by Na<sup>+</sup> ions in <b>all directions</b> equally. There is no specific \"axis\" for the force.",
+                keyNa: "Sodium Ion (Na<sup>+</sup>)",
+                keyCl: "Chloride Ion (Cl<sup>-</sup>)",
+                keyAttr: "Attraction",
+                keyRep: "Repulsion",
+                footerTitle: "Summary for Students",
+                sumCovLabel: "Covalent:",
+                sumCovText: "Directional. The nuclei are pulled specifically toward the center where the electrons are.",
+                sumIonLabel: "Ionic:",
+                sumIonText: "Non-directional. Forces act like a field, pulling or pushing in every direction around the ion.",
+                canvasCovLabel: "Force is concentrated along the bond axis",
+                canvasIonLabel: "Non-directional: Field acts in all directions"
+            },
+            zh: {
+                btn: "English",
+                title: "離子鍵與共價鍵的方向性",
+                subtitle: "可視化局部電子共享與全方位靜電力的差異",
+                covTitle: "共價鍵 (具方向性)",
+                covDesc: "在 H<sub>2</sub> 中，化學鍵是由兩個原子核之間共享的<b>一對電子</b>形成的。正電荷的原子核被<b>拉向特定方向</b>（即共享電子的位置）。",
+                keyH: "氫原子核 (+)",
+                keyEPair: "共享電子對（負電荷吸引並拉動原子核）",
+                ionTitle: "離子鍵 (不具方向性)",
+                ionDesc: "Na<sup>+</sup> 離子受到來自各個方向的 Cl<sup>-</sup> 離子的吸引，並排斥各個方向的 Na<sup>+</sup> 離子。作用力沒有特定的「軸線」。",
+                keyNa: "鈉離子 (Na<sup>+</sup>)",
+                keyCl: "氯離子 (Cl<sup>-</sup>)",
+                keyAttr: "吸引力",
+                keyRep: "排斥力",
+                footerTitle: "學生總結",
+                sumCovLabel: "共價鍵：",
+                sumCovText: "具方向性。原子核被特定地拉向電子所在的中心位置。",
+                sumIonLabel: "離子鍵：",
+                sumIonText: "不具方向性。作用力像場一樣，在離子周圍的每個方向產生吸引或排斥。",
+                canvasCovLabel: "力量集中在鍵軸方向",
+                canvasIonLabel: "無方向性：電場作用於所有方向"
+            }
+        };
+
+        function updateLanguage() {
+            const t = translations[currentLang];
+            document.getElementById('langBtnText').innerText = t.btn;
+            document.getElementById('title').innerText = t.title;
+            document.getElementById('subtitle').innerText = t.subtitle;
+            document.getElementById('covTitle').innerText = t.covTitle;
+            document.getElementById('covDesc').innerHTML = t.covDesc;
+            document.getElementById('keyH').innerText = t.keyH;
+            document.getElementById('keyEPair').innerText = t.keyEPair;
+            document.getElementById('ionTitle').innerText = t.ionTitle;
+            document.getElementById('ionDesc').innerHTML = t.ionDesc;
+            document.getElementById('keyNa').innerHTML = t.keyNa;
+            document.getElementById('keyCl').innerHTML = t.keyCl;
+            document.getElementById('keyAttr').innerHTML = `<span class="text-red-500 font-bold">→</span> ${t.keyAttr}`;
+            document.getElementById('keyRep').innerHTML = `<span class="text-blue-500 font-bold">→</span> ${t.keyRep}`;
+            document.getElementById('footerTitle').innerText = t.footerTitle;
+            document.getElementById('sumCovLabel').innerText = t.sumCovLabel;
+            document.getElementById('sumCovText').innerText = t.sumCovText;
+            document.getElementById('sumIonLabel').innerText = t.sumIonLabel;
+            document.getElementById('sumIonText').innerText = t.sumIonText;
+        }
+
+        document.getElementById('langToggle').addEventListener('click', () => {
+            currentLang = currentLang === 'en' ? 'zh' : 'en';
+            updateLanguage();
+        });
 
         function resize() {
             [covCanvas, ionCanvas].forEach(canvas => {
@@ -278,7 +361,8 @@
 
             ctxC.fillStyle = '#475569';
             ctxC.font = 'italic 12px Arial';
-            ctxC.fillText('Force is concentrated along the bond axis', midX, midY + 95);
+            ctxC.textAlign = 'center';
+            ctxC.fillText(translations[currentLang].canvasCovLabel, midX, midY + 95);
         }
 
         function drawIonic() {
@@ -322,7 +406,8 @@
 
             ctxI.fillStyle = '#475569';
             ctxI.font = 'italic 12px Arial';
-            ctxI.fillText('Non-directional: Field acts in all directions', ionCanvas.width/2, ionCanvas.height - 15);
+            ctxI.textAlign = 'center';
+            ctxI.fillText(translations[currentLang].canvasIonLabel, ionCanvas.width/2, ionCanvas.height - 15);
         }
 
         function animate() {
