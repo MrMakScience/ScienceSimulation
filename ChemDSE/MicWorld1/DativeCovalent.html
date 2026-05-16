@@ -51,19 +51,23 @@
 </head>
 <body class="p-4 md:p-8">
     <div class="max-w-7xl mx-auto">
-        <header class="mb-8 text-center">
-            <h1 class="text-3xl font-bold text-slate-800">Formation of Dative Covalent Bonds</h1>
-            <p class="text-slate-600 mt-2">Interactive dot-and-cross diagrams with tablet-optimized animations</p>
+        <header class="mb-8 relative">
+            <div class="absolute right-0 top-0 bg-slate-200 rounded-lg p-1 flex items-center text-sm font-semibold">
+                <button id="lang-en" class="px-3 py-1 rounded-md transition-colors bg-white shadow-sm">EN</button>
+                <button id="lang-zh" class="px-3 py-1 rounded-md transition-colors text-slate-500 hover:text-slate-800">繁中</button>
+            </div>
+            <h1 id="ui-title" class="text-3xl font-bold text-slate-800">Formation of Dative Covalent Bonds</h1>
+            <p id="ui-subtitle" class="text-slate-600 mt-2">Interactive dot-and-cross diagrams with tablet-optimized animations</p>
         </header>
 
         <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
             <div class="lg:col-span-1 space-y-4">
                 <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-                    <h2 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-4">Select Example</h2>
+                    <h2 id="ui-select-example" class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-4">Select Example</h2>
                     <div id="case-selector" class="space-y-2"></div>
                 </div>
                 <div id="structural-panel" class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                    <p class="text-[10px] font-bold text-slate-400 mb-2 uppercase tracking-widest text-center">Structural Formula</p>
+                    <p id="ui-struct-label" class="text-[10px] font-bold text-slate-400 mb-2 uppercase tracking-widest text-center">Structural Formula</p>
                     <div id="struct-svg-container" class="flex items-center justify-center min-h-[220px]"></div>
                 </div>
             </div>
@@ -102,6 +106,33 @@
         const DONOR_MOL_COLOR = '#3b82f6';
         const ACCEPTOR_MOL_COLOR = '#f59e0b'; 
         const DATIVE_COLOR = '#ef4444';
+
+        let currentLang = 'en';
+
+        const i18n = {
+            en: {
+                title: "Formation of Dative Covalent Bonds",
+                subtitle: "Interactive dot-and-cross diagrams with animations",
+                selectExample: "Select Example",
+                structLabel: "Structural Formula",
+                prev: "Previous",
+                next: "Next",
+                step: "Step",
+                octet: "octet",
+                duplet: "duplet"
+            },
+            zh: {
+                title: "配位共價鍵的形成",
+                subtitle: "互動式電子圖動畫",
+                selectExample: "選擇例子",
+                structLabel: "結構式",
+                prev: "上一步",
+                next: "下一步",
+                step: "步驟",
+                octet: "八隅體",
+                duplet: "二隅體"
+            }
+        };
 
         const getCrossSVG = (color, size = 4.5, weight = 2.5) => `<path d="M-${size},-${size} L${size},${size} M-${size},${size} L${size},-${size}" stroke="${color}" stroke-width="${weight}" fill="none" class="symbol-draw" />`;
         const getDotSVG = (color) => `<circle cx="0" cy="0" r="4.5" fill="${color}" class="symbol-fill" />`;
@@ -189,7 +220,14 @@
 
         const cases = {
             nh3bf3: {
-                name: "NH₃BF₃", donor: "Nitrogen", dMol: "NH₃", acceptor: "Boron", aMol: "BF₃", final: "NH₃BF₃", octet: "octet", charge: null,
+                name: "NH₃BF₃", 
+                donor: { en: "Nitrogen", zh: "氮" },
+                dMol: "NH₃", 
+                acceptor: { en: "Boron", zh: "硼" }, 
+                aMol: "BF₃", 
+                final: "NH₃BF₃", 
+                octet: "octet", 
+                charge: null,
                 setup: (groups, step) => {
                     const isMerged = step === 2;
                     const dX = isMerged ? 400 - (MAIN_RADIUS - OVERLAP_DEPTH/2) : 220;
@@ -208,7 +246,14 @@
                 struct: (step) => renderRefinedStruct(step, 'N', 'B', ['H','H','H'], ['F','F','F'], DATIVE_COLOR)
             },
             alcl4: {
-                name: "AlCl₄⁻", donor: "Chlorine", dMol: "Cl⁻", acceptor: "Aluminium", aMol: "AlCl₃", final: "AlCl₄⁻", octet: "octet", charge: '-',
+                name: "AlCl₄⁻", 
+                donor: { en: "Chlorine", zh: "氯" }, 
+                dMol: "Cl⁻", 
+                acceptor: { en: "Aluminium", zh: "鋁" }, 
+                aMol: "AlCl₃", 
+                final: "AlCl₄⁻", 
+                octet: "octet", 
+                charge: '-',
                 setup: (groups, step) => {
                     const isMerged = step === 2;
                     const dX = isMerged ? 400 - (MAIN_RADIUS - OVERLAP_DEPTH/2) : 220;
@@ -230,7 +275,14 @@
                 struct: (step) => renderRefinedStruct(step, 'Cl', 'Al', [], ['Cl','Cl','Cl'], DATIVE_COLOR, true, '-', true, false)
             },
             h3o: {
-                name: "H₃O⁺", donor: "Oxygen", dMol: "H₂O", acceptor: "Hydrogen", aMol: "H⁺", final: "H₃O⁺", octet: "duplet", charge: '+',
+                name: "H₃O⁺", 
+                donor: { en: "Oxygen", zh: "氧" }, 
+                dMol: "H₂O", 
+                acceptor: { en: "Hydrogen", zh: "氫" }, 
+                aMol: "H⁺", 
+                final: "H₃O⁺", 
+                octet: "duplet", 
+                charge: '+',
                 setup: (groups, step) => {
                     const isMerged = step === 2;
                     const dX = isMerged ? 400 - (MAIN_RADIUS - OVERLAP_DEPTH/2) : 220;
@@ -252,7 +304,14 @@
                 struct: (step) => renderRefinedStruct(step, 'O', 'H', ['H','H'], [], DATIVE_COLOR, true, '+', false, true)
             },
             nh4: {
-                name: "NH₄⁺", donor: "Nitrogen", dMol: "NH₃", acceptor: "Hydrogen", aMol: "H⁺", final: "NH₄⁺", octet: "duplet", charge: '+',
+                name: "NH₄⁺", 
+                donor: { en: "Nitrogen", zh: "氮" }, 
+                dMol: "NH₃", 
+                acceptor: { en: "Hydrogen", zh: "氫" }, 
+                aMol: "H⁺", 
+                final: "NH₄⁺", 
+                octet: "duplet", 
+                charge: '+',
                 setup: (groups, step) => {
                     const isMerged = step === 2;
                     const dX = isMerged ? 400 - (MAIN_RADIUS - OVERLAP_DEPTH/2) : 220;
@@ -322,33 +381,82 @@
 
         function formatChem(str) { return str.replace(/(\d+)/g, '<sub>$1</sub>').replace(/([-+])/, '<sup>$1</sup>'); }
 
-        Object.keys(cases).forEach(key => {
-            const btn = document.createElement('button');
-            btn.className = "chem-label w-full text-left px-4 py-2 rounded-lg border border-slate-200 hover:bg-slate-50 transition-all font-medium text-slate-700 active:scale-95";
-            btn.innerHTML = formatChem(cases[key].name);
-            btn.onclick = () => { currentKey = key; currentStep = 0; update(); };
-            caseSelector.appendChild(btn);
-        });
+        function renderSelector() {
+            caseSelector.innerHTML = '';
+            Object.keys(cases).forEach(key => {
+                const btn = document.createElement('button');
+                btn.className = "chem-label w-full text-left px-4 py-2 rounded-lg border border-slate-200 hover:bg-slate-50 transition-all font-medium text-slate-700 active:scale-95";
+                btn.innerHTML = formatChem(cases[key].name);
+                btn.onclick = () => { currentKey = key; currentStep = 0; update(); };
+                caseSelector.appendChild(btn);
+            });
+        }
 
         function update() {
             const c = cases[currentKey];
+            const text = i18n[currentLang];
+            
+            // UI Static Labels
+            document.getElementById('ui-title').innerText = text.title;
+            document.getElementById('ui-subtitle').innerText = text.subtitle;
+            document.getElementById('ui-select-example').innerText = text.selectExample;
+            document.getElementById('ui-struct-label').innerText = text.structLabel;
+            document.getElementById('prev-btn').innerText = text.prev;
+            document.getElementById('next-btn').innerText = text.next;
+
+            // Visual Content
             c.setup(svgGroups, currentStep);
             structContainer.innerHTML = c.struct(currentStep);
-            let msg = currentStep === 0 ? `${c.donor} atom in ${c.dMol} contains lone pair electron.` : currentStep === 1 ? `While ${c.acceptor} atom in ${c.aMol} outermost electron shell is not fully filled, which has a vacant site to accept the electron.` : `${c.acceptor} atom in ${c.aMol} accepts the lone pair electron from ${c.donor} atom in ${c.dMol} to form dative covalent bond, so that ${c.acceptor.toLowerCase()} atom in ${c.final} attains a stable ${c.octet} structure.`;
+
+            // Guidance Generation
+            let msg = "";
+            const donorName = c.donor[currentLang];
+            const acceptorName = c.acceptor[currentLang];
+            const octetType = text[c.octet];
+
+            if (currentLang === 'en') {
+                msg = currentStep === 0 ? `${donorName} in ${c.dMol} contains lone pair electron.` : 
+                      currentStep === 1 ? `While ${acceptorName} in ${c.aMol} outermost electron shell is not fully filled, which has a vacant site to accept the electron.` : 
+                      `${acceptorName} in ${c.aMol} accepts the lone pair electron from ${donorName} in ${c.dMol} to form dative covalent bond, so that ${acceptorName.toLowerCase()} atom in ${c.final} attains a stable ${octetType} structure.`;
+            } else {
+                msg = currentStep === 0 ? `${c.dMol} 中的 ${donorName} 含有孤電子對。` : 
+                      currentStep === 1 ? `而 ${c.aMol} 中的 ${acceptorName} 最外層電子殼未填滿，具有空位可接收電子。` : 
+                      `${c.aMol} 中的 ${acceptorName} 接收來自 ${c.dMol} 中 ${donorName} 的孤電子對，形成配位共價鍵，使 ${c.final} 中的 ${acceptorName} 原子達到穩定的 ${octetType} 結構。`;
+            }
+
             guidanceText.innerText = msg;
-            document.getElementById('step-indicator').innerText = `Step ${currentStep + 1} / 3`;
+            document.getElementById('step-indicator').innerText = `${text.step} ${currentStep + 1} / 3`;
             document.getElementById('prev-btn').disabled = currentStep === 0;
             document.getElementById('next-btn').disabled = currentStep === 2;
+
+            // Update button states
             Array.from(caseSelector.children).forEach(b => {
                 const isActive = b.innerHTML === formatChem(c.name);
                 b.classList.toggle('bg-blue-50', isActive); b.classList.toggle('border-blue-300', isActive);
             });
+
+            // Update Language Buttons
+            const btnEn = document.getElementById('lang-en');
+            const btnZh = document.getElementById('lang-zh');
+            if (currentLang === 'en') {
+                btnEn.classList.add('bg-white', 'shadow-sm'); btnEn.classList.remove('text-slate-500');
+                btnZh.classList.remove('bg-white', 'shadow-sm'); btnZh.classList.add('text-slate-500');
+            } else {
+                btnZh.classList.add('bg-white', 'shadow-sm'); btnZh.classList.remove('text-slate-500');
+                btnEn.classList.remove('bg-white', 'shadow-sm'); btnEn.classList.add('text-slate-500');
+            }
         }
 
+        // Event Listeners
+        document.getElementById('lang-en').onclick = () => { currentLang = 'en'; update(); };
+        document.getElementById('lang-zh').onclick = () => { currentLang = 'zh'; update(); };
         document.getElementById('prev-btn').onclick = () => { if(currentStep > 0) { currentStep--; update(); }};
         document.getElementById('next-btn').onclick = () => { if(currentStep < 2) { currentStep++; update(); }};
         
-        window.onload = update;
+        window.onload = () => {
+            renderSelector();
+            update();
+        };
     </script>
 </body>
 </html>

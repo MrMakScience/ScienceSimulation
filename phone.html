@@ -3,696 +3,460 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Covalent Bonding Step-by-Step Simulator</title>
+    <title>Dative Covalent Bond Simulation</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Noto+Sans+TC:wght@400;700&display=swap');
-        body { font-family: 'Inter', 'Noto Sans TC', sans-serif; background-color: #f8fafc; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; overflow-x: hidden; }
         
-        .step-active { font-weight: 800; color: #000; border-left: 4px solid #000 !important; transform: scale(1.02); }
-        
-        /* Atom Styling - Black Theme */
-        .atom-circle { stroke: #000; stroke-width: 2; fill: none; transition: all 0.3s ease; }
-        .atom-circle.interactive { cursor: pointer; fill: rgba(0, 0, 0, 0.01); }
-        .atom-circle.interactive:hover { stroke-width: 4; fill: rgba(0, 0, 0, 0.05); }
-        .atom-center-bg { fill: none; stroke: #000; stroke-width: 2; }
-        
-        /* Highlighting new additions in Blue */
-        .highlight-blue { stroke: #2563eb !important; stroke-width: 3 !important; }
-        .highlight-blue-text { fill: #2563eb !important; }
-        .symbol-blue { stroke: #2563eb !important; fill: #2563eb !important; }
-        .symbol-ring.symbol-blue { fill: white !important; stroke: #2563eb !important; stroke-width: 2 !important; }
-        
-        /* Electron Styling - Black Theme */
-        .electron { transition: opacity 0.5s ease; pointer-events: none; }
-        .symbol-cross { stroke: #000; }
-        .symbol-dot { fill: #000; }
-        .symbol-ring { fill: #fff; stroke: #000; stroke-width: 1.5; }
-        
-        sub { bottom: -0.25em; font-size: 75%; line-height: 0; position: relative; vertical-align: baseline; }
-        sup { top: -0.5em; font-size: 75%; line-height: 0; position: relative; vertical-align: baseline; }
-
-        .btn-action { 
-            animation: pulse 2s infinite; 
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        .move-transition { 
+            transition: transform 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+            will-change: transform;
         }
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
+        
+        .atom-label { font-weight: bold; font-size: 1.2rem; pointer-events: none; }
+        
+        .highlight-pulse { 
+            animation: pulse-ring 1.5s infinite; 
+            transform-origin: center;
+            transform-box: fill-box;
+        }
+        @keyframes pulse-ring {
+            0% { transform: scale(0.6); opacity: 0.8; }
+            50% { transform: scale(1.1); opacity: 0.3; }
+            100% { transform: scale(0.6); opacity: 0.8; }
         }
 
-        .shake { animation: shake 0.4s ease-in-out; }
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-5px); }
-            75% { transform: translateX(5px); }
+        .canvas-container {
+            aspect-ratio: 16/9;
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            overflow: hidden;
+            position: relative;
         }
+
+        .struct-line { stroke: #334155; stroke-width: 2.2; }
+        .struct-text { font-family: 'Inter', sans-serif; font-weight: 700; font-size: 18px; fill: #1e293b; }
         
-        @media (max-width: 768px) {
-            #canvas { max-height: 50vh; }
-        }
+        .symbol-draw { stroke-width: 2.5; fill: none; }
+        .symbol-fill { transition: opacity 0.5s ease; }
+
+        .ion-bracket { stroke: #334155; stroke-width: 3; fill: none; stroke-linecap: round; }
+        .ion-charge { font-weight: bold; font-size: 1.6rem; fill: #1e293b; }
+        
+        .struct-bracket { stroke: #000000; stroke-width: 2; fill: none; }
+        .struct-charge { font-size: 16px; font-weight: bold; fill: #1e293b; }
     </style>
 </head>
-<body class="p-2 md:p-8 flex items-start justify-center min-h-screen">
-    <div id="app" class="w-full max-w-6xl bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row min-h-[90vh]">
-        
-        <!-- Left Sidebar -->
-        <div class="w-full md:w-80 bg-slate-50 p-4 md:p-6 border-b md:border-b-0 md:border-r border-slate-200 flex flex-col shrink-0 relative">
-            <!-- Language Toggle Button with Globe Icon -->
-            <button id="langToggle" class="absolute top-4 right-4 flex items-center gap-1.5 px-2 py-1 bg-white border border-slate-300 rounded text-[10px] md:text-xs font-bold hover:bg-slate-100 transition-colors shadow-sm uppercase tracking-tighter">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-                <span>中 / EN</span>
-            </button>
+<body class="p-4 md:p-8">
+    <div class="max-w-7xl mx-auto">
+        <header class="mb-8 relative">
+            <div class="absolute right-0 top-0 bg-slate-200 rounded-lg p-1 flex items-center text-sm font-semibold">
+                <button id="lang-en" class="px-3 py-1 rounded-md transition-colors bg-white shadow-sm">EN</button>
+                <button id="lang-zh" class="px-3 py-1 rounded-md transition-colors text-slate-500 hover:text-slate-800">繁中</button>
+            </div>
+            <h1 id="ui-title" class="text-3xl font-bold text-slate-800">Formation of Dative Covalent Bonds</h1>
+            <p id="ui-subtitle" class="text-slate-600 mt-2">Interactive dot-and-cross diagrams with tablet-optimized animations</p>
+        </header>
 
-            <h1 id="mainTitle" class="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-slate-900 pr-12">Covalent Simulation</h1>
-            
-            <div class="mb-4 md:mb-6">
-                <label id="moleculeLabel" class="block text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wider">Active Molecule</label>
-                <div id="activeMoleculeDisplay" class="p-2 md:p-3 bg-white border rounded-lg font-bold text-base md:text-lg shadow-sm border-slate-300">
-                    Select a molecule
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <div class="lg:col-span-1 space-y-4">
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                    <h2 id="ui-select-example" class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-4">Select Example</h2>
+                    <div id="case-selector" class="space-y-2"></div>
+                </div>
+                <div id="structural-panel" class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <p id="ui-struct-label" class="text-[10px] font-bold text-slate-400 mb-2 uppercase tracking-widest text-center">Structural Formula</p>
+                    <div id="struct-svg-container" class="flex items-center justify-center min-h-[220px]"></div>
                 </div>
             </div>
 
-            <div class="space-y-2 md:space-y-3 flex-1 md:overflow-y-auto" id="stepsList">
-                <div id="step-nav-1" class="p-2 md:p-3 rounded-lg border bg-white shadow-sm transition-all duration-300">
-                    <span class="text-[10px] md:text-xs uppercase text-slate-400 font-bold" data-t="step">Step 1</span>
-                    <p class="font-medium text-xs md:text-sm leading-tight" data-t="step1Desc">Calculate e<sup>-</sup> need for each atom</p>
-                </div>
-                <div id="step-nav-2" class="p-2 md:p-3 rounded-lg border bg-white shadow-sm transition-all duration-300">
-                    <span class="text-[10px] md:text-xs uppercase text-slate-400 font-bold" data-t="step">Step 2</span>
-                    <p class="font-medium text-xs md:text-sm leading-tight" data-t="step2Desc">Decide central atom</p>
-                </div>
-                <div id="step-nav-3" class="p-2 md:p-3 rounded-lg border bg-white shadow-sm transition-all duration-300">
-                    <span class="text-[10px] md:text-xs uppercase text-slate-400 font-bold" data-t="step">Step 3</span>
-                    <p class="font-medium text-xs md:text-sm leading-tight" data-t="step3Desc">Connect central atom with other atoms</p>
-                </div>
-                <div id="step-nav-4" class="p-2 md:p-3 rounded-lg border bg-white shadow-sm transition-all duration-300">
-                    <span class="text-[10px] md:text-xs uppercase text-slate-400 font-bold" data-t="step">Step 4</span>
-                    <p class="font-medium text-xs md:text-sm leading-tight" data-t="step4Desc">Fill the shared electrons</p>
-                </div>
-                <div id="step-nav-5" class="p-2 md:p-3 rounded-lg border bg-white shadow-sm transition-all duration-300">
-                    <span class="text-[10px] md:text-xs uppercase text-slate-400 font-bold" data-t="step">Step 5</span>
-                    <p class="font-medium text-xs md:text-sm leading-tight" data-t="step5Desc">Fill adjacent shells</p>
-                </div>
-                <div id="step-nav-6" class="p-2 md:p-3 rounded-lg border bg-white shadow-sm transition-all duration-300">
-                    <span class="text-[10px] md:text-xs uppercase text-slate-400 font-bold" data-t="step">Step 6</span>
-                    <p class="font-medium text-xs md:text-sm leading-tight" data-t="step6Desc">Fill central shell</p>
-                </div>
-            </div>
-
-            <div class="mt-4 md:mt-6 pt-4 md:pt-6 border-t flex justify-between gap-2">
-                <button id="prevBtn" class="flex-1 px-2 md:px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg font-semibold transition-colors disabled:opacity-30 text-sm md:text-base" data-t="back">Back</button>
-                <button id="nextBtnSidebar" class="flex-1 px-2 md:px-4 py-2 bg-slate-900 hover:bg-black text-white rounded-lg font-semibold transition-colors disabled:opacity-30 text-sm md:text-base" data-t="next">Next</button>
-            </div>
-        </div>
-
-        <!-- Main Viewport -->
-        <div class="flex-1 p-4 md:p-8 flex flex-col relative bg-white overflow-hidden min-h-[500px]">
-            <div id="instructionBox" class="mb-4 p-3 md:p-4 bg-slate-100 border-l-4 border-slate-900 rounded-r-lg text-slate-900 font-medium text-sm md:text-base min-h-[60px] md:min-h-[80px] flex items-center shadow-sm">
-                Please select a molecule from the menu to start.
-            </div>
-
-            <div id="interactiveArea" class="flex-1 border-2 border-dashed border-slate-100 rounded-xl relative flex flex-col items-center justify-center bg-slate-50/30 overflow-hidden min-h-[400px]">
-                
-                <div id="feedbackBar" class="absolute top-0 left-0 right-0 p-3 md:p-4 bg-red-600 text-white text-center font-bold text-sm transform -translate-y-full transition-transform duration-300 z-50">
-                    Incorrect! This atom is not the most electron-deficient. Check the stats!
-                </div>
-
-                <!-- Missing Electron Stats -->
-                <div id="atomStats" class="absolute top-2 md:top-4 left-2 md:left-4 p-2 md:p-4 bg-white/95 border border-slate-300 rounded-xl shadow-lg z-20 hidden max-w-[150px] md:max-w-none">
-                    <h4 class="text-[10px] md:text-xs font-bold text-slate-500 uppercase mb-1 md:mb-2" data-t="missingElectrons">Electrons Missing:</h4>
-                    <div id="statsList" class="space-y-0.5 md:space-y-1"></div>
-                </div>
-
-                <!-- Electron Key -->
-                <div id="electronKey" class="absolute top-2 md:top-4 right-2 md:right-4 p-2 md:p-4 bg-white/95 border border-slate-300 rounded-xl shadow-lg z-20 hidden max-w-[180px] md:max-w-none">
-                    <h4 class="text-[10px] md:text-xs font-bold text-slate-500 uppercase mb-1 md:mb-2" data-t="electronKey">Electron Key:</h4>
-                    <div id="keyListContent" class="space-y-1 md:space-y-2"></div>
-                </div>
-
-                <svg id="canvas" viewBox="0 0 600 450" class="w-full h-full max-h-[60vh] md:max-h-none">
-                    <defs>
-                        <g id="cross">
-                            <line x1="-5.5" y1="-5.5" x2="5.5" y2="5.5" stroke-width="2.5" />
-                            <line x1="-5.5" y1="5.5" x2="5.5" y2="-5.5" stroke-width="2.5" />
+            <div class="lg:col-span-3 space-y-6">
+                <div class="canvas-container border border-slate-200" id="viz-container">
+                    <svg id="main-svg" viewBox="0 0 800 450" class="w-full h-full">
+                        <g id="drawing-area">
+                            <g id="donor-group" class="move-transition"></g>
+                            <g id="acceptor-group" class="move-transition"></g>
+                            <g id="lone-pair-group" class="move-transition"></g>
                         </g>
-                        <circle id="dot" r="5.5" />
-                        <circle id="ring" r="5.5" fill="white" />
-                    </defs>
-                    <g id="drawingLayer"></g>
-                </svg>
-
-                <div id="floatingActionContainer" class="absolute bottom-4 md:bottom-8 right-4 md:right-8 z-30 hidden">
-                    <button id="mainNextBtn" class="btn-action px-6 md:px-8 py-3 md:py-4 bg-slate-900 text-white rounded-full font-bold text-base md:text-lg flex items-center gap-2">
-                        <span data-t="next">Next</span> <span class="text-xl">→</span>
-                    </button>
-                    <button id="finishBtn" class="hidden px-6 md:px-8 py-3 md:py-4 bg-green-600 text-white rounded-full font-bold text-base md:text-lg flex items-center gap-2 hover:bg-green-700 transition-colors shadow-lg">
-                        <span data-t="finish">Finish</span> <span class="text-xl">✓</span>
-                    </button>
+                    </svg>
                 </div>
 
-                <div id="calcOverlay" class="absolute inset-0 bg-white/90 backdrop-blur-sm flex flex-col items-center justify-center z-40 hidden p-2 md:p-6 overflow-y-auto">
-                    <div class="w-full max-w-2xl bg-white shadow-2xl rounded-2xl border border-slate-200 overflow-hidden my-auto">
-                        <div class="bg-slate-900 p-3 md:p-4 text-white">
-                            <h3 class="text-base md:text-lg font-bold" data-t="step1FullTitle">Step 1: Calculate electrons needed</h3>
-                            <p class="text-slate-300 text-[10px] md:text-xs" data-t="step1SubTitle">Determine electronic arrangements</p>
-                        </div>
-                        <div id="calcList" class="p-3 md:p-6 space-y-3 md:space-y-4"></div>
-                        <div class="p-3 md:p-6 bg-slate-50 border-t flex flex-col items-center gap-2">
-                            <button id="confirmStep1" class="hidden btn-action px-6 md:px-10 py-3 md:py-4 bg-slate-900 text-white rounded-full font-bold shadow-lg transition-all text-sm md:text-base" data-t="successBtn">
-                                Success! Move to Step 2
-                            </button>
-                            <p id="hintStep1" class="text-slate-400 text-xs md:text-sm italic" data-t="calcHint">Complete calculations to proceed...</p>
-                        </div>
-                    </div>
+                <div id="guidance-box" class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 min-h-[100px] flex items-center">
+                    <p id="guidance-text" class="text-lg text-slate-700 text-center w-full leading-relaxed"></p>
                 </div>
 
-                <!-- Molecule Selection Start Screen -->
-                <div id="startScreen" class="absolute inset-0 bg-white flex flex-col items-center justify-center z-50 p-4 md:p-6 overflow-y-auto">
-                    <div class="text-center mb-6 md:mb-8">
-                        <h2 id="startTitle" class="text-2xl md:text-3xl font-black mb-2 text-slate-900">Molecule Lab</h2>
-                        <p id="startSubtitle" class="text-slate-500 text-sm">Select a molecule to begin</p>
-                    </div>
-                    <div id="moleculeGrid" class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 w-full max-w-2xl"></div>
+                <div class="flex justify-between items-center bg-slate-800 p-4 rounded-xl text-white">
+                    <button id="prev-btn" class="px-6 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg disabled:opacity-50 transition-colors">Previous</button>
+                    <div id="step-indicator" class="font-mono text-sm md:text-base">Step 1 / 3</div>
+                    <button id="next-btn" class="px-6 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg disabled:opacity-50 transition-colors">Next</button>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        const TRANSLATIONS = {
-            en: {
-                mainTitle: "Covalent Simulation",
-                moleculeLabel: "Active Molecule",
-                step: "Step",
-                step1Desc: "Calculate e- need for each atom",
-                step2Desc: "Decide central atom",
-                step3Desc: "Connect central atom with other atoms",
-                step4Desc: "Fill the shared electrons",
-                step5Desc: "Fill adjacent shells",
-                step6Desc: "Fill central shell",
-                back: "Back",
-                next: "Next",
-                finish: "Finish",
-                selectMolecule: "Select a molecule",
-                instructionStart: "Please select a molecule from the menu to start.",
-                missingElectrons: "Electrons Missing:",
-                electronKey: "Electron Key:",
-                step1FullTitle: "Step 1: Calculate electrons needed",
-                step1SubTitle: "Determine electronic arrangements",
-                successBtn: "Success! Move to Step 2",
-                calcHint: "Complete calculations to proceed...",
-                startTitle: "Molecule Lab",
-                startSubtitle: "Select a molecule to begin",
-                incorrectFeedback: "Incorrect! This atom is not the most electron-deficient. Check the stats!",
-                need: "need",
-                newE: "(New)",
-                eOf: "e- of",
-                current: "Current",
-                target: "Target",
-                step1Instr: "<strong>Step 1:</strong> Identify the number of electron needed for each atom.",
-                step2Instr: "<strong>Step 2:</strong> Decide central atom",
-                step2Remark: "Remark: As both atoms are missing same number of electrons, there is no central atoms actually.",
-                step2Correct: "<strong>Step 2: Correct!</strong> {atom} need the most electrons.",
-                step3Instr: "<strong>Step 3:</strong> Connect central atom with other atoms",
-                step4Instr: "<strong>Step 4:</strong> Fill the shared electrons",
-                step4Remark: "Remark: Number of shared e- can be decided by how many e- each atom missing.",
-                step5Instr: "<strong>Step 5:</strong> Fill adjacent shells",
-                step5Remark: "As adjacent atoms reach a stable electronic arrangement already, there is nothing need to do in this step.",
-                step6Instr: "<strong>Step 6:</strong> Fill central shell",
-                step6Remark: "As {atom} atom reach a stable electronic arrangement already, there is nothing need to do in this step."
-            },
-            zh: {
-                mainTitle: "共價鍵模擬器",
-                moleculeLabel: "當前分子",
-                step: "步驟",
-                step1Desc: "計算每種原子所需的電子數",
-                step2Desc: "確定中心原子",
-                step3Desc: "將中心原子與其他原子連接",
-                step4Desc: "填寫共用電子",
-                step5Desc: "填充鄰近原子電子層",
-                step6Desc: "填充中心原子電子層",
-                back: "返回",
-                next: "下一步",
-                finish: "完成",
-                selectMolecule: "請選擇分子",
-                instructionStart: "請從選單中選擇一個分子開始。",
-                missingElectrons: "缺少電子數：",
-                electronKey: "電子標識：",
-                step1FullTitle: "步驟 1：計算所需電子",
-                step1SubTitle: "確定電子排布",
-                successBtn: "成功！進入步驟 2",
-                calcHint: "請完成所有計算以繼續...",
-                startTitle: "分子實驗室",
-                startSubtitle: "選擇一個分子開始模擬",
-                incorrectFeedback: "錯誤！該原子並非最缺少電子的原子。請查看數據！",
-                need: "需要",
-                newE: "(新增)",
-                eOf: "的電子",
-                current: "當前",
-                target: "目標",
-                step1Instr: "<strong>步驟 1：</strong> 識別每個原子達到穩定結構所需的電子數。",
-                step2Instr: "<strong>步驟 2：</strong> 確定中心原子",
-                step2Remark: "備註：由於兩個原子缺少的電子數相同，實際上沒有中心原子。",
-                step2Correct: "<strong>步驟 2：正確！</strong> {atom} 需要最多的電子。",
-                step3Instr: "<strong>步驟 3：</strong> 將中心原子與其他原子連接",
-                step4Instr: "<strong>步驟 4：</strong> 填寫共用電子對",
-                step4Remark: "備註：共用電子的數量取決於每個原子所缺少的電子數。",
-                step5Instr: "<strong>步驟 5：</strong> 填充鄰近原子的電子層",
-                step5Remark: "由於鄰近原子已達到穩定的電子結構，此步驟無需任何操作。",
-                step6Instr: "<strong>步驟 6：</strong> 填充中心原子的電子層",
-                step6Remark: "由於 {atom} 原子已達到穩定的電子結構，此步驟無需任何操作。"
-            }
-        };
+        const MAIN_RADIUS = 85; 
+        const PERIPHERAL_RADIUS = 60; 
+        const ION_RADIUS = 85; 
+        const HYDROGEN_RADIUS = 45; 
+        const OVERLAP_DEPTH = 18; 
 
-        const ATOM_DATA = {
-            "H": { config: "1", target: "2", valence: 1, limit: 2 },
-            "C": { config: "2, 4", target: "2, 8", valence: 4, limit: 8 },
-            "N": { config: "2, 5", target: "2, 8", valence: 5, limit: 8 },
-            "O": { config: "2, 6", target: "2, 8", valence: 6, limit: 8 },
-            "F": { config: "2, 7", target: "2, 8", valence: 7, limit: 8 },
-            "P": { config: "2, 8, 5", target: "2, 8, 8", valence: 5, limit: 8 },
-            "Cl": { config: "2, 8, 7", target: "2, 8, 8", valence: 7, limit: 8 }
-        };
+        const DONOR_MOL_COLOR = '#3b82f6';
+        const ACCEPTOR_MOL_COLOR = '#f59e0b'; 
+        const DATIVE_COLOR = '#ef4444';
 
-        const MOLECULES = {
-            "NH3": { name: "NH3", display: "NH<sub>3</sub>", center: "N", outer: ["H", "H", "H"], symbols: {N: "dot", H: "cross"}, orientations: [180, 0, 90] },
-            "PCl3": { name: "PCl3", display: "PCl<sub>3</sub>", center: "P", outer: ["Cl", "Cl", "Cl"], symbols: {P: "dot", Cl: "cross"}, orientations: [180, 0, 90] },
-            "CO2": { name: "CO2", display: "CO<sub>2</sub>", center: "C", outer: ["O", "O"], symbols: {C: "dot", O: "cross"}, orientations: [180, 0] },
-            "H2O": { name: "H2O", display: "H<sub>2</sub>O", center: "O", outer: ["H", "H"], symbols: {O: "dot", H: "cross"}, orientations: [180, 0] },
-            "HCN": { name: "HCN", display: "HCN", center: "C", outer: ["H", "N"], symbols: {C: "dot", H: "cross", N: "ring"}, orientations: [180, 0] },
-            "COCl2": { name: "COCl2", display: "COCl<sub>2</sub>", center: "C", outer: ["O", "Cl", "Cl"], symbols: {C: "dot", O: "cross", Cl: "ring"}, orientations: [180, 0, 90] },
-            "HF": { name: "HF", display: "HF", center: "F", outer: ["H"], symbols: {F: "dot", H: "cross"}, orientations: [180] },
-            "O2": { name: "O2", display: "O<sub>2</sub>", center: "O", outer: ["O"], symbols: {O: "dot"}, orientations: [180] }
-        };
-
-        let currentMolId = null;
-        let currentStep = 1;
-        let userCalc = {};
-        let step2Resolved = false;
-        let selectedCenterAtom = null;
         let currentLang = 'en';
 
-        const canvas = document.getElementById('drawingLayer');
-        const instruction = document.getElementById('instructionBox');
-        const sidebarNextBtn = document.getElementById('nextBtnSidebar');
-        const mainNextBtn = document.getElementById('mainNextBtn');
-        const finishBtn = document.getElementById('finishBtn');
-        const prevBtn = document.getElementById('prevBtn');
-        const confirmBtn = document.getElementById('confirmStep1');
-        const feedback = document.getElementById('feedbackBar');
-        const startScreen = document.getElementById('startScreen');
-        const moleculeGrid = document.getElementById('moleculeGrid');
-        const activeMolDisplay = document.getElementById('activeMoleculeDisplay');
-        const langToggle = document.getElementById('langToggle');
-
-        function t(key) { return TRANSLATIONS[currentLang][key] || key; }
-
-        function updateUIText() {
-            document.getElementById('mainTitle').innerText = t('mainTitle');
-            document.getElementById('moleculeLabel').innerText = t('moleculeLabel');
-            document.getElementById('prevBtn').innerText = t('back');
-            document.getElementById('nextBtnSidebar').innerText = t('next');
-            document.querySelectorAll('[data-t="step"]').forEach(el => el.innerText = t('step') + ' ' + el.parentElement.id.split('-').pop());
-            document.getElementById('step-nav-1').querySelector('p').innerText = t('step1Desc');
-            document.getElementById('step-nav-2').querySelector('p').innerText = t('step2Desc');
-            document.getElementById('step-nav-3').querySelector('p').innerText = t('step3Desc');
-            document.getElementById('step-nav-4').querySelector('p').innerText = t('step4Desc');
-            document.getElementById('step-nav-5').querySelector('p').innerText = t('step5Desc');
-            document.getElementById('step-nav-6').querySelector('p').innerText = t('step6Desc');
-            
-            document.querySelector('#mainNextBtn [data-t="next"]').innerText = t('next');
-            document.querySelector('#finishBtn [data-t="finish"]').innerText = t('finish');
-            document.querySelector('[data-t="step1FullTitle"]').innerText = t('step1FullTitle');
-            document.querySelector('[data-t="step1SubTitle"]').innerText = t('step1SubTitle');
-            document.querySelector('[data-t="successBtn"]').innerText = t('successBtn');
-            document.querySelector('[data-t="calcHint"]').innerText = t('calcHint');
-            document.getElementById('startTitle').innerText = t('startTitle');
-            document.getElementById('startSubtitle').innerText = t('startSubtitle');
-            document.querySelector('[data-t="missingElectrons"]').innerText = t('missingElectrons');
-            document.querySelector('[data-t="electronKey"]').innerText = t('electronKey');
-
-            if (!currentMolId) {
-                instruction.innerText = t('instructionStart');
-                activeMolDisplay.innerText = t('selectMolecule');
+        const i18n = {
+            en: {
+                title: "Formation of Dative Covalent Bonds",
+                subtitle: "Interactive dot-and-cross diagrams with animations",
+                selectExample: "Select Example",
+                structLabel: "Structural Formula",
+                prev: "Previous",
+                next: "Next",
+                step: "Step",
+                octet: "octet",
+                duplet: "duplet"
+            },
+            zh: {
+                title: "配位共價鍵的形成",
+                subtitle: "互動式電子圖動畫",
+                selectExample: "選擇例子",
+                structLabel: "結構式",
+                prev: "上一步",
+                next: "下一步",
+                step: "步驟",
+                octet: "八隅體",
+                duplet: "二隅體"
             }
+        };
+
+        const getCrossSVG = (color, size = 4.5, weight = 2.5) => `<path d="M-${size},-${size} L${size},${size} M-${size},${size} L${size},-${size}" stroke="${color}" stroke-width="${weight}" fill="none" class="symbol-draw" />`;
+        const getDotSVG = (color) => `<circle cx="0" cy="0" r="4.5" fill="${color}" class="symbol-fill" />`;
+        const getCircleSVG = (color) => `<circle cx="0" cy="0" r="5" fill="white" stroke="${color}" stroke-width="2.2" class="symbol-draw" />`;
+
+        function getInternalBrackets(radius, charge, isLarge = false) {
+            if (!charge) return '';
+            const pad = isLarge ? 110 : 25;
+            const hPad = isLarge ? 160 : 25;
+            const hook = 20;
+            const left = -radius - hPad;
+            const right = radius + hPad;
+            const top = -radius - pad;
+            const bottom = radius + pad;
+
+            return `
+                <g class="bracket-internal">
+                    <path d="M ${left + hook},${top} L ${left},${top} L ${left},${bottom} L ${left + hook},${bottom}" class="ion-bracket" />
+                    <path d="M ${right - hook},${top} L ${right},${top} L ${right},${bottom} L ${right - hook},${bottom}" class="ion-bracket" />
+                    <text x="${right + 8}" y="${top + 18}" class="ion-charge">${charge}</text>
+                </g>`;
         }
 
-        function init() {
-            updateUIText();
-            langToggle.onclick = () => {
-                currentLang = currentLang === 'en' ? 'zh' : 'en';
-                updateUIText();
-                if (currentMolId) update();
+        function getAtomHtml(color, label, radius = MAIN_RADIUS) {
+            return `<circle cx="0" cy="0" r="${radius}" fill="none" stroke="${color}" stroke-width="2.5" />
+                <text x="0" y="8" text-anchor="middle" class="atom-label" fill="${color}">${label}</text>`;
+        }
+
+        function getLonePairHtml(angleDeg, color, symbolType = 'x', customRadius = PERIPHERAL_RADIUS) {
+            const rad = (angleDeg * Math.PI) / 180;
+            const tx = Math.cos(rad) * customRadius, ty = Math.sin(rad) * customRadius;
+            const pairRotation = angleDeg + 90; 
+            const symbolHtml = symbolType === 'x' ? getCrossSVG(color) : getCircleSVG(color);
+            const offset = 8;
+            return `<g transform="translate(${tx}, ${ty}) rotate(${pairRotation})"><g transform="translate(-${offset}, 0)">${symbolHtml}</g><g transform="translate(${offset}, 0)">${symbolHtml}</g></g>`;
+        }
+
+        function getBondHtml(angleDeg, sym1Type, sym2Type, molColor, atomLabel) {
+            const rad = (angleDeg * Math.PI) / 180;
+            const vec = { x: Math.cos(rad), y: Math.sin(rad) };
+            const pRadius = (atomLabel === 'H') ? HYDROGEN_RADIUS : PERIPHERAL_RADIUS;
+            const distToPeripheral = MAIN_RADIUS + pRadius - OVERLAP_DEPTH;
+            const atomX = vec.x * distToPeripheral, atomY = vec.y * distToPeripheral;
+            const lensCenterDist = MAIN_RADIUS - (OVERLAP_DEPTH / 2);
+            const sharedX = vec.x * lensCenterDist, sharedY = vec.y * lensCenterDist;
+            const spacing = 8;
+
+            const getSym = (type, color) => {
+                if (type === 'x') return getCrossSVG(color);
+                if (type === '•' || type === 'dot') return getDotSVG(color);
+                return getCircleSVG(color);
             };
 
-            moleculeGrid.innerHTML = '';
-            Object.keys(MOLECULES).forEach(key => {
-                const btn = document.createElement('button');
-                btn.className = "p-3 md:p-4 border-2 border-slate-200 rounded-xl hover:border-slate-900 hover:bg-slate-50 font-bold transition-all text-base md:text-xl";
-                btn.innerHTML = MOLECULES[key].display;
-                btn.onclick = () => {
-                    currentMolId = key;
-                    startScreen.classList.add('hidden');
-                    activeMolDisplay.innerHTML = MOLECULES[key].display;
-                    reset();
-                };
-                moleculeGrid.appendChild(btn);
-            });
+            let lonePairs = '';
+            if (atomLabel === 'Cl' || atomLabel === 'F') {
+                const baseAngle = (angleDeg + 180) % 360;
+                lonePairs = getLonePairHtml(baseAngle + 90, molColor, 'o', pRadius) + getLonePairHtml(baseAngle + 180, molColor, 'o', pRadius) + getLonePairHtml(baseAngle + 270, molColor, 'o', pRadius);
+            }
 
-            const goNext = () => { if(currentStep < 6) { currentStep++; update(); } };
-            sidebarNextBtn.addEventListener('click', goNext);
-            mainNextBtn.addEventListener('click', goNext);
-            finishBtn.addEventListener('click', () => { 
-                startScreen.classList.remove('hidden'); 
-                currentMolId = null;
-                updateUIText();
-            });
-            prevBtn.addEventListener('click', () => { if(currentStep > 1) { currentStep--; update(); }});
-            confirmBtn.addEventListener('click', () => { currentStep = 2; update(); });
-            startScreen.classList.remove('hidden');
+            return `<g>
+                <g transform="translate(${atomX}, ${atomY})">
+                    <circle cx="0" cy="0" r="${pRadius}" fill="none" stroke="${molColor}" stroke-width="1.5" />
+                    <text x="0" y="5" text-anchor="middle" class="atom-label" style="font-size:0.9rem" fill="${molColor}">${atomLabel}</text>
+                    ${lonePairs}
+                </g>
+                <g transform="translate(${sharedX}, ${sharedY}) rotate(${angleDeg + 90})">
+                    <g transform="translate(-${spacing}, 0)">${getSym(sym1Type, molColor)}</g>
+                    <g transform="translate(${spacing}, 0)">${getSym(sym2Type, molColor)}</g>
+                </g></g>`;
         }
 
-        function reset() {
-            currentStep = 1;
-            userCalc = {};
-            step2Resolved = false;
-            selectedCenterAtom = null;
-            const mol = MOLECULES[currentMolId];
-            const uniqueAtoms = [...new Set([mol.center, ...mol.outer])];
-            uniqueAtoms.forEach(a => userCalc[a] = 0);
-            update();
+        function getLonePairSymbols(angleDeg, color, highlight = false, isDative = false) {
+            const rad = (angleDeg * Math.PI) / 180;
+            const dist = isDative ? (MAIN_RADIUS - (OVERLAP_DEPTH / 2)) : MAIN_RADIUS;
+            const tx = Math.cos(rad) * dist, ty = Math.sin(rad) * dist;
+            const offset = 8;
+            const pairRotation = angleDeg + 90;
+
+            return `<g transform="translate(${tx}, ${ty}) rotate(${pairRotation})">
+                <g transform="translate(-${offset}, 0)">${getCrossSVG(color)}</g>
+                <g transform="translate(${offset}, 0)">${getCrossSVG(color)}</g>
+                ${highlight ? `<circle cx="0" cy="0" r="32" fill="none" stroke="${color}" stroke-width="2.5" class="highlight-pulse" />` : ''}
+            </g>`;
+        }
+
+        const cases = {
+            nh3bf3: {
+                name: "NH₃BF₃", 
+                donor: { en: "Nitrogen", zh: "氮" },
+                dMol: "NH₃", 
+                acceptor: { en: "Boron", zh: "硼" }, 
+                aMol: "BF₃", 
+                final: "NH₃BF₃", 
+                octet: "octet", 
+                charge: null,
+                setup: (groups, step) => {
+                    const isMerged = step === 2;
+                    const dX = isMerged ? 400 - (MAIN_RADIUS - OVERLAP_DEPTH/2) : 220;
+                    const aX = isMerged ? 400 + (MAIN_RADIUS - OVERLAP_DEPTH/2) : 580;
+                    const cy = 225;
+
+                    groups.donor.innerHTML = getAtomHtml(DONOR_MOL_COLOR, 'N') + getBondHtml(270, 'x', 'o', DONOR_MOL_COLOR, 'H') + getBondHtml(180, 'x', 'o', DONOR_MOL_COLOR, 'H') + getBondHtml(90, 'x', 'o', DONOR_MOL_COLOR, 'H');
+                    const box = (step === 1) ? `<rect x="-105" y="-20" width="40" height="40" fill="none" stroke="${ACCEPTOR_MOL_COLOR}" stroke-width="2" stroke-dasharray="4" class="highlight-pulse" />` : '';
+                    groups.acceptor.innerHTML = getAtomHtml(ACCEPTOR_MOL_COLOR, 'B') + getBondHtml(270, 'dot', 'o', ACCEPTOR_MOL_COLOR, 'F') + getBondHtml(0, 'dot', 'o', ACCEPTOR_MOL_COLOR, 'F') + getBondHtml(90, 'dot', 'o', ACCEPTOR_MOL_COLOR, 'F') + box;
+                    groups.lonePair.innerHTML = getLonePairSymbols(0, DATIVE_COLOR, step === 0, isMerged);
+
+                    groups.donor.style.transform = `translate(${dX}px, ${cy}px)`;
+                    groups.acceptor.style.transform = `translate(${aX}px, ${cy}px)`;
+                    groups.lonePair.style.transform = `translate(${dX}px, ${cy}px)`;
+                },
+                struct: (step) => renderRefinedStruct(step, 'N', 'B', ['H','H','H'], ['F','F','F'], DATIVE_COLOR)
+            },
+            alcl4: {
+                name: "AlCl₄⁻", 
+                donor: { en: "Chlorine", zh: "氯" }, 
+                dMol: "Cl⁻", 
+                acceptor: { en: "Aluminium", zh: "鋁" }, 
+                aMol: "AlCl₃", 
+                final: "AlCl₄⁻", 
+                octet: "octet", 
+                charge: '-',
+                setup: (groups, step) => {
+                    const isMerged = step === 2;
+                    const dX = isMerged ? 400 - (MAIN_RADIUS - OVERLAP_DEPTH/2) : 220;
+                    const aX = isMerged ? 400 + (MAIN_RADIUS - OVERLAP_DEPTH/2) : 580;
+                    const cy = 225;
+
+                    let dBrackets = (step < 2) ? getInternalBrackets(ION_RADIUS, '-') : '';
+                    let combinedBrackets = isMerged ? getInternalBrackets(MAIN_RADIUS, '-', true) : '';
+
+                    groups.donor.innerHTML = dBrackets + getAtomHtml(DONOR_MOL_COLOR, 'Cl', ION_RADIUS) + getLonePairHtml(270, DONOR_MOL_COLOR, 'x', ION_RADIUS) + getLonePairHtml(180, DONOR_MOL_COLOR, 'x', ION_RADIUS) + getLonePairHtml(90, DONOR_MOL_COLOR, 'x', ION_RADIUS);
+                    const box = (step === 1) ? `<rect x="-105" y="-20" width="40" height="40" fill="none" stroke="${ACCEPTOR_MOL_COLOR}" stroke-width="2" stroke-dasharray="4" class="highlight-pulse" />` : '';
+                    groups.acceptor.innerHTML = combinedBrackets + getAtomHtml(ACCEPTOR_MOL_COLOR, 'Al') + getBondHtml(270, 'dot', 'o', ACCEPTOR_MOL_COLOR, 'Cl') + getBondHtml(0, 'dot', 'o', ACCEPTOR_MOL_COLOR, 'Cl') + getBondHtml(90, 'dot', 'o', ACCEPTOR_MOL_COLOR, 'Cl') + box;
+                    groups.lonePair.innerHTML = getLonePairSymbols(0, DATIVE_COLOR, step === 0, isMerged);
+
+                    groups.donor.style.transform = `translate(${dX}px, ${cy}px)`;
+                    groups.acceptor.style.transform = `translate(${aX}px, ${cy}px)`;
+                    groups.lonePair.style.transform = `translate(${dX}px, ${cy}px)`;
+                },
+                struct: (step) => renderRefinedStruct(step, 'Cl', 'Al', [], ['Cl','Cl','Cl'], DATIVE_COLOR, true, '-', true, false)
+            },
+            h3o: {
+                name: "H₃O⁺", 
+                donor: { en: "Oxygen", zh: "氧" }, 
+                dMol: "H₂O", 
+                acceptor: { en: "Hydrogen", zh: "氫" }, 
+                aMol: "H⁺", 
+                final: "H₃O⁺", 
+                octet: "duplet", 
+                charge: '+',
+                setup: (groups, step) => {
+                    const isMerged = step === 2;
+                    const dX = isMerged ? 400 - (MAIN_RADIUS - OVERLAP_DEPTH/2) : 220;
+                    const aX = isMerged ? 400 + (HYDROGEN_RADIUS - OVERLAP_DEPTH/2) : 580;
+                    const cy = 225;
+
+                    let aBrackets = (step < 2) ? getInternalBrackets(HYDROGEN_RADIUS, '+') : '';
+                    let combinedBrackets = isMerged ? getInternalBrackets(MAIN_RADIUS, '+', true) : '';
+
+                    groups.donor.innerHTML = combinedBrackets + getAtomHtml(DONOR_MOL_COLOR, 'O') + getBondHtml(180, 'x', 'o', DONOR_MOL_COLOR, 'H') + getBondHtml(90, 'x', 'o', DONOR_MOL_COLOR, 'H') + getLonePairHtml(270, DONOR_MOL_COLOR, 'x', MAIN_RADIUS);
+                    const box = (step === 1) ? `<circle cx="-25" cy="0" r="32" fill="none" stroke="${DATIVE_COLOR}" stroke-width="2" stroke-dasharray="4" class="highlight-pulse" />` : '';
+                    groups.acceptor.innerHTML = aBrackets + `<circle cx="0" cy="0" r="${HYDROGEN_RADIUS}" fill="none" stroke="${ACCEPTOR_MOL_COLOR}" stroke-width="2" stroke-dasharray="4" /><text x="0" y="8" text-anchor="middle" class="atom-label" fill="${ACCEPTOR_MOL_COLOR}">H</text>${box}`;
+                    groups.lonePair.innerHTML = getLonePairSymbols(0, DATIVE_COLOR, step === 0, isMerged);
+
+                    groups.donor.style.transform = `translate(${dX}px, ${cy}px)`;
+                    groups.acceptor.style.transform = `translate(${aX}px, ${cy}px)`;
+                    groups.lonePair.style.transform = `translate(${dX}px, ${cy}px)`;
+                },
+                struct: (step) => renderRefinedStruct(step, 'O', 'H', ['H','H'], [], DATIVE_COLOR, true, '+', false, true)
+            },
+            nh4: {
+                name: "NH₄⁺", 
+                donor: { en: "Nitrogen", zh: "氮" }, 
+                dMol: "NH₃", 
+                acceptor: { en: "Hydrogen", zh: "氫" }, 
+                aMol: "H⁺", 
+                final: "NH₄⁺", 
+                octet: "duplet", 
+                charge: '+',
+                setup: (groups, step) => {
+                    const isMerged = step === 2;
+                    const dX = isMerged ? 400 - (MAIN_RADIUS - OVERLAP_DEPTH/2) : 220;
+                    const aX = isMerged ? 400 + (HYDROGEN_RADIUS - OVERLAP_DEPTH/2) : 580;
+                    const cy = 225;
+
+                    let aBrackets = (step < 2) ? getInternalBrackets(HYDROGEN_RADIUS, '+') : '';
+                    let combinedBrackets = isMerged ? getInternalBrackets(MAIN_RADIUS, '+', true) : '';
+
+                    groups.donor.innerHTML = combinedBrackets + getAtomHtml(DONOR_MOL_COLOR, 'N') + getBondHtml(270, 'x', 'o', DONOR_MOL_COLOR, 'H') + getBondHtml(180, 'x', 'o', DONOR_MOL_COLOR, 'H') + getBondHtml(90, 'x', 'o', DONOR_MOL_COLOR, 'H');
+                    const box = (step === 1) ? `<circle cx="-25" cy="0" r="32" fill="none" stroke="${DATIVE_COLOR}" stroke-width="2" stroke-dasharray="4" class="highlight-pulse" />` : '';
+                    groups.acceptor.innerHTML = aBrackets + `<circle cx="0" cy="0" r="${HYDROGEN_RADIUS}" fill="none" stroke="${ACCEPTOR_MOL_COLOR}" stroke-width="2" stroke-dasharray="4" /><text x="0" y="8" text-anchor="middle" class="atom-label" fill="${ACCEPTOR_MOL_COLOR}">H</text>${box}`;
+                    groups.lonePair.innerHTML = getLonePairSymbols(0, DATIVE_COLOR, step === 0, isMerged);
+
+                    groups.donor.style.transform = `translate(${dX}px, ${cy}px)`;
+                    groups.acceptor.style.transform = `translate(${aX}px, ${cy}px)`;
+                    groups.lonePair.style.transform = `translate(${dX}px, ${cy}px)`;
+                },
+                struct: (step) => renderRefinedStruct(step, 'N', 'H', ['H','H','H'], [], DATIVE_COLOR, true, '+', false, true)
+            }
+        };
+
+        function renderRefinedStruct(step, dSym, aSym, dNeighbors, aNeighbors, arrowColor, isIon=false, charge='', dIsIon=false, aIsIon=false) {
+            const isMerged = step === 2;
+            const cx = 130, cy = 110, unit = 32;
+            const dX = isMerged ? -20 : -38, aX = isMerged ? 20 : 38;
+
+            const drawBonds = (neighbors, side, molColor) => {
+                let html = '';
+                const positions = neighbors.length === 3 ? [{x:0, y:-12, dx:0, dy:-unit+14},{x:side==='L'?-12:12, y:0, dx:side==='L'?-unit+14:unit-14, dy:0},{x:0, y:12, dx:0, dy:unit-14}] 
+                    : neighbors.length === 2 ? [{x:side==='L'?-12:12, y:0, dx:side==='L'?-unit+14:unit-14, dy:0},{x:0, y:12, dx:0, dy:unit-14}] 
+                    : neighbors.length === 1 ? [{x:side==='L'?-12:12, y:0, dx:side==='L'?-unit+14:unit-14, dy:0}] : [];
+                neighbors.forEach((sym, i) => {
+                    const p = positions[i];
+                    html += `<line x1="${p.x}" y1="${p.y}" x2="${p.x+p.dx}" y2="${p.y+p.dy}" class="struct-line" /><text x="${p.x+p.dx+(p.dx>0?8:(p.dx<0?-8:0))}" y="${p.y+p.dy+(p.dy>0?14:(p.dy<0?-6:7))}" text-anchor="middle" class="struct-text" style="fill:${molColor}">${sym}</text>`;
+                });
+                return html;
+            };
+
+            const atomBracket = (sign) => {
+                const bw=22, bh=24;
+                return `<g><path d="M -${bw-4},-${bh} L -${bw},-${bh} L -${bw},${bh} L -${bw-4},${bh}" class="struct-bracket" /><path d="M ${bw-4},-${bh} L ${bw},-${bh} L ${bw},${bh} L ${bw-4},${bh}" class="struct-bracket" /><text x="${bw+6}" y="-${bh-12}" class="struct-charge">${sign}</text></g>`;
+            };
+
+            const lonePairX = (x, y, color) => {
+                const offset = 5;
+                return `<g transform="translate(${x},${y})"><g transform="translate(0,-${offset})">${getCrossSVG(color, 3, 2)}</g><g transform="translate(0,${offset})">${getCrossSVG(color, 3, 2)}</g></g>`;
+            };
+
+            return `
+            <svg width="260" height="220" viewBox="0 0 260 220">
+                <defs><marker id="arr" markerWidth="6" markerHeight="6" refX="4" refY="3" orient="auto"><polygon points="0 0, 4 3, 0 6" fill="${arrowColor}"/></marker></defs>
+                <g transform="translate(${cx}, ${cy})">
+                    ${(isMerged && isIon) ? `<g><path d="M -85,-75 L -95,-75 L -95,80 L -85,80" class="struct-bracket" /><path d="M 85,-75 L 95,-75 L 95,80 L 85,80" class="struct-bracket" /><text x="100" y="-60" class="ion-charge" style="fill:#000">${charge}</text></g>` : ''}
+                    <g transform="translate(${dX}, 0)"><text x="0" y="7" text-anchor="middle" class="struct-text" style="fill:${DONOR_MOL_COLOR}">${dSym}</text>${drawBonds(dNeighbors, 'L', DONOR_MOL_COLOR)}${(!isMerged) ? lonePairX(15, 0, arrowColor) : ''}${(!isMerged && dIsIon) ? atomBracket(charge) : ''}</g>
+                    <g transform="translate(${aX}, 0)"><text x="0" y="7" text-anchor="middle" class="struct-text" style="fill:${ACCEPTOR_MOL_COLOR}">${aSym}</text>${drawBonds(aNeighbors, 'R', ACCEPTOR_MOL_COLOR)}${(!isMerged && aIsIon) ? atomBracket(charge) : ''}</g>
+                    ${isMerged ? `<line x1="${dX+10}" y1="0" x2="${aX-8}" y2="0" stroke="${arrowColor}" stroke-width="2.5" marker-end="url(#arr)"/>` : ''}
+                </g>
+            </svg>`;
+        }
+
+        let currentKey = 'nh3bf3', currentStep = 0;
+        const caseSelector = document.getElementById('case-selector');
+        const structContainer = document.getElementById('struct-svg-container');
+        const guidanceText = document.getElementById('guidance-text');
+        const svgGroups = { donor: document.getElementById('donor-group'), acceptor: document.getElementById('acceptor-group'), lonePair: document.getElementById('lone-pair-group') };
+
+        function formatChem(str) { return str.replace(/(\d+)/g, '<sub>$1</sub>').replace(/([-+])/, '<sup>$1</sup>'); }
+
+        function renderSelector() {
+            caseSelector.innerHTML = '';
+            Object.keys(cases).forEach(key => {
+                const btn = document.createElement('button');
+                btn.className = "chem-label w-full text-left px-4 py-2 rounded-lg border border-slate-200 hover:bg-slate-50 transition-all font-medium text-slate-700 active:scale-95";
+                btn.innerHTML = formatChem(cases[key].name);
+                btn.onclick = () => { currentKey = key; currentStep = 0; update(); };
+                caseSelector.appendChild(btn);
+            });
         }
 
         function update() {
-            for(let i=1; i<=6; i++) {
-                const el = document.getElementById(`step-nav-${i}`);
-                el.classList.remove('step-active', 'bg-white', 'border-slate-900');
-                if(i === currentStep) el.classList.add('step-active');
-            }
-            prevBtn.disabled = currentStep === 1;
-            sidebarNextBtn.disabled = currentStep === 1 || currentStep === 6 || (currentStep === 2 && !step2Resolved);
+            const c = cases[currentKey];
+            const text = i18n[currentLang];
             
-            const floatingBtn = document.getElementById('floatingActionContainer');
-            floatingBtn.classList.toggle('hidden', currentStep === 1);
-            mainNextBtn.classList.toggle('hidden', currentStep === 6 || (currentStep === 2 && !step2Resolved));
-            finishBtn.classList.toggle('hidden', currentStep !== 6);
+            // UI Static Labels
+            document.getElementById('ui-title').innerText = text.title;
+            document.getElementById('ui-subtitle').innerText = text.subtitle;
+            document.getElementById('ui-select-example').innerText = text.selectExample;
+            document.getElementById('ui-struct-label').innerText = text.structLabel;
+            document.getElementById('prev-btn').innerText = text.prev;
+            document.getElementById('next-btn').innerText = text.next;
 
-            renderStep();
-            renderKey();
-        }
+            // Visual Content
+            c.setup(svgGroups, currentStep);
+            structContainer.innerHTML = c.struct(currentStep);
 
-        function renderKey() {
-            const keyEl = document.getElementById('electronKey');
-            const list = document.getElementById('keyListContent');
-            if (currentStep < 4) { keyEl.classList.add('hidden'); return; }
-            keyEl.classList.remove('hidden');
-            list.innerHTML = '';
-            const mol = MOLECULES[currentMolId];
-            const unique = [...new Set([mol.center, ...mol.outer])];
-            unique.forEach(atom => {
-                const sym = mol.symbols[atom];
-                const div = document.createElement('div');
-                div.className = "flex items-center gap-2 text-[10px] md:text-sm font-medium";
-                div.innerHTML = `<svg width="16" height="16" viewBox="-12 -12 24 24" class="md:w-6 md:h-6"><use href="#${sym}" x="0" y="0" class="symbol-${sym} symbol-blue" /></svg><span class="truncate">${currentLang === 'en' ? t('eOf') + ' ' + atom : atom + t('eOf')} <span class="text-blue-600 font-bold">${t('newE')}</span></span>`;
-                list.appendChild(div);
-            });
-        }
+            // Guidance Generation
+            let msg = "";
+            const donorName = c.donor[currentLang];
+            const acceptorName = c.acceptor[currentLang];
+            const octetType = text[c.octet];
 
-        function renderStep() {
-            const mol = MOLECULES[currentMolId];
-            if (!mol) return;
-            canvas.innerHTML = '';
-            document.getElementById('calcOverlay').classList.add('hidden');
-            document.getElementById('atomStats').classList.add('hidden');
-            feedback.classList.add('-translate-y-full');
-            const actualCenter = selectedCenterAtom || mol.center;
-
-            switch(currentStep) {
-                case 1:
-                    instruction.innerHTML = t('step1Instr');
-                    showCalculation();
-                    break;
-                case 2:
-                    if (!step2Resolved) {
-                        let msg = t('step2Instr');
-                        if (currentMolId === "HF" || currentMolId === "O2") {
-                            msg += `<br><span class='text-sm text-blue-600 font-semibold'>${t('step2Remark')}</span>`;
-                        }
-                        instruction.innerHTML = msg;
-                        showStats(); drawSelectionPhase();
-                    } else {
-                        instruction.innerHTML = t('step2Correct').replace('{atom}', actualCenter);
-                        showStats(); drawAtom(actualCenter, 300, 225, 70, true, true);
-                    }
-                    break;
-                case 3:
-                    instruction.innerHTML = t('step3Instr');
-                    drawFullLayout(false, 'connect');
-                    break;
-                case 4:
-                    instruction.innerHTML = t('step4Instr') + `<br><span class='text-xs md:text-sm text-blue-600 font-semibold mt-1 block italic'>${t('step4Remark')}</span>`;
-                    showStats();
-                    drawFullLayout(true, 'share');
-                    break;
-                case 5: {
-                    let anyOuterNeedsFilling = false;
-                    mol.outer.forEach(atom => {
-                        const needed = ATOM_DATA[atom].limit - ATOM_DATA[atom].valence;
-                        if (ATOM_DATA[atom].valence - needed > 0) anyOuterNeedsFilling = true;
-                    });
-                    
-                    if (!anyOuterNeedsFilling) {
-                        instruction.innerHTML = t('step5Instr') + `<br><span class='text-xs md:text-sm text-blue-600 font-semibold mt-1 block italic'>${t('step5Remark')}</span>`;
-                    } else {
-                        instruction.innerHTML = t('step5Instr');
-                    }
-                    drawFullLayout(true, 'fillOuter');
-                    break;
-                }
-                case 6: {
-                    let spent = 0;
-                    mol.outer.forEach(s => spent += (ATOM_DATA[s].limit - ATOM_DATA[s].valence));
-                    const rem = ATOM_DATA[actualCenter].valence - spent;
-                    
-                    if (rem <= 0) {
-                        instruction.innerHTML = t('step6Instr') + `<br><span class='text-xs md:text-sm text-blue-600 font-semibold mt-1 block italic'>${t('step6Remark').replace('{atom}', actualCenter)}</span>`;
-                    } else {
-                        instruction.innerHTML = t('step6Instr');
-                    }
-                    drawFullLayout(true, 'full');
-                    break;
-                }
-            }
-        }
-
-        function showStats() {
-            const stats = document.getElementById('atomStats');
-            const list = document.getElementById('statsList');
-            stats.classList.remove('hidden');
-            list.innerHTML = '';
-            const unique = [...new Set([MOLECULES[currentMolId].center, ...MOLECULES[currentMolId].outer])];
-            unique.forEach(atom => {
-                const needed = ATOM_DATA[atom].limit - ATOM_DATA[atom].valence;
-                const div = document.createElement('div');
-                div.className = "flex items-center justify-between gap-2 text-[10px] md:text-sm py-0.5 md:py-1";
-                div.innerHTML = `<span class="font-bold text-slate-900">${atom}:</span><span class="bg-slate-100 text-slate-900 px-1 md:px-2 py-0.5 rounded md:rounded-md font-mono font-bold border border-slate-300">${t('need')} ${needed}</span>`;
-                list.appendChild(div);
-            });
-        }
-
-        function showCalculation() {
-            const overlay = document.getElementById('calcOverlay');
-            overlay.classList.remove('hidden');
-            const list = document.getElementById('calcList');
-            list.innerHTML = '';
-            const unique = [...new Set([MOLECULES[currentMolId].center, ...MOLECULES[currentMolId].outer])];
-            unique.forEach(atom => {
-                const data = ATOM_DATA[atom];
-                const row = document.createElement('div');
-                row.className = "grid grid-cols-[30px_1fr_auto_40px] md:grid-cols-4 gap-1 md:gap-4 items-center p-2 md:p-3 border-b border-slate-100 last:border-0";
-                row.innerHTML = `
-                    <div class="font-bold text-black text-lg md:text-2xl">${atom}</div>
-                    <div class="text-[9px] md:text-xs text-slate-500 leading-tight pr-1">${t('current')}: <b>${data.config}</b><br>${t('target')}: <b>${data.target}</b></div>
-                    <div class="flex items-center border rounded-lg bg-white overflow-hidden shadow-sm h-8 md:h-10">
-                        <button onclick="changeCalc('${atom}', -1)" class="px-2 md:px-3 bg-slate-50 hover:bg-slate-200 transition-colors h-full">-</button>
-                        <span id="val-${atom}" class="px-2 md:px-4 font-mono font-bold text-sm md:text-lg text-black min-w-[30px] md:min-w-[40px] text-center">${userCalc[atom]}</span>
-                        <button onclick="changeCalc('${atom}', 1)" class="px-2 md:px-3 bg-slate-50 hover:bg-slate-200 transition-colors h-full">+</button>
-                    </div>
-                    <div id="check-${atom}" class="text-right text-lg md:text-2xl"></div>
-                `;
-                list.appendChild(row);
-                verifyCalc(atom);
-            });
-            checkAllCompleted();
-        }
-
-        window.changeCalc = (atom, dir) => {
-            userCalc[atom] = Math.max(0, userCalc[atom] + dir);
-            document.getElementById(`val-${atom}`).textContent = userCalc[atom];
-            verifyCalc(atom);
-            checkAllCompleted();
-        };
-
-        function verifyCalc(atom) {
-            const needed = ATOM_DATA[atom].limit - ATOM_DATA[atom].valence;
-            const icon = document.getElementById(`check-${atom}`);
-            icon.innerHTML = userCalc[atom] === needed ? "✅" : "❓";
-            icon.style.opacity = userCalc[atom] === needed ? "1" : "0.2";
-        }
-
-        function checkAllCompleted() {
-            const unique = [...new Set([MOLECULES[currentMolId].center, ...MOLECULES[currentMolId].outer])];
-            const allCorrect = unique.every(atom => userCalc[atom] === (ATOM_DATA[atom].limit - ATOM_DATA[atom].valence));
-            confirmBtn.classList.toggle('hidden', !allCorrect);
-            document.getElementById('hintStep1').classList.toggle('hidden', allCorrect);
-        }
-
-        function drawSelectionPhase() {
-            const mol = MOLECULES[currentMolId];
-            const unique = [...new Set([mol.center, ...mol.outer])];
-            const spacing = 150;
-            const startX = 300 - ((unique.length - 1) * spacing) / 2;
-            unique.forEach((atom, i) => {
-                const x = startX + i * spacing;
-                const y = 225;
-                const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-                g.setAttribute("class", "cursor-pointer group");
-                g.onclick = () => handleAtomSelect(atom);
-                const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-                circle.setAttribute("cx", x); circle.setAttribute("cy", y); circle.setAttribute("r", 55);
-                circle.setAttribute("class", "atom-circle interactive group-hover:stroke-[4px]");
-                const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-                text.setAttribute("x", x); text.setAttribute("y", y + 12);
-                text.setAttribute("text-anchor", "middle");
-                text.setAttribute("class", "font-bold text-3xl fill-black pointer-events-none");
-                text.textContent = atom;
-                g.appendChild(circle); g.appendChild(text);
-                canvas.appendChild(g);
-            });
-        }
-
-        function handleAtomSelect(atom) {
-            const mol = MOLECULES[currentMolId];
-            const centerNeeded = ATOM_DATA[mol.center].limit - ATOM_DATA[mol.center].valence;
-            const pickedNeeded = ATOM_DATA[atom].limit - ATOM_DATA[atom].valence;
-            if (pickedNeeded === centerNeeded) {
-                selectedCenterAtom = atom;
-                step2Resolved = true;
-                update();
+            if (currentLang === 'en') {
+                msg = currentStep === 0 ? `${donorName} in ${c.dMol} contains lone pair electron.` : 
+                      currentStep === 1 ? `While ${acceptorName} in ${c.aMol} outermost electron shell is not fully filled, which has a vacant site to accept the electron.` : 
+                      `${acceptorName} in ${c.aMol} accepts the lone pair electron from ${donorName} in ${c.dMol} to form dative covalent bond, so that ${acceptorName.toLowerCase()} atom in ${c.final} attains a stable ${octetType} structure.`;
             } else {
-                feedback.innerText = t('incorrectFeedback');
-                feedback.classList.remove('-translate-y-full');
-                document.getElementById('interactiveArea').classList.add('shake');
-                setTimeout(() => document.getElementById('interactiveArea').classList.remove('shake'), 400);
-                setTimeout(() => feedback.classList.add('-translate-y-full'), 3000);
+                msg = currentStep === 0 ? `${c.dMol} 中的 ${donorName} 含有孤電子對。` : 
+                      currentStep === 1 ? `而 ${c.aMol} 中的 ${acceptorName} 最外層電子殼未填滿，具有空位可接收電子。` : 
+                      `${c.aMol} 中的 ${acceptorName} 接收來自 ${c.dMol} 中 ${donorName} 的孤電子對，形成配位共價鍵，使 ${c.final} 中的 ${acceptorName} 原子達到穩定的 ${octetType} 結構。`;
             }
-        }
 
-        function drawAtom(symbol, x, y, r, isCenter, highlight = false) {
-            const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-            const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-            circle.setAttribute("cx", x); circle.setAttribute("cy", y); circle.setAttribute("r", r);
-            let cls = isCenter ? "atom-center-bg" : "atom-circle";
-            if(highlight) cls += " highlight-blue";
-            circle.setAttribute("class", cls);
-            const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-            text.setAttribute("x", x); text.setAttribute("y", y + 12); text.setAttribute("text-anchor", "middle");
-            let textCls = "font-bold text-3xl fill-black pointer-events-none";
-            if(highlight) textCls += " highlight-blue-text";
-            text.setAttribute("class", textCls);
-            text.textContent = symbol;
-            g.appendChild(circle); g.appendChild(text);
-            canvas.appendChild(g);
-        }
+            guidanceText.innerText = msg;
+            document.getElementById('step-indicator').innerText = `${text.step} ${currentStep + 1} / 3`;
+            document.getElementById('prev-btn').disabled = currentStep === 0;
+            document.getElementById('next-btn').disabled = currentStep === 2;
 
-        function drawFullLayout(showElectrons, mode) {
-            const mol = MOLECULES[currentMolId];
-            const centerAtom = selectedCenterAtom || mol.center;
-            const outerAtoms = mol.outer;
-            const centerPos = { x: 300, y: 225 };
-            const r = 70;
-            const overlapDist = 105; 
-            drawAtom(centerAtom, centerPos.x, centerPos.y, r, true, false);
-            const occupiedSlots = mol.orientations || [];
-            occupiedSlots.forEach((angle, i) => {
-                const rad = angle * Math.PI / 180;
-                const ox = centerPos.x + Math.cos(rad) * overlapDist;
-                const oy = centerPos.y + Math.sin(rad) * overlapDist;
-                const atomName = outerAtoms[i];
-                drawAtom(atomName, ox, oy, r, false, mode === 'connect');
-                if (showElectrons) {
-                    const needed = ATOM_DATA[atomName].limit - ATOM_DATA[atomName].valence;
-                    drawSharedPairs({x: ox, y: oy}, centerPos, needed, mol.symbols[atomName], mol.symbols[centerAtom], r, mode === 'share');
-                    if (mode === 'fillOuter' || mode === 'full') {
-                        const rem = ATOM_DATA[atomName].valence - needed;
-                        if(rem > 0) drawOuterLonePairs({x: ox, y: oy}, centerPos, rem, mol.symbols[atomName], r, mode === 'fillOuter');
-                    }
-                }
+            // Update button states
+            Array.from(caseSelector.children).forEach(b => {
+                const isActive = b.innerHTML === formatChem(c.name);
+                b.classList.toggle('bg-blue-50', isActive); b.classList.toggle('border-blue-300', isActive);
             });
-            if (showElectrons && mode === 'full') {
-                let spent = 0;
-                outerAtoms.forEach(s => spent += (ATOM_DATA[s].limit - ATOM_DATA[s].valence));
-                const rem = ATOM_DATA[centerAtom].valence - spent;
-                if (rem > 0) {
-                    const available = [270, 90, 0, 180].filter(s => !occupiedSlots.includes(s));
-                    drawCentralLonePairs(centerPos, rem, mol.symbols[centerAtom], available, r, mode === 'full');
-                }
+
+            // Update Language Buttons
+            const btnEn = document.getElementById('lang-en');
+            const btnZh = document.getElementById('lang-zh');
+            if (currentLang === 'en') {
+                btnEn.classList.add('bg-white', 'shadow-sm'); btnEn.classList.remove('text-slate-500');
+                btnZh.classList.remove('bg-white', 'shadow-sm'); btnZh.classList.add('text-slate-500');
+            } else {
+                btnZh.classList.add('bg-white', 'shadow-sm'); btnZh.classList.remove('text-slate-500');
+                btnEn.classList.remove('bg-white', 'shadow-sm'); btnEn.classList.add('text-slate-500');
             }
         }
 
-        function drawSharedPairs(atomPos, centerPos, pairCount, outerSym, centerSym, r, highlight) {
-            const angle = Math.atan2(atomPos.y - centerPos.y, atomPos.x - centerPos.x);
-            const sharedDist = 52; 
-            const pairSpacing = 16; 
-            for(let i=0; i<pairCount; i++) {
-                const verticalOffset = (i - (pairCount-1)/2) * pairSpacing;
-                const dx = Math.cos(angle + Math.PI/2) * verticalOffset;
-                const dy = Math.sin(angle + Math.PI/2) * verticalOffset;
-                const baseLineX = centerPos.x + Math.cos(angle) * sharedDist;
-                const baseLineY = centerPos.y + Math.sin(angle) * sharedDist;
-                placeElectron(baseLineX + dx - Math.cos(angle)*7, baseLineY + dy - Math.sin(angle)*7, centerSym, highlight);
-                placeElectron(baseLineX + dx + Math.cos(angle)*7, baseLineY + dy + Math.sin(angle)*7, outerSym, highlight);
-            }
-        }
-
-        function drawOuterLonePairs(pos, centerRef, eCount, symbol, r, highlight) {
-            const bondAngle = Math.atan2(centerRef.y - pos.y, centerRef.x - pos.x);
-            let deg = Math.round((bondAngle * 180 / Math.PI) / 90) * 90;
-            while(deg < 0) deg += 360;
-            const allSides = [0, 90, 180, 270];
-            const emptySides = allSides.filter(s => s !== (deg % 360));
-            const pairCount = Math.ceil(eCount / 2);
-            for(let p = 0; p < pairCount; p++) {
-                const sideAngle = emptySides[p % emptySides.length];
-                const rad = sideAngle * Math.PI / 180;
-                placeElectron(pos.x + Math.cos(rad - 0.12) * r, pos.y + Math.sin(rad - 0.12) * r, symbol, highlight);
-                if (eCount > (p * 2 + 1)) placeElectron(pos.x + Math.cos(rad + 0.12) * r, pos.y + Math.sin(rad + 0.12) * r, symbol, highlight);
-            }
-        }
-
-        function drawCentralLonePairs(pos, eCount, symbol, slots, r, highlight) {
-            const pairCount = Math.ceil(eCount / 2);
-            for(let p=0; p<pairCount; p++) {
-                const slotIndex = p % slots.length;
-                const ang = slots[slotIndex] * Math.PI / 180;
-                placeElectron(pos.x + Math.cos(ang - 0.12) * r, pos.y + Math.sin(ang - 0.12) * r, symbol, highlight);
-                if (eCount > (p*2 + 1)) placeElectron(pos.x + Math.cos(ang + 0.12) * r, pos.y + Math.sin(ang + 0.12) * r, symbol, highlight);
-            }
-        }
-
-        function placeElectron(x, y, type, highlight = false) {
-            const use = document.createElementNS("http://www.w3.org/2000/svg", "use");
-            use.setAttribute("href", `#${type}`);
-            use.setAttribute("x", x); use.setAttribute("y", y);
-            let cls = `electron symbol-${type}`;
-            if(highlight) cls += " symbol-blue";
-            use.setAttribute("class", cls);
-            canvas.appendChild(use);
-        }
-
-        window.onload = init;
+        // Event Listeners
+        document.getElementById('lang-en').onclick = () => { currentLang = 'en'; update(); };
+        document.getElementById('lang-zh').onclick = () => { currentLang = 'zh'; update(); };
+        document.getElementById('prev-btn').onclick = () => { if(currentStep > 0) { currentStep--; update(); }};
+        document.getElementById('next-btn').onclick = () => { if(currentStep < 2) { currentStep++; update(); }};
+        
+        window.onload = () => {
+            renderSelector();
+            update();
+        };
     </script>
 </body>
 </html>
