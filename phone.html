@@ -2,681 +2,442 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Metal Reactions in Water Simulation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ionic Compound Brittleness Simulation</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
-            background-color: #0f172a;
-            color: #f8fafc;
+            background-color: #f8fafc;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            touch-action: pan-y;
-            overflow-x: hidden;
         }
-
-        #canvas-container {
-            position: relative;
-            width: 100%;
-            height: 40vh;
-            min-height: 300px;
-            background: #cbd5e1; 
-            border-bottom: 8px solid #1e293b;
-            overflow: hidden;
-            display: flex;
-            align-items: flex-end;
-            justify-content: center;
-            padding-bottom: 10px;
-            touch-action: pan-y;
+        canvas {
+            border: 2px solid #334155;
+            border-radius: 8px;
+            background-color: #ffffff;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            touch-action: none;
+            cursor: default;
         }
-
-        /* Language Toggle Button */
-        #lang-toggle {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            z-index: 100;
-            background: rgba(30, 41, 59, 0.8);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            color: white;
-            padding: 8px 12px;
-            border-radius: 20px;
+        canvas.clickable {
             cursor: pointer;
+        }
+        .controls {
             display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .btn-hammer {
+            background-color: #ef4444;
+            color: white;
+        }
+        .btn-hammer:hover:not(:disabled) {
+            background-color: #dc2626;
+        }
+        .btn-hammer:disabled {
+            background-color: #94a3b8;
+            cursor: not-allowed;
+        }
+        .btn-reset {
+            background-color: #3b82f6;
+            color: white;
+        }
+        .btn-reset:hover {
+            background-color: #2563eb;
+        }
+        .mode-toggle {
+            display: flex;
+            background: #e2e8f0;
+            padding: 0.25rem;
+            border-radius: 0.5rem;
             align-items: center;
-            gap: 6px;
-            font-size: 14px;
-            font-weight: bold;
-            backdrop-filter: blur(4px);
+        }
+        .mode-btn {
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
             transition: all 0.2s;
         }
-        #lang-toggle:hover {
-            background: rgba(51, 65, 85, 0.9);
+        .mode-btn.active {
+            background: white;
+            color: #1e293b;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
-
-        .trough {
-            position: relative;
-            width: 80%; 
-            max-width: 600px;
-            height: 65%; 
-            background: transparent;
-            border: 4px solid rgba(255, 255, 255, 0.6);
-            border-top: none;
-            border-bottom-left-radius: 12px;
-            border-bottom-right-radius: 12px;
-            z-index: 10;
-        }
-
-        #water-body {
+        
+        #hammerIcon {
             position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 70%; 
-            background: linear-gradient(180deg, rgba(56, 189, 248, 0.4) 0%, rgba(3, 105, 161, 0.6) 100%);
-            z-index: -1;
-            border-bottom-left-radius: 8px;
-            border-bottom-right-radius: 8px;
-        }
-
-        .water-surface {
-            position: absolute;
-            bottom: 70%;
-            left: 0;
-            width: 100%;
-            height: 3px;
-            background: rgba(255, 255, 255, 0.95);
-            box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
-            z-index: 15;
+            top: 20px; 
+            font-size: 70px;
             pointer-events: none;
-            transform: translateY(50%);
+            transform: scaleX(-1) rotate(45deg); 
+            opacity: 0;
+            z-index: 20;
+            filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.2));
+            /* Default Desktop left position */
+            left: -100px;
         }
 
-        .control-panel {
-            padding: 20px;
-            background: #1e293b;
-            min-height: 60vh;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
+        /* Mobile specific adjustments for the hammer */
+        @media (max-width: 640px) {
+            #hammerIcon {
+                /* Use a percentage or smaller negative value to keep it in the viewport */
+                left: 10px; 
+                font-size: 50px; 
+                top: 5px;
+            }
+            @keyframes strike {
+                0% { transform: scaleX(-1) translate(0, 0) rotate(45deg); }
+                70% { transform: scaleX(-1) translate(40px, 40px) rotate(-15deg); }
+                100% { transform: scaleX(-1) translate(35px, 45px) rotate(-10deg); }
+            }
         }
 
-        .metal-btn {
-            transition: all 0.2s;
-            letter-spacing: 1px;
-            font-weight: bold;
-            flex: 1 1 140px;
+        /* Desktop keyframes (Original) */
+        @media (min-width: 641px) {
+            @keyframes strike {
+                0% { transform: scaleX(-1) translate(0, 0) rotate(45deg); }
+                70% { transform: scaleX(-1) translate(75px, 40px) rotate(-15deg); }
+                100% { transform: scaleX(-1) translate(65px, 45px) rotate(-10deg); }
+            }
         }
 
-        #observation-box {
-            background: #0f172a;
-            border-left: 4px solid #38bdf8;
-            padding: 15px;
-            border-radius: 4px;
-            min-height: 150px;
-            font-family: monospace;
+        .hammer-swing {
+            animation: strike 0.4s cubic-bezier(0.3, 0, 0.7, 1) forwards;
+            opacity: 1 !important;
         }
 
-        .particle {
+        /* Updated Notification Style to not block diagram */
+        #shatterMessage {
             position: absolute;
-            pointer-events: none;
-            border-radius: 50%;
-        }
-
-        .bubble {
-            position: absolute;
-            background: rgba(255, 255, 255, 0.6);
-            border: 1px solid rgba(255, 255, 255, 0.8);
-            border-radius: 50%;
-            pointer-events: none;
-        }
-
-        #h2-setup {
-            position: absolute;
-            bottom: 0;
+            top: 10px;
             left: 50%;
             transform: translateX(-50%);
-            width: 120px;
-            height: 220px;
-            display: none;
-            z-index: 18;
-            pointer-events: none;
-        }
-
-        #funnel {
-            position: absolute;
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 100px;
-            height: 80px;
-            background: rgba(255, 255, 255, 0.15);
-            border: 2px solid rgba(255, 255, 255, 0.4);
-            clip-path: polygon(0% 100%, 100% 100%, 65% 20%, 35% 20%);
-        }
-
-        #test-tube {
-            position: absolute;
-            top: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 30px;
-            height: 160px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 2px solid rgba(255, 255, 255, 0.5);
-            border-top-left-radius: 15px;
-            border-top-right-radius: 15px;
-            overflow: hidden;
-        }
-
-        #tube-water {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(56, 189, 248, 0.3);
-            transition: height 0.1s linear;
-        }
-
-        #litmus-paper {
-            position: absolute;
-            width: 40px;
-            height: 120px;
-            background: #f87171;
-            border: 1px solid #b91c1c;
-            cursor: grab;
-            z-index: 50; 
-            display: none;
-            user-select: none;
-            box-shadow: 2px 2px 10px rgba(0,0,0,0.3);
-            overflow: hidden;
-            touch-action: none; 
-        }
-
-        #litmus-wet-part {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 0%;
-            background: #ef4444;
-            transition: background 0.5s ease;
-        }
-
-        #litmus-paper.turned-blue #litmus-wet-part {
-            background: #3b82f6;
-        }
-
-        @media (min-width: 768px) {
-            #canvas-container { height: 50vh; }
-            .trough { width: 50%; }
+            width: 90%;
+            background-color: rgba(255, 255, 255, 0.95);
+            padding: 12px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border-left: 6px solid #ef4444;
+            z-index: 30;
+            pointer-events: none; 
         }
     </style>
 </head>
-<body>
+<body class="flex flex-col items-center p-4 md:p-10">
+    <div class="max-w-3xl w-full text-center">
+        <h1 class="text-3xl font-bold text-slate-800 mb-2">Why are Ionic Crystals Brittle?</h1>
+        <p class="text-slate-600 mb-6">
+            In an ionic lattice, ions are held together by strong electrostatic forces. 
+            Watch what happens to the force directions when a physical force is applied.
+        </p>
 
-    <div id="canvas-container">
-        <!-- Language Switcher -->
-        <button id="lang-toggle" onclick="toggleLanguage()">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-            <span id="lang-text">繁體中文</span>
-        </button>
-
-        <div class="trough" id="main-trough">
-            <div id="water-body"></div>
-            <div class="water-surface" id="surface-line"></div>
+        <div class="relative inline-block">
+            <div id="hammerIcon">🔨</div>
             
-            <div id="h2-setup">
-                <div id="test-tube">
-                    <div id="tube-water"></div>
-                </div>
-                <div id="funnel"></div>
-            </div>
+            <canvas id="simCanvas"></canvas>
             
-            <div id="simulation-area" class="absolute inset-0 overflow-visible pointer-events-none"></div>
-        </div>
-
-        <div id="litmus-paper" style="left: 20px; top: 20px;">
-            <div id="litmus-wet-part"></div>
-        </div>
-    </div>
-
-    <div class="control-panel">
-        <div class="flex flex-col gap-6">
-            <div class="flex flex-wrap justify-center gap-3">
-                <button onclick="startReaction('sodium')" class="metal-btn bg-yellow-600 hover:bg-yellow-500 text-white py-4 px-6 rounded-xl shadow-lg active:scale-95" data-t="btn-na">Sodium (Na)</button>
-                <button onclick="startReaction('potassium')" class="metal-btn bg-purple-600 hover:bg-purple-500 text-white py-4 px-6 rounded-xl shadow-lg active:scale-95" data-t="btn-k">Potassium (K)</button>
-                <button onclick="startReaction('calcium')" class="metal-btn bg-gray-400 hover:bg-gray-300 text-slate-900 py-4 px-6 rounded-xl shadow-lg active:scale-95" data-t="btn-ca">Calcium (Ca)</button>
-                <button onclick="resetSim()" class="metal-btn bg-red-800 hover:bg-red-700 text-white py-4 px-6 rounded-xl shadow-lg active:scale-95" data-t="btn-reset">Reset</button>
-            </div>
-
-            <div class="flex flex-wrap justify-center items-center gap-8 border-t border-slate-700 pt-6">
-                <label class="flex items-center cursor-pointer group">
-                    <input type="checkbox" value="" class="sr-only peer" id="litmus-toggle" onchange="toggleLitmus()">
-                    <div class="relative w-14 h-7 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-red-500"></div>
-                    <span class="ms-3 text-lg font-bold text-slate-300 group-active:text-white" data-t="label-litmus">Red Litmus Paper</span>
-                </label>
-
-                <div id="setup-toggle-container" class="opacity-30 pointer-events-none transition-all">
-                    <label class="flex items-center cursor-pointer group">
-                        <input type="checkbox" value="" class="sr-only peer" id="setup-toggle" onchange="toggleSetup()">
-                        <div class="relative w-14 h-7 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-blue-500"></div>
-                        <span class="ms-3 text-lg font-bold text-slate-300 group-active:text-white" data-t="label-h2">H<sub>2</sub> collection set-up</span>
-                    </label>
+            <!-- Relocated message to the top to avoid blocking the lattice -->
+            <div id="shatterMessage" class="hidden">
+                <div class="flex flex-col items-center">
+                    <p id="messageTitle" class="text-red-600 font-bold text-lg uppercase leading-tight">Repulsion Occurring!</p>
+                    <p id="messageSub" class="text-xs text-slate-700">Like charges have aligned and are pushing apart.</p>
+                    <p id="manualPrompt" class="hidden mt-1 text-sm font-bold text-blue-600 animate-bounce">↓ CLICK CANVAS TO RELEASE ↓</p>
                 </div>
             </div>
         </div>
 
-        <div id="observation-box">
-            <h3 class="text-sky-400 font-bold mb-2" data-t="title-obs">Observations:</h3>
-            <ul id="observation-list" class="text-sm list-disc list-inside space-y-1">
-                <li data-t="default-obs">Select a metal to begin.</li>
+        <div class="controls">
+            <div class="mode-toggle mr-4">
+                <button id="modeAuto" class="mode-btn active">Auto Split</button>
+                <button id="modeManual" class="mode-btn">Manual Split</button>
+            </div>
+            <button id="hammerBtn" class="btn btn-hammer">Apply Force (Hammer)</button>
+            <button id="resetBtn" class="btn btn-reset">Reset Structure</button>
+        </div>
+
+        <div class="mt-8 text-left bg-blue-50 p-6 rounded-xl border border-blue-100">
+            <h2 class="text-lg font-bold text-blue-900 mb-2">Key Concept:</h2>
+            <ul class="list-disc ml-5 text-blue-800 space-y-2">
+                <li><strong>Attraction (Green):</strong> Opposite charges pull toward each other.</li>
+                <li><strong>Repulsion (Red):</strong> Like charges push away from each other.</li>
+                <li><strong>Brittleness:</strong> Shifting layers causes like-charge alignment. In <strong>Manual mode</strong>, you can see this alignment frozen before the crystal shatters.</li>
             </ul>
-            <div id="equation-container" class="mt-4 flex flex-col items-center gap-1 border-t border-slate-800 pt-3">
-                <div id="chemical-equation" class="text-lg font-bold italic text-sky-200"></div>
-                <div id="word-equation" class="text-xs text-sky-400 opacity-80 uppercase tracking-widest"></div>
-            </div>
         </div>
     </div>
 
     <script>
-        const simArea = document.getElementById('simulation-area');
-        const obsList = document.getElementById('observation-list');
-        const chemicalEqDiv = document.getElementById('chemical-equation');
-        const wordEqDiv = document.getElementById('word-equation');
-        const troughElement = document.getElementById('main-trough');
-        const waterBody = document.getElementById('water-body');
-        const litmusPaper = document.getElementById('litmus-paper');
-        const litmusWetPart = document.getElementById('litmus-wet-part');
-        const h2Setup = document.getElementById('h2-setup');
-        const tubeWater = document.getElementById('tube-water');
-        const setupToggleCont = document.getElementById('setup-toggle-container');
-        const setupToggle = document.getElementById('setup-toggle');
-        const langText = document.getElementById('lang-text');
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+        const hammerBtn = document.getElementById('hammerBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const message = document.getElementById('shatterMessage');
+        const manualPrompt = document.getElementById('manualPrompt');
+        const hammerIcon = document.getElementById('hammerIcon');
+        const modeAuto = document.getElementById('modeAuto');
+        const modeManual = document.getElementById('modeManual');
+
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         
-        let audioCtx = null;
-        let reactionInterval = null;
-        let activeMetal = null;
-        let isSolutionAlkaline = false;
-        let gasVolumeInTube = 100;
-        let currentLang = 'en';
-
-        const TRANSLATIONS = {
-            en: {
-                toggle: '繁體中文',
-                'btn-na': 'Sodium (Na)',
-                'btn-k': 'Potassium (K)',
-                'btn-ca': 'Calcium (Ca)',
-                'btn-reset': 'Reset',
-                'label-litmus': 'Red Litmus Paper',
-                'label-h2': 'H2 collection set-up',
-                'title-obs': 'Observations:',
-                'default-obs': 'Select a metal to begin.'
-            },
-            zh: {
-                toggle: 'English',
-                'btn-na': '鈉 (Na)',
-                'btn-k': '鉀 (K)',
-                'btn-ca': '鈣 (Ca)',
-                'btn-reset': '重設',
-                'label-litmus': '紅色石蕊試紙',
-                'label-h2': '氫氣收集裝置',
-                'title-obs': '實驗觀察：',
-                'default-obs': '請選擇一種金屬開始。'
-            }
-        };
-
-        const DATA = {
-            sodium: {
-                en: {
-                    equation: "2Na(s) + 2H₂O(l) → 2NaOH(aq) + H₂(g)",
-                    wordEquation: "Sodium + Water → Sodium hydroxide + Hydrogen",
-                    observations: ["Na melts to form a silvery ball.", "Hissing sound is generated.", "Na moves rapidly on water surface.", "Na burns with golden yellow flame.", "Solution turns red litmus blue."]
-                },
-                zh: {
-                    equation: "2Na(s) + 2H₂O(l) → 2NaOH(aq) + H₂(g)",
-                    wordEquation: "鈉 + 水 → 氫氧化鈉 + 氫",
-                    observations: ["鈉熔化成一個銀色的小球。", "產生嘶嘶聲。", "鈉在水面上快速移動。", "鈉燃燒時發出金黃色火焰。", "溶液令紅色石蕊試紙變藍。"]
-                },
-                color: "#cbd5e1", flameColor: "rgba(255, 215, 0, 0.9)",
-                behavior: "float", shrinkSpeed: 0.08, moveSpeed: 4, bubbleProb: 0.5, hissPitch: 1400, hissVol: 0.03
-            },
-            potassium: {
-                en: {
-                    equation: "2K(s) + 2H₂O(l) → 2KOH(aq) + H₂(g)",
-                    wordEquation: "Potassium + Water → Potassium hydroxide + Hydrogen",
-                    observations: ["K melts to form a silvery ball.", "Hissing sound is generated.", "K moves rapidly on water surface.", "K burns with lilac flame.", "Solution turns red litmus blue."]
-                },
-                zh: {
-                    equation: "2K(s) + 2H₂O(l) → 2KOH(aq) + H₂(g)",
-                    wordEquation: "鉀 + 水 → 氫氧化鉀 + 氫",
-                    observations: ["鉀熔化成一個銀色的小球。", "產生嘶嘶聲。", "鉀在水面上快速移動。", "鉀燃燒時發出淡紫色火焰。", "溶液令紅色石蕊試紙變藍。"]
-                },
-                color: "#cbd5e1", flameColor: "rgba(230, 190, 255, 0.9)",
-                behavior: "float", shrinkSpeed: 0.22, moveSpeed: 8, bubbleProb: 0.95, hissPitch: 2200, hissVol: 0.12
-            },
-            calcium: {
-                en: {
-                    equation: "Ca(s) + 2H₂O(l) → Ca(OH)₂(aq) + H₂(g)",
-                    wordEquation: "Calcium + Water → Calcium hydroxide + Hydrogen",
-                    observations: ["Ca sinks and reacts steadily.", "Colourless gas bubbles are evolved.", "Solution turns red litmus blue."]
-                },
-                zh: {
-                    equation: "Ca(s) + 2H₂O(l) → Ca(OH)₂(aq) + H₂(g)",
-                    wordEquation: "鈣 + 水 → 氫氧化鈣 + 氫",
-                    observations: ["鈣沉入水底並穩定反應。", "產生無色氣泡。", "溶液令紅色石蕊試紙變藍。"]
-                },
-                color: "#94a3b8", flameColor: "transparent",
-                behavior: "sink", shrinkSpeed: 0.07, moveSpeed: 0, bubbleProb: 1.0, hissPitch: 0, hissVol: 0
-            }
-        };
-
-        function toggleLanguage() {
-            currentLang = currentLang === 'en' ? 'zh' : 'en';
-            
-            // Update the button text to show the OTHER language choice
-            langText.innerText = TRANSLATIONS[currentLang].toggle;
-
-            // Update all elements with [data-t]
-            document.querySelectorAll('[data-t]').forEach(el => {
-                const key = el.getAttribute('data-t');
-                const text = TRANSLATIONS[currentLang][key];
-                if (text) {
-                    // Check if the text contains H2 and needs subscripting
-                    if (text.includes('H2')) {
-                        el.innerHTML = text.replace(/H2/g, 'H<sub>2</sub>');
-                    } else {
-                        el.innerText = text;
-                    }
-                }
-            });
-
-            // Update observation box and equations if a reaction is active or in default state
-            if (activeMetal) {
-                const metalData = DATA[activeMetal][currentLang];
-                obsList.innerHTML = '';
-                metalData.observations.forEach(t => {
-                    const li = document.createElement('li');
-                    li.innerText = t;
-                    obsList.appendChild(li);
-                });
-                chemicalEqDiv.innerHTML = metalData.equation;
-                wordEqDiv.innerHTML = metalData.wordEquation;
-            } else {
-                obsList.innerHTML = `<li data-t="default-obs">${TRANSLATIONS[currentLang]['default-obs']}</li>`;
-            }
-        }
-
-        let isDragging = false;
-        let dragOffset = { x: 0, y: 0 };
-
-        function startDrag(clientX, clientY) {
-            isDragging = true;
-            const rect = litmusPaper.getBoundingClientRect();
-            dragOffset.x = clientX - rect.left;
-            dragOffset.y = clientY - rect.top;
-        }
-
-        function handleDrag(clientX, clientY) {
-            if (!isDragging) return;
-            const containerRect = document.getElementById('canvas-container').getBoundingClientRect();
-            litmusPaper.style.left = (clientX - containerRect.left - dragOffset.x) + 'px';
-            litmusPaper.style.top = (clientY - containerRect.top - dragOffset.y) + 'px';
-            checkLitmusSubmersion();
-        }
-
-        litmusPaper.addEventListener('mousedown', e => startDrag(e.clientX, e.clientY));
-        window.addEventListener('mousemove', e => handleDrag(e.clientX, e.clientY));
-        window.addEventListener('mouseup', () => isDragging = false);
-
-        litmusPaper.addEventListener('touchstart', e => {
-            const touch = e.touches[0];
-            startDrag(touch.clientX, touch.clientY);
-            e.stopPropagation();
-        }, { passive: false });
-
-        window.addEventListener('touchmove', e => {
-            if (!isDragging) return;
-            const touch = e.touches[0];
-            handleDrag(touch.clientX, touch.clientY);
-            e.preventDefault();
-        }, { passive: false });
-
-        window.addEventListener('touchend', () => isDragging = false);
-
-        function checkLitmusSubmersion() {
-            const paperRect = litmusPaper.getBoundingClientRect();
-            const waterRect = waterBody.getBoundingClientRect();
-            const troughRect = troughElement.getBoundingClientRect();
-            const withinX = paperRect.right > troughRect.left && paperRect.left < troughRect.right;
-            if (withinX && paperRect.bottom > waterRect.top) {
-                const overlap = Math.min(paperRect.bottom, waterRect.bottom) - waterRect.top;
-                const pct = Math.max(0, Math.min(100, (overlap / paperRect.height) * 100));
-                if (pct > (parseFloat(litmusWetPart.style.height) || 0)) litmusWetPart.style.height = pct + '%';
-                if (isSolutionAlkaline) litmusPaper.classList.add('turned-blue');
-            }
-        }
-
-        function toggleLitmus() {
-            litmusPaper.style.display = document.getElementById('litmus-toggle').checked ? 'block' : 'none';
-        }
-
-        function toggleSetup() {
-            h2Setup.style.display = setupToggle.checked ? 'block' : 'none';
-        }
-
-        function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
-
-        function playExplosion(x, y, color) {
-            if (!audioCtx) return;
+        function playImpactSound() {
             const now = audioCtx.currentTime;
             const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.frequency.setValueAtTime(150, now);
-            osc.frequency.exponentialRampToValueAtTime(40, now + 0.3);
-            gain.gain.setValueAtTime(1.5, now);
-            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
-            osc.connect(gain); gain.connect(audioCtx.destination);
-            osc.start(); osc.stop(now + 0.5);
+            const oscGain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(150, now); 
+            osc.frequency.exponentialRampToValueAtTime(40, now + 0.15);
+            oscGain.gain.setValueAtTime(0.6, now);
+            oscGain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+            osc.connect(oscGain);
+            oscGain.connect(audioCtx.destination);
             
-            for(let i=0; i<30; i++) {
-                const spark = document.createElement('div');
-                spark.className = 'particle';
-                const s = Math.random() * 8 + 2;
-                spark.style.width = s + 'px'; spark.style.height = s + 'px';
-                spark.style.backgroundColor = i % 2 ? color : '#fff';
-                spark.style.left = x + 'px'; spark.style.top = y + 'px';
-                simArea.appendChild(spark);
-                const ang = Math.random() * Math.PI * 2;
-                const d = Math.random() * 150 + 50;
-                const start = Date.now();
-                const anim = () => {
-                    const p = (Date.now() - start) / 1000;
-                    if(p >= 1) { spark.remove(); return; }
-                    spark.style.left = (x + Math.cos(ang) * d * p) + 'px';
-                    spark.style.top = (y + Math.sin(ang) * d * p + (p * p * 300)) + 'px';
-                    spark.style.opacity = 1 - p;
-                    requestAnimationFrame(anim);
-                };
-                requestAnimationFrame(anim);
-            }
-        }
-
-        function playHiss(active, type) {
-            if (!audioCtx || !active || (type && DATA[type].hissPitch === 0)) {
-                if (this.hissNode) {
-                    this.hissNode.gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
-                    this.hissNode = null;
-                }
-                return;
-            }
-            if (this.hissNode) return;
-            const bufferSize = audioCtx.sampleRate * 2;
+            const bufferSize = audioCtx.sampleRate * 0.1;
             const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
             const data = buffer.getChannelData(0);
-            for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+            for (let i = 0; i < bufferSize; i++) { data[i] = Math.random() * 2 - 1; }
             const noise = audioCtx.createBufferSource();
-            noise.buffer = buffer; noise.loop = true;
-            const filter = audioCtx.createBiquadFilter();
-            filter.type = 'highpass'; filter.frequency.value = DATA[type].hissPitch;
-            const gain = audioCtx.createGain(); gain.gain.value = DATA[type].hissVol;
-            noise.connect(filter); filter.connect(gain); gain.connect(audioCtx.destination);
-            noise.start();
-            this.hissNode = { noise, gain };
+            noise.buffer = buffer;
+            const noiseFilter = audioCtx.createBiquadFilter();
+            noiseFilter.type = 'lowpass';
+            noiseFilter.frequency.setValueAtTime(1000, now);
+            const noiseGain = audioCtx.createGain();
+            noiseGain.gain.setValueAtTime(0.3, now);
+            noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+            noise.connect(noiseFilter);
+            noiseFilter.connect(noiseGain);
+            noiseGain.connect(audioCtx.destination);
+            osc.start(); osc.stop(now + 0.2);
+            noise.start(); noise.stop(now + 0.1);
         }
 
-        function createBubble(x, y) {
-            const bubble = document.createElement('div');
-            bubble.className = 'bubble';
-            const size = Math.random() * 5 + 2;
-            bubble.style.width = size + 'px'; bubble.style.height = size + 'px';
-            bubble.style.left = x + 'px'; bubble.style.bottom = (troughElement.offsetHeight - y) + 'px';
-            simArea.appendChild(bubble);
+        const ROWS = 4;
+        const COLS = 6;
+        const ION_RADIUS = 25;
+        const SPACING = 85; 
+        
+        let ions = [];
+        let isShattered = false;
+        let isPausedForManual = false;
+        let splitMode = 'auto'; 
+        let animationFrame;
 
-            const start = Date.now();
-            const duration = 1200;
-            const surfaceBottomPct = 70;
+        function init() {
+            ions = [];
+            isShattered = false;
+            isPausedForManual = false;
+            hammerBtn.disabled = false;
+            message.classList.add('hidden');
+            manualPrompt.classList.add('hidden');
+            canvas.classList.remove('clickable');
+            hammerIcon.classList.remove('hammer-swing');
+            hammerIcon.style.opacity = '0';
+            
+            const startX = (canvas.width - (COLS - 1) * SPACING) / 2;
+            const startY = (canvas.height - (ROWS - 1) * SPACING) / 2;
 
-            const anim = () => {
-                const p = (Date.now() - start) / duration;
-                if (p >= 1) { bubble.remove(); return; }
-                let curBottomPx = (troughElement.offsetHeight - y) + (p * 200);
-                let curBottomPct = (curBottomPx / troughElement.offsetHeight) * 100;
-                
-                if (setupToggle.checked && activeMetal === 'calcium') {
-                    const tubeHeight = 160; 
-                    const setupHeight = 220;
-                    if (curBottomPx > (setupHeight - tubeHeight) && Math.abs(x - troughElement.offsetWidth/2) < 15) {
-                        gasVolumeInTube = Math.max(0, gasVolumeInTube - 0.2);
-                        tubeWater.style.height = gasVolumeInTube + '%';
-                        bubble.remove(); return;
-                    }
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    const type = (r + c) % 2 === 0 ? 'cation' : 'anion';
+                    ions.push({
+                        r, c,
+                        x: startX + c * SPACING,
+                        y: startY + r * SPACING,
+                        baseX: startX + c * SPACING,
+                        baseY: startY + r * SPACING,
+                        type: type,
+                        vx: 0,
+                        vy: 0
+                    });
                 }
-                if (curBottomPct >= surfaceBottomPct) { bubble.remove(); return; }
-                bubble.style.bottom = curBottomPx + 'px';
-                bubble.style.opacity = 1 - p;
-                requestAnimationFrame(anim);
-            };
-            requestAnimationFrame(anim);
-        }
-
-        function createFlame(x, y, color, scale = 1) {
-            const flame = document.createElement('div');
-            flame.className = 'particle';
-            const size = (Math.random() * 20 + 10) * scale;
-            flame.style.width = size + 'px'; flame.style.height = size + 'px';
-            flame.style.left = (x - size/2) + 'px'; flame.style.top = (y - size/2) + 'px';
-            flame.style.backgroundColor = color; flame.style.filter = 'blur(5px)';
-            simArea.appendChild(flame);
-            const start = Date.now();
-            const anim = () => {
-                const p = (Date.now() - start) / 250;
-                if (p >= 1) { flame.remove(); return; }
-                flame.style.transform = `translateY(${-p * 30}px) scale(${1-p})`;
-                flame.style.opacity = 1 - p;
-                requestAnimationFrame(anim);
-            };
-            requestAnimationFrame(anim);
-        }
-
-        function resetSim() {
-            clearInterval(reactionInterval);
-            simArea.innerHTML = '';
-            obsList.innerHTML = `<li data-t="default-obs">${TRANSLATIONS[currentLang]['default-obs']}</li>`;
-            chemicalEqDiv.innerHTML = ''; wordEqDiv.innerHTML = '';
-            playHiss(false);
-            activeMetal = null;
-            isSolutionAlkaline = false;
-            litmusPaper.classList.remove('turned-blue');
-            litmusWetPart.style.height = '0%';
-            setupToggleCont.style.opacity = "0.3";
-            setupToggleCont.style.pointerEvents = "none";
-            setupToggle.checked = false;
-            h2Setup.style.display = 'none';
-            gasVolumeInTube = 100;
-            tubeWater.style.height = '100%';
-        }
-
-        function startReaction(type) {
-            initAudio();
-            resetSim();
-            activeMetal = type;
-            const metal = DATA[type];
-            const metalLang = metal[currentLang];
-
-            if (type === 'calcium') {
-                setupToggleCont.style.opacity = "1";
-                setupToggleCont.style.pointerEvents = "auto";
             }
-            obsList.innerHTML = '';
-            metalLang.observations.forEach(t => {
-                const li = document.createElement('li');
-                li.innerText = t;
-                obsList.appendChild(li);
-            });
-            chemicalEqDiv.innerHTML = metalLang.equation;
-            wordEqDiv.innerHTML = metalLang.wordEquation;
+            draw();
+        }
 
-            const el = document.createElement('div');
-            el.id = 'metal-piece';
-            el.className = 'absolute z-30 shadow-md border border-white/20 transition-[border-radius] duration-1000';
-            let size = 30;
-            let posX = troughElement.offsetWidth / 2 - size/2;
-            let posY = -50; 
-            const surfaceTopPct = 30;
-            const surfaceY = (troughElement.offsetHeight * surfaceTopPct) / 100;
-            const floorY = troughElement.offsetHeight - 4;
-            el.style.width = size + 'px'; el.style.height = size + 'px';
-            el.style.backgroundColor = metal.color;
-            el.style.left = posX + 'px'; el.style.top = posY + 'px';
-            simArea.appendChild(el);
+        function drawSingleArrow(ionA, ionB) {
+            const isAttracting = ionA.type !== ionB.type;
+            const color = isAttracting ? '#16a34a' : '#dc2626'; 
+            const dx = ionB.x - ionA.x;
+            const dy = ionB.y - ionA.y;
+            const angle = Math.atan2(dy, dx);
+            const headlen = 10;
+            const margin = 28; 
 
-            let reacting = false;
-            let angle = Math.random() * Math.PI * 2;
-            let melted = false;
-            let grounded = false;
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 5;
+            ctx.beginPath();
 
-            reactionInterval = setInterval(() => {
-                if (!reacting) {
-                    let target = metal.behavior === 'float' ? surfaceY - (size/2) : surfaceY;
-                    if (posY < target) posY += 8;
-                    else { posY = target; reacting = true; isSolutionAlkaline = true; playHiss(true, type); }
-                } else {
-                    size -= metal.shrinkSpeed;
-                    if (!melted && type !== 'calcium' && size < 28) {
-                        melted = true;
-                        el.style.borderRadius = '50%';
-                        el.style.boxShadow = 'inset -3px -3px 8px rgba(0,0,0,0.5), 0 0 10px rgba(255,255,255,0.7)';
-                    }
-                    if (type === 'potassium' && size <= 12) {
-                        playExplosion(posX + size/2, posY + size/2, metal.flameColor);
-                        clearInterval(reactionInterval); el.remove(); playHiss(false); return;
-                    }
-                    if (size <= 4) { clearInterval(reactionInterval); el.remove(); playHiss(false); return; }
+            const startX = ionA.x + Math.cos(angle) * margin;
+            const startY = ionA.y + Math.sin(angle) * margin;
+            const endX = ionB.x - Math.cos(angle) * margin;
+            const endY = ionB.y - Math.sin(angle) * margin;
 
-                    if (metal.behavior === 'float') {
-                        posY = surfaceY - (size * 0.7);
-                        posX += Math.cos(angle) * metal.moveSpeed;
-                        if (Math.random() > 0.9) angle = Math.random() * Math.PI * 2;
-                        const L = 10;
-                        const R = troughElement.offsetWidth - size - 10;
-                        if (posX < L || posX > R) angle += Math.PI;
-                        posX = Math.max(L, Math.min(R, posX));
-                        createFlame(posX + size/2, posY + size/2, metal.flameColor, type === 'potassium' ? 1.5 : 1);
-                        if (Math.random() < metal.bubbleProb) createBubble(posX + size/2, posY + size);
+            ctx.moveTo(startX, startY);
+            ctx.lineTo(endX, endY);
+
+            // One head at A pointing toward B
+            ctx.moveTo(startX, startY);
+            ctx.lineTo(startX + headlen * Math.cos(angle + 0.6), startY + headlen * Math.sin(angle + 0.6));
+            ctx.moveTo(startX, startY);
+            ctx.lineTo(startX + headlen * Math.cos(angle - 0.6), startY + headlen * Math.sin(angle - 0.6));
+            
+            // One head at B pointing toward A
+            ctx.moveTo(endX, endY);
+            ctx.lineTo(endX + headlen * Math.cos(angle + 2.5), endY + headlen * Math.sin(angle + 2.5));
+            ctx.moveTo(endX, endY);
+            ctx.lineTo(endX + headlen * Math.cos(angle - 2.5), endY + headlen * Math.sin(angle - 2.5));
+            
+            ctx.stroke();
+        }
+
+        function drawAllForceArrows() {
+            for (let i = 0; i < ions.length; i++) {
+                const ionA = ions[i];
+                const rightNeighbor = ions.find(target => target.r === ionA.r && target.c === ionA.c + 1);
+                if (rightNeighbor) drawSingleArrow(ionA, rightNeighbor);
+
+                const bottomNeighbor = ions.find(target => target.c === ionA.c && target.r === ionA.r + 1);
+                if (bottomNeighbor) {
+                    if (ionA.r === 1) {
+                        const shiftedBottom = ions.filter(t => t.r === 2)
+                            .find(t => Math.abs(t.x - ionA.x) < SPACING / 2);
+                        if (shiftedBottom) drawSingleArrow(ionA, shiftedBottom);
                     } else {
-                        if (!grounded) {
-                            if (posY < floorY - size) posY += 6;
-                            else { posY = floorY - size; grounded = true; }
-                        } else posY = floorY - size;
-                        if (Math.random() < metal.bubbleProb) createBubble(posX + Math.random() * size, posY);
+                        drawSingleArrow(ionA, bottomNeighbor);
                     }
                 }
-                el.style.width = size + 'px'; el.style.height = size + 'px';
-                el.style.left = posX + 'px'; el.style.top = posY + 'px';
-                checkLitmusSubmersion();
-            }, 40);
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (!isShattered || isPausedForManual) {
+                drawAllForceArrows();
+            }
+
+            ions.forEach(ion => {
+                ctx.beginPath();
+                ctx.arc(ion.x, ion.y, ion.type === 'cation' ? ION_RADIUS * 0.85 : ION_RADIUS, 0, Math.PI * 2);
+                if (ion.type === 'cation') {
+                    ctx.fillStyle = '#3b82f6'; 
+                    ctx.fill();
+                    ctx.fillStyle = 'white';
+                    ctx.font = 'bold 20px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('+', ion.x, ion.y + 7);
+                } else {
+                    ctx.fillStyle = '#f97316'; 
+                    ctx.fill();
+                    ctx.fillStyle = 'white';
+                    ctx.font = 'bold 20px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('–', ion.x, ion.y + 7);
+                }
+                ctx.closePath();
+            });
+        }
+
+        function update() {
+            if (isShattered && !isPausedForManual) {
+                ions.forEach(ion => {
+                    if (ion.r < 2) ion.vy -= 1.5;
+                    else ion.vy += 1.5;
+                    ion.y += ion.vy;
+                });
+            }
+            
+            draw();
+            if (isShattered && !isPausedForManual && ions[0].y > -100 && ions[ions.length-1].y < canvas.height + 100) {
+                animationFrame = requestAnimationFrame(update);
+            }
+        }
+
+        function triggerShatter() {
+            isPausedForManual = false;
+            isShattered = true;
+            message.classList.add('hidden');
+            manualPrompt.classList.add('hidden');
+            canvas.classList.remove('clickable');
+            update();
+        }
+
+        hammerBtn.addEventListener('click', () => {
+            if (isShattered || isPausedForManual) return;
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            
+            hammerBtn.disabled = true;
+            hammerIcon.classList.add('hammer-swing');
+            
+            setTimeout(() => {
+                playImpactSound();
+                let shift = 0;
+                const shiftTarget = SPACING;
+                
+                const interval = setInterval(() => {
+                    shift += 4;
+                    ions.forEach(ion => { if (ion.r < 2) ion.x = ion.baseX + shift; });
+                    draw();
+
+                    if (shift >= shiftTarget) {
+                        clearInterval(interval);
+                        setTimeout(() => {
+                            message.classList.remove('hidden');
+                            if (splitMode === 'manual') {
+                                isPausedForManual = true;
+                                isShattered = true; 
+                                message.classList.remove('hidden');
+                                manualPrompt.classList.remove('hidden');
+                                canvas.classList.add('clickable');
+                                draw(); 
+                            } else {
+                                isShattered = true;
+                                update();
+                            }
+                        }, splitMode === 'manual' ? 100 : 800); 
+                    }
+                }, 16);
+            }, 280); 
+        });
+
+        canvas.addEventListener('click', () => {
+            if (isPausedForManual) {
+                triggerShatter();
+            }
+        });
+
+        resetBtn.addEventListener('click', () => {
+            cancelAnimationFrame(animationFrame);
+            init();
+        });
+
+        modeAuto.addEventListener('click', () => {
+            splitMode = 'auto';
+            modeAuto.classList.add('active');
+            modeManual.classList.remove('active');
+            init();
+        });
+
+        modeManual.addEventListener('click', () => {
+            splitMode = 'manual';
+            modeManual.classList.add('active');
+            modeAuto.classList.remove('active');
+            init();
+        });
+
+        window.onload = resize;
+        window.onresize = resize;
+        function resize() {
+            canvas.width = Math.min(window.innerWidth - 40, 600);
+            canvas.height = 450;
+            init();
         }
     </script>
 </body>
