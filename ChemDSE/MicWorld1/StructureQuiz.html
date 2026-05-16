@@ -24,15 +24,17 @@
 
     <div id="app" class="max-w-2xl w-full bg-white rounded-2xl shadow-xl overflow-hidden">
         <!-- Header -->
-        <div class="bg-indigo-600 p-6 text-white text-center relative">
-            <button onclick="toggleLanguage()" class="absolute right-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30 p-2 rounded-full transition-colors flex items-center gap-1 text-sm font-medium">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div class="bg-indigo-600 p-6 text-white text-center relative flex flex-col items-center">
+            <!-- Language Toggle Moved to Top Right and Labeled "中文" -->
+            <button onclick="toggleLanguage()" class="absolute right-3 top-3 bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-full transition-colors flex items-center gap-1 text-xs font-bold border border-white/20">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
                 </svg>
-                <span id="lang-label">ZH</span>
+                <span id="lang-label">中文</span>
             </button>
-            <h1 id="ui-title" class="text-2xl font-bold">Structure of Substances</h1>
-            <p id="ui-subtitle" class="text-indigo-100 mt-1">Test your understanding of chemical structures</p>
+            
+            <h1 id="ui-title" class="text-2xl font-bold mt-4">Structure of Substances</h1>
+            <p id="ui-subtitle" class="text-indigo-100 mt-1 max-w-[80%] mx-auto">Test your understanding of chemical structures</p>
         </div>
 
         <!-- Progress Area -->
@@ -106,7 +108,7 @@
             </button>
         </div>
 
-        <!-- Feedback Modal (Per Question) -->
+        <!-- Feedback Modal -->
         <div id="feedback-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
             <div class="bg-white rounded-2xl p-6 max-w-sm w-full text-center shadow-2xl">
                 <div id="feedback-icon" class="text-4xl mb-2"></div>
@@ -147,7 +149,8 @@
                 continue: "Continue",
                 correct: "Correct!",
                 incorrect: "Incorrect",
-                detailPrefix: "is a"
+                detailPrefix: "is a",
+                langToggle: "中文"
             },
             ZH: {
                 title: "物質的結構",
@@ -173,7 +176,8 @@
                 continue: "繼續",
                 correct: "正確！",
                 incorrect: "錯誤",
-                detailPrefix: "是"
+                detailPrefix: "是",
+                langToggle: "EN"
             }
         };
 
@@ -246,7 +250,6 @@
 
         function toggleLanguage() {
             currentLang = currentLang === 'EN' ? 'ZH' : 'EN';
-            document.getElementById('lang-label').innerText = currentLang === 'EN' ? 'ZH' : 'EN';
             applyTranslations();
             updateUI();
         }
@@ -265,6 +268,7 @@
             document.getElementById('ui-hints-title').innerText = t.hintsTitle;
             document.getElementById('ui-retry-btn').innerText = t.retry;
             document.getElementById('ui-continue-btn').innerText = t.continue;
+            document.getElementById('lang-label').innerText = t.langToggle;
             
             const hintList = document.getElementById('ui-hints-list');
             hintList.innerHTML = t.hints.map(h => `<li>${h}</li>`).join('');
@@ -287,7 +291,6 @@
             const finalPool = shuffle([...selectedA, ...selectedB, ...selectedOthers]);
             
             quizData = finalPool.map(q => {
-                // If it's Diamond or Graphite, never show symbol
                 const showSymbol = q.forceName ? false : Math.random() > 0.5;
                 return { ...q, useSymbol: showSymbol };
             });
