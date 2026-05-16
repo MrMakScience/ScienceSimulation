@@ -446,14 +446,46 @@
             text-decoration: underline;
             font-weight: 900;
         }
+
+        .lang-btn {
+            background: #334155;
+            border: 1px solid #475569;
+            padding: 6px 12px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .lang-btn:hover {
+            background: #475569;
+            border-color: #64748b;
+            transform: translateY(-1px);
+        }
+        
+        .lang-btn:active {
+            transform: translateY(0);
+        }
+
+        .lang-name {
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+        }
     </style>
 </head>
 <body class="p-2 md:p-4 font-sans select-none overflow-hidden">
 
     <div class="max-w-6xl mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden border-4 border-slate-300 relative">
         <div class="bg-slate-800 p-4 text-white flex flex-col md:flex-row justify-between items-center gap-4">
-            <div>
-                <h1 class="text-xl font-bold italic tracking-tight">Flame Test Lab</h1>
+            <div class="flex items-center gap-3 md:gap-5">
+                <h1 id="main-title" class="text-xl font-bold italic tracking-tight">Flame Test Lab</h1>
+                <button onclick="toggleLanguage()" class="lang-btn group" title="Switch Language">
+                    <svg class="text-blue-400 group-hover:text-blue-300 transition-colors" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                    <span id="current-lang-display" class="lang-name">English</span>
+                </button>
             </div>
             <div id="instruction-pill">
                 <span class="text-xl animate-bounce">⚠️</span>
@@ -472,7 +504,7 @@
 
                 <div id="static-wire-container" class="pickup-wire-container">
                     <div class="flex flex-col gap-1">
-                        <span class="text-[9px] font-bold text-slate-500 uppercase tracking-widest ml-1">Nichrome Wire</span>
+                        <span id="wire-label" class="text-[9px] font-bold text-slate-500 uppercase tracking-widest ml-1">Nichrome Wire</span>
                         <div class="flex items-center">
                             <div class="wire-handle-style" id="start-handle"></div>
                             <div class="wire-stem-style"></div>
@@ -488,7 +520,7 @@
                     <div class="hcl-beaker">
                         <div class="hcl-liquid"></div>
                     </div>
-                    <span class="hcl-tag">conc. HCl</span>
+                    <span id="hcl-label" class="hcl-tag">conc. HCl</span>
                 </div>
 
                 <div class="burner-container">
@@ -508,19 +540,19 @@
                 <div class="sample-tray" id="tray">
                     <div class="text-center sample-target" data-type="Cu">
                         <div class="watch-glass"><div class="powder-pile bg-emerald-500/90"></div></div>
-                        <span class="text-[10px] md:text-sm font-black text-white">Sample of Cu<sup>2+</sup></span>
+                        <span class="text-[10px] md:text-sm font-black text-white"><span class="sample-prefix">Sample of</span> Cu<sup>2+</sup></span>
                     </div>
                     <div class="text-center sample-target" data-type="K">
                         <div class="watch-glass"><div class="powder-pile bg-white"></div></div>
-                        <span class="text-[10px] md:text-sm font-black text-white">Sample of K<sup>+</sup></span>
+                        <span class="text-[10px] md:text-sm font-black text-white"><span class="sample-prefix">Sample of</span> K<sup>+</sup></span>
                     </div>
                     <div class="text-center sample-target" data-type="Na">
                         <div class="watch-glass"><div class="powder-pile bg-white"></div></div>
-                        <span class="text-[10px] md:text-sm font-black text-white">Sample of Na<sup>+</sup></span>
+                        <span class="text-[10px] md:text-sm font-black text-white"><span class="sample-prefix">Sample of</span> Na<sup>+</sup></span>
                     </div>
                     <div class="text-center sample-target" data-type="Ca">
                         <div class="watch-glass"><div class="powder-pile bg-white"></div></div>
-                        <span class="text-[10px] md:text-sm font-black text-white">Sample of Ca<sup>2+</sup></span>
+                        <span class="text-[10px] md:text-sm font-black text-white"><span class="sample-prefix">Sample of</span> Ca<sup>2+</sup></span>
                     </div>
                 </div>
                 
@@ -536,18 +568,18 @@
 
             <div class="md:col-span-1 bg-slate-50 border-l border-slate-200 p-6 flex flex-col gap-4">
                 <div>
-                    <h3 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-2">Flame Status</h3>
+                    <h3 id="stat-title" class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-2">Flame Status</h3>
                     <div class="bg-white p-3 rounded-lg shadow-sm border border-slate-200">
                         <span id="flame-label" class="text-xs font-black text-orange-500 uppercase">LUMINOUS FLAME</span>
                     </div>
                 </div>
                 <div>
-                    <h3 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-2">Action Log</h3>
+                    <h3 id="log-title" class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-2">Action Log</h3>
                     <div class="action-log-container">
                         <div id="log-text">Ready.</div>
                     </div>
                 </div>
-                <button onclick="window.location.reload()" class="w-full py-4 bg-slate-800 hover:bg-red-700 text-white font-black rounded-xl transition-all">RESET</button>
+                <button id="reset-btn" onclick="window.location.reload()" class="w-full py-4 bg-slate-800 hover:bg-red-700 text-white font-black rounded-xl transition-all">RESET</button>
             </div>
         </div>
     </div>
@@ -558,14 +590,72 @@
             collarState: 0, 
             isWet: false,
             activeSample: null,
-            isOverFlame: false
+            isOverFlame: false,
+            lang: 'en'
+        };
+
+        const translations = {
+            en: {
+                langName: "English",
+                title: "Flame Test Lab",
+                instrPick: 'To pick up wire, <span class="click-highlight">CLICK</span> the PURPLE HANDLE',
+                instrWash: '<span class="click-highlight">CLICK</span> HCl beaker to <span class="warning-text">WASH THE WIRE</span>',
+                instrTest: '<span class="click-highlight">CLICK</span> a chemical sample to test',
+                instrBurn: '<span class="click-highlight">CLICK</span> the flame area to test',
+                instrOpen: 'To <span class="click-highlight">CLICK</span> air hole collar, OPEN air hole',
+                instrObserve: 'Observe the flame color',
+                cleanFirst: 'CLEAN WIRE WITH HCl FIRST',
+                luminousMask: 'Luminous flame masks ion color. Open air hole.',
+                wireLabel: 'Nichrome Wire',
+                statTitle: 'Flame Status',
+                logTitle: 'Action Log',
+                resetBtn: 'RESET',
+                flameLum: 'LUMINOUS FLAME',
+                flameNonLum: 'NON-LUMINOUS FLAME',
+                ready: 'Ready.',
+                pickedUp: 'Picked up nichrome wire',
+                dipping: 'Dipping wire in HCl',
+                testing: 'TESTING',
+                samplePrefix: 'Sample of',
+                returned: 'Returned wire to mat',
+                collarOpen: 'Air hole open',
+                collarClosed: 'Air hole closed',
+                hclLabel: 'conc. HCl'
+            },
+            zh: {
+                langName: "繁體中文",
+                title: "焰色試驗實驗室",
+                instrPick: '如欲拿起鎳鉻絲，請 <span class="click-highlight">點擊</span> 紫色手柄',
+                instrWash: '<span class="click-highlight">點擊</span> 鹽酸燒杯以 <span class="warning-text">清洗導線</span>',
+                instrTest: '<span class="click-highlight">點擊</span> 化學樣本進行測試',
+                instrBurn: '<span class="click-highlight">點擊</span> 火焰區域進行測試',
+                instrOpen: '請 <span class="click-highlight">點擊</span> 氣孔調節環，打開氣孔',
+                instrObserve: '觀察火焰顏色',
+                cleanFirst: '請先用氫氯酸清洗導線',
+                luminousMask: '發光焰會遮蓋離子顏色。請打開氣孔。',
+                wireLabel: '鎳鉻絲',
+                statTitle: '火焰狀態',
+                logTitle: '操作日誌',
+                resetBtn: '重置',
+                flameLum: '發光焰 (黃色)',
+                flameNonLum: '無光焰 (藍色)',
+                ready: '準備就緒。',
+                pickedUp: '已拿起鎳鉻絲',
+                dipping: '正將導線浸入鹽酸',
+                testing: '正在測試',
+                samplePrefix: '樣本：',
+                returned: '已將鎳鉻絲放回墊子',
+                collarOpen: '氣孔已打開',
+                collarClosed: '氣孔已關閉',
+                hclLabel: '濃氫氯酸'
+            }
         };
 
         const samples = {
-            'Cu': { name: 'copper (II)', color: 'rgba(0, 255, 180, 0.8)', glow: 'rgba(0, 255, 150, 0.6)', powder: '#10b981' },
-            'K': { name: 'potassium', color: 'rgba(200, 150, 255, 0.8)', glow: 'rgba(180, 100, 255, 0.6)', powder: '#ffffff' },
-            'Na': { name: 'sodium', color: 'rgba(255, 200, 0, 0.9)', glow: 'rgba(255, 150, 0, 0.7)', powder: '#ffffff' },
-            'Ca': { name: 'calcium', color: 'rgba(255, 80, 0, 0.8)', glow: 'rgba(255, 50, 0, 0.6)', powder: '#ffffff' }
+            'Cu': { name: 'copper (II)', zhName: '銅 (II)', color: 'rgba(0, 255, 180, 0.8)', glow: 'rgba(0, 255, 150, 0.6)', powder: '#10b981' },
+            'K': { name: 'potassium', zhName: '鉀', color: 'rgba(200, 150, 255, 0.8)', glow: 'rgba(180, 100, 255, 0.6)', powder: '#ffffff' },
+            'Na': { name: 'sodium', zhName: '鈉', color: 'rgba(255, 200, 0, 0.9)', glow: 'rgba(255, 150, 0, 0.7)', powder: '#ffffff' },
+            'Ca': { name: 'calcium', zhName: '鈣', color: 'rgba(255, 80, 0, 0.8)', glow: 'rgba(255, 50, 0, 0.6)', powder: '#ffffff' }
         };
 
         const bench = document.getElementById('bench');
@@ -582,6 +672,25 @@
         const activeTip = document.getElementById('wire-active-tip');
         const startHandle = document.getElementById('start-handle');
         const collar = document.getElementById('collar');
+
+        function toggleLanguage() {
+            state.lang = state.lang === 'en' ? 'zh' : 'en';
+            const t = translations[state.lang];
+            
+            document.getElementById('main-title').textContent = t.title;
+            document.getElementById('current-lang-display').textContent = t.langName;
+            document.getElementById('wire-label').textContent = t.wireLabel;
+            document.getElementById('stat-title').textContent = t.statTitle;
+            document.getElementById('log-title').textContent = t.logTitle;
+            document.getElementById('reset-btn').textContent = t.resetBtn;
+            document.getElementById('hcl-label').textContent = t.hclLabel;
+            
+            document.querySelectorAll('.sample-prefix').forEach(el => el.textContent = t.samplePrefix);
+            
+            updateFlame();
+            updateGeneralInstruction();
+            logEvent(t.ready);
+        }
 
         function setInstruction(html) {
             instructionText.innerHTML = html;
@@ -639,7 +748,7 @@
             
             updateToolPosition(clientX, clientY);
             updateGeneralInstruction();
-            logEvent("Picked up nichrome wire");
+            logEvent(translations[state.lang].pickedUp);
         }
 
         function handleActiveInteractions(clientX, clientY) {
@@ -653,34 +762,30 @@
             }
 
             const tipRect = activeTip.getBoundingClientRect();
-
-            // HCl Collision
             const hclArea = document.getElementById('hcl-target-area').getBoundingClientRect();
+            
             if (isColliding(tipRect, hclArea, 20)) {
                 state.isWet = true;
                 state.activeSample = null;
                 droplets.style.display = 'block';
                 powder.style.display = 'none';
-                logEvent("Dipping wire in HCl");
+                logEvent(translations[state.lang].dipping);
                 updateGeneralInstruction();
                 updateFlame();
                 return;
             }
 
-            // Sample Collision - High precision logic for mobile
             const sampleElements = document.querySelectorAll('.sample-target');
             for (let el of sampleElements) {
                 const rect = el.getBoundingClientRect();
-                // Tighten collision box on mobile to prevent overlapping triggers
                 const vertBuffer = window.innerWidth < 768 ? 5 : 10;
-                const horizBuffer = window.innerWidth < 768 ? 5 : 10;
 
                 if (isColliding(tipRect, rect, vertBuffer)) {
                     const type = el.dataset.type;
                     
                     if (state.activeSample || !state.isWet) {
-                        logEvent("CLEAN WIRE WITH HCl FIRST");
-                        setInstruction('<span class="click-highlight">CLICK</span> HCl beaker to <span class="warning-text">WASH THE WIRE</span>');
+                        logEvent(translations[state.lang].cleanFirst);
+                        setInstruction(translations[state.lang].instrWash);
                         return;
                     }
                     
@@ -689,7 +794,8 @@
                     droplets.style.display = 'none';
                     powder.style.display = 'block';
                     powder.style.backgroundColor = samples[type].powder;
-                    logEvent(`Picked up ${samples[type].name} sample`);
+                    const sampleName = state.lang === 'zh' ? samples[type].zhName : samples[type].name;
+                    logEvent(`${translations[state.lang].pickedUp} ${sampleName}`);
                     updateGeneralInstruction();
                     return;
                 }
@@ -706,8 +812,8 @@
             staticPowder.style.display = state.activeSample ? 'block' : 'none';
             if(state.activeSample) staticPowder.style.backgroundColor = samples[state.activeSample].powder;
             
-            setInstruction('To pick up wire, <span class="click-highlight">CLICK</span> the PURPLE HANDLE');
-            logEvent("Returned wire to mat");
+            setInstruction(translations[state.lang].instrPick);
+            logEvent(translations[state.lang].returned);
         }
 
         bench.addEventListener('mousedown', handleStartInteraction);
@@ -727,18 +833,19 @@
         }, { passive: false });
 
         function updateGeneralInstruction() {
+            const t = translations[state.lang];
             if (state.isOverFlame) {
                 if (state.collarState === 0) {
-                    setInstruction('To <span class="click-highlight">CLICK</span> air hole collar, OPEN air hole');
+                    setInstruction(t.instrOpen);
                 } else {
-                    setInstruction('Observe the flame color');
+                    setInstruction(t.instrObserve);
                 }
             } else if (state.activeSample) {
-                setInstruction('<span class="click-highlight">CLICK</span> the flame area to test');
+                setInstruction(t.instrBurn);
             } else if (state.isWet) {
-                setInstruction('<span class="click-highlight">CLICK</span> a chemical sample to test');
+                setInstruction(t.instrTest);
             } else {
-                setInstruction('<span class="click-highlight">CLICK</span> HCl beaker to <span class="warning-text">WASH THE WIRE</span>');
+                setInstruction(t.instrWash);
             }
         }
 
@@ -751,12 +858,13 @@
 
         function cycleAirHole() {
             state.collarState = state.collarState === 0 ? 1 : 0;
+            const t = translations[state.lang];
             if (state.collarState === 0) {
                 shutterPlate.style.transform = 'translateX(-12px) scale(1.1)';
-                logEvent("Air hole closed");
+                logEvent(t.collarClosed);
             } else {
                 shutterPlate.style.transform = 'translateX(-6px) scale(1.0)';
-                logEvent("Air hole open");
+                logEvent(t.collarOpen);
             }
             updateFlame();
             if (state.isHoldingWire) updateGeneralInstruction();
@@ -765,17 +873,18 @@
         function updateFlame() {
             const inner = document.getElementById('flame-inner');
             const label = document.getElementById('flame-label');
+            const t = translations[state.lang];
             if (state.collarState === 0) {
                 document.documentElement.style.setProperty('--flame-color', 'rgba(255, 200, 50, 0.8)');
                 document.documentElement.style.setProperty('--glow-color', 'rgba(255, 150, 0, 0.4)');
                 inner.style.display = 'none';
-                label.textContent = "LUMINOUS FLAME";
+                label.textContent = t.flameLum;
                 label.style.color = "#f97316";
             } else {
                 document.documentElement.style.setProperty('--flame-color', 'rgba(100, 150, 255, 0.2)');
                 document.documentElement.style.setProperty('--glow-color', 'transparent');
                 inner.style.display = 'block';
-                label.textContent = "NON-LUMINOUS FLAME";
+                label.textContent = t.flameNonLum;
                 label.style.color = "#3b82f6";
             }
             if (state.isOverFlame) applyChemicalColor();
@@ -797,15 +906,17 @@
         }
 
         function applyChemicalColor() {
+            const t = translations[state.lang];
             if (state.activeSample) {
                 const s = samples[state.activeSample];
                 if (state.collarState === 1) {
                     document.documentElement.style.setProperty('--flame-color', s.color);
                     document.documentElement.style.setProperty('--glow-color', s.glow);
-                    logEvent(`TESTING ${s.name.toUpperCase()}...`);
+                    const name = state.lang === 'zh' ? s.zhName : s.name.toUpperCase();
+                    logEvent(`${t.testing} ${name}...`);
                 } else {
                     document.documentElement.style.setProperty('--flame-color', 'rgba(255, 180, 50, 0.9)'); 
-                    logEvent("Luminous flame masks ion color. Open air hole.");
+                    logEvent(t.luminousMask);
                 }
                 activeTip.style.borderColor = '#ff6b6b';
             } else {
