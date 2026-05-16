@@ -3,657 +3,1038 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ionic Formula Cross Method Simulator</title>
+    <title>Ion Blaster</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Inter:wght@400;700&display=swap');
         
         body {
+            font-family: 'Outfit', sans-serif;
+            background-color: #f0f4f8;
+            overflow-x: hidden;
+        }
+
+        .chem-formula {
             font-family: 'Inter', sans-serif;
-            background-color: #f8fafc;
-            scroll-behavior: smooth;
+            letter-spacing: 0.02em;
         }
 
         .ion-card {
-            transition: all 0.2s ease;
-            cursor: pointer;
-        }
-
-        .ion-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-        }
-
-        .selected-ion {
-            border: 2px solid #3b82f6;
-            background-color: #eff6ff;
-        }
-
-        .step-container {
-            min-height: 400px;
-        }
-
-        .formula-subscript {
-            vertical-align: sub;
-            font-size: 0.6em;
-            font-weight: bold;
-            line-height: 0;
-        }
-
-        .formula-superscript {
-            vertical-align: super;
-            font-size: 0.6em;
-            font-weight: bold;
-            line-height: 0;
-        }
-
-        .moving-charge {
-            position: absolute;
-            transition: all 2s cubic-bezier(0.4, 0, 0.2, 1);
-            z-index: 50;
-            pointer-events: none;
-            white-space: nowrap;
-        }
-
-        /* Bracket Fade-in Animation */
-        .bracket-fade {
-            opacity: 0;
-            display: inline-block;
-            transition: opacity 1s ease-in-out;
-        }
-
-        .bracket-visible {
-            opacity: 1;
-        }
-
-        #visual-area {
-            transition: gap 0.8s ease-in-out;
-            max-width: 100%;
-        }
-
-        .merge-gap {
-            gap: 0 !important;
-        }
-
-        .merged-style {
-            padding-left: 0 !important;
-            padding-right: 0 !important;
-            border-color: transparent !important;
-            background-color: transparent !important;
-            background: none !important;
-            min-width: 0 !important;
-        }
-
-        /* Strike-through animation */
-        .strike-container {
+            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease-out, border 0.2s, box-shadow 0.2s;
+            user-select: none;
             position: relative;
-            display: inline-block;
+            aspect-ratio: 1 / 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding: 0.5rem;
+            overflow: hidden;
+            border-radius: 0.75rem;
+            border: 2px solid transparent;
         }
 
-        .strike-line {
-            position: absolute;
-            top: 50%;
-            left: 0;
-            width: 0;
-            height: 4px;
-            background: #ef4444;
-            transform: translateY(-50%) rotate(-15deg);
-            transition: width 0.5s ease-out;
+        .ion-card:hover:not(.disabled):not(.static) {
+            transform: translateY(-2px);
+            filter: brightness(1.05);
         }
 
-        .strike-active .strike-line {
-            width: 110%;
+        .ion-card.selected {
+            transform: scale(0.9) !important;
+            z-index: 10;
+            box-shadow: 0 0 0 4px #4f46e5 !important;
+            border-color: #4f46e5 !important;
         }
 
-        .simplify-fade {
-            opacity: 0;
-            transition: opacity 0.5s ease-in;
-        }
-
-        .simplify-visible {
-            opacity: 1;
-        }
-
-        /* Fade out for subscript 1 */
-        .subscript-fade-out {
-            transition: opacity 0.8s ease-out, transform 0.8s ease-out;
-        }
-
-        .fade-hidden {
+        .burst-effect {
             opacity: 0 !important;
-            transform: translateY(-5px);
+            transform: scale(0.5) !important;
+            pointer-events: none;
         }
 
-        @keyframes pulse-success {
-            0% { transform: scale(1); }
+        .cation {
+            background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+            border-color: #7dd3fc;
+            color: #0369a1;
+        }
+
+        .anion {
+            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+            border-color: #fca5a5;
+            color: #b91c1c;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 0.5rem;
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        #game-grid {
+            max-height: 70vh;
+            aspect-ratio: 1 / 1;
+        }
+
+        .library-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 0.75rem;
+        }
+
+        @media (min-width: 640px) {
+            .library-grid {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            }
+        }
+
+        .ion-symbol {
+            font-size: clamp(1rem, 5cqi, 1.75rem);
+            font-weight: 700;
+            line-height: 1.1;
+        }
+
+        .ion-name {
+            font-size: clamp(0.6rem, 3cqi, 0.9rem);
+            font-weight: 600;
+            line-height: 1.1;
+            margin-top: 0.25rem;
+            text-align: center;
+        }
+
+        sub, sup {
+            line-height: 0;
+            font-size: 0.7em;
+        }
+        
+        .tab-btn.active {
+            background-color: #4f46e5;
+            color: white;
+            border-color: #4f46e5;
+        }
+
+        .shake {
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+
+        .mode-switch {
+            display: flex;
+            background: #e2e8f0;
+            padding: 4px;
+            border-radius: 9999px;
+            width: fit-content;
+        }
+        .mode-switch button {
+            padding: 6px 16px;
+            border-radius: 9999px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .mode-switch button.active {
+            background: white;
+            color: #4f46e5;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .timer-low {
+            color: #ef4444;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
             50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
         }
 
-        .animate-success {
-            animation: pulse-success 0.5s ease-in-out;
+        .control-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            background: white;
+            border-radius: 9999px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            transition: all 0.2s;
         }
-
-        /* Mobile specific fixes */
-        @media (max-width: 640px) {
-            #visual-area {
-                gap: 1rem;
-                font-size: 2.25rem;
-            }
-            .ion-box-mobile {
-                padding: 0.75rem !important;
-                min-width: 80px !important;
-            }
+        .control-btn.muted {
+            opacity: 0.5;
+            background: #f1f5f9;
         }
     </style>
 </head>
-<body class="p-4 md:p-8">
+<body class="min-h-screen p-2 md:p-8 flex flex-col items-center">
 
-<div class="max-w-6xl mx-auto">
-    <!-- Language Toggle Button -->
-    <div class="flex justify-end mb-2">
-        <button id="lang-btn" class="flex items-center gap-2 bg-white border border-slate-200 px-3 py-1.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors shadow-sm">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-            <span id="lang-text">繁體中文</span>
-        </button>
-    </div>
-
-    <header class="text-center mb-8">
-        <h1 id="main-title" class="text-3xl font-bold text-slate-800">Ionic Formula Builder</h1>
-        <p id="main-subtitle" class="text-slate-600">Master the Cross Method step-by-step</p>
-    </header>
-
-    <!-- Selection View -->
-    <div id="setup-view" class="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-            <h2 id="title-cation" class="text-xl font-semibold mb-4 text-blue-700 border-b pb-2">Select a Cation</h2>
-            <div id="cation-list" class="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-[500px] overflow-y-auto pr-2"></div>
-        </div>
-
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-            <h2 id="title-anion" class="text-xl font-semibold mb-4 text-red-700 border-b pb-2">Select an Anion</h2>
-            <div id="anion-list" class="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-[500px] overflow-y-auto pr-2"></div>
-        </div>
-    </div>
-
-    <div id="controls" class="mt-8 flex justify-center hidden">
-        <button id="start-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-full font-bold shadow-lg transition-all transform hover:scale-105">
-            Start Simulation
-        </button>
-    </div>
-
-    <!-- Simulation View -->
-    <div id="simulation-view" class="mt-8 bg-white p-4 md:p-8 rounded-2xl shadow-xl border border-slate-200 hidden">
-        <div class="flex justify-between items-center mb-8">
-            <h2 id="step-title" class="text-2xl font-bold text-slate-800">Step 1: Identify Charges</h2>
-            <button id="reset-btn" class="text-slate-500 hover:text-red-600 text-sm font-medium">Cancel & Reset</button>
-        </div>
-
-        <div class="step-container flex flex-col items-center justify-center relative overflow-visible">
-            <div id="visual-area" class="flex items-center gap-12 md:gap-48 text-5xl md:text-7xl font-bold mb-12 relative w-full justify-center">
-                <div id="v-cation" class="ion-box-mobile relative p-6 rounded-2xl bg-blue-50 border-2 border-blue-200 text-blue-800 transition-all duration-500 min-w-[100px] md:min-w-[120px] text-center"></div>
-                <div id="v-operator" class="text-slate-300 transition-opacity duration-500">+</div>
-                <div id="v-anion" class="ion-box-mobile relative p-6 rounded-2xl bg-red-50 border-2 border-red-200 text-red-800 transition-all duration-500 min-w-[100px] md:min-w-[120px] text-center"></div>
-            </div>
-
-            <div id="step-description" class="text-center w-full max-w-2xl bg-slate-50 p-6 rounded-xl border border-slate-100 min-h-[100px]">
-                <p class="text-lg text-slate-700"></p>
-            </div>
-        </div>
-
-        <div class="mt-8 flex justify-center gap-4">
-            <button id="back-btn" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-6 py-3 rounded-lg font-semibold transition-all hidden">
-                Back
+    <div class="max-w-5xl w-full relative">
+        <div class="absolute top-0 right-0 z-10 flex flex-col items-end gap-2 p-2">
+            <button id="lang-toggle" onclick="toggleLanguage()" class="control-btn text-emerald-600">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                <span id="lang-status">English</span>
             </button>
-            <button id="next-btn" class="bg-slate-800 hover:bg-slate-900 text-white px-10 py-3 rounded-lg font-semibold transition-all">
-                Next Step
+            <button id="music-toggle" onclick="toggleMusic()" class="control-btn text-indigo-600">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+                <span id="music-status">Music On</span>
+            </button>
+            <button id="sfx-toggle" onclick="toggleSFX()" class="control-btn text-slate-600">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                <span id="sfx-status">SFX On</span>
             </button>
         </div>
+
+        <header class="text-center mb-6">
+            <h1 id="app-title" class="text-3xl md:text-5xl font-bold text-slate-800 mb-2">Ion Blaster</h1>
+            <p id="header-desc" class="text-slate-500 mb-4">Master the language of ions and compounds</p>
+        </header>
+
+        <div id="tab-library" class="space-y-8">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-indigo-50 p-6 rounded-3xl border-2 border-indigo-100">
+                <div class="space-y-1">
+                    <h3 id="lib-cta-title" class="text-xl font-bold text-indigo-900">Ready to Challenge?</h3>
+                    <p id="lib-cta-desc" class="text-indigo-700">Choose difficulty and press start to begin the 90s round.</p>
+                    <div class="mode-switch mt-3">
+                        <button id="mode-simple" onclick="setDifficulty('simple')">Simple</button>
+                        <button id="mode-difficult" class="active" onclick="setDifficulty('difficult')">Difficult</button>
+                    </div>
+                    <p id="lib-footnote" class="text-xs text-indigo-400 mt-2 italic">Simple mode will skip many uncommon polyatomic ions.</p>
+                </div>
+                <button id="play-btn" onclick="startGame()" class="px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-xl font-bold shadow-lg shadow-indigo-200 transition-all transform hover:scale-105 active:scale-95">
+                    Play Game ➔
+                </button>
+            </div>
+
+            <section>
+                <h2 id="cations-title" class="text-2xl font-bold text-sky-700 mb-4 flex items-center gap-2">
+                    <span class="w-8 h-8 bg-sky-100 rounded-lg flex items-center justify-center text-lg">+</span> 
+                    Cations (Positive)
+                </h2>
+                <div id="cation-library" class="library-grid bg-white p-4 md:p-6 rounded-2xl shadow-lg border border-slate-200" style="container-type: inline-size;"></div>
+            </section>
+            <section>
+                <h2 id="anions-title" class="text-2xl font-bold text-rose-700 mb-4 flex items-center gap-2">
+                    <span class="w-8 h-8 bg-rose-100 rounded-lg flex items-center justify-center text-lg">-</span> 
+                    Anions (Negative)
+                </h2>
+                <div id="anion-library" class="library-grid bg-white p-4 md:p-6 rounded-2xl shadow-lg border border-slate-200" style="container-type: inline-size;"></div>
+            </section>
+        </div>
+
+        <div id="tab-play" class="hidden flex flex-col lg:flex-row gap-4 md:gap-8 items-start">
+            <div class="w-full flex-1">
+                <div class="flex justify-between items-center mb-4 bg-white px-6 py-3 rounded-2xl shadow-sm border border-slate-100">
+                    <div class="flex flex-col">
+                        <span id="label-time" class="text-xs uppercase font-bold text-slate-400">Time Left</span>
+                        <span id="timer" class="text-2xl font-mono font-bold text-slate-700">01:30</span>
+                    </div>
+                    <div class="flex flex-col items-end">
+                        <span id="label-score" class="text-xs uppercase font-bold text-slate-400">Score</span>
+                        <span id="game-score" class="text-2xl font-mono font-bold text-indigo-600">0</span>
+                    </div>
+                </div>
+
+                <div id="game-grid" class="grid-container bg-white p-2 md:p-4 rounded-2xl shadow-xl border border-slate-200" style="container-type: inline-size;"></div>
+                
+                <div class="mt-4 flex justify-between items-center bg-white p-3 rounded-xl shadow-md border border-slate-100">
+                    <button id="btn-clear" onclick="resetSelection()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg font-semibold transition-colors text-sm">Clear Selection</button>
+                    <button id="btn-restart" onclick="confirmRestart()" class="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg font-semibold transition-colors text-sm">Restart Game</button>
+                </div>
+            </div>
+
+            <div class="w-full lg:w-72 space-y-4">
+                <div class="bg-white p-6 rounded-2xl shadow-md border border-slate-200">
+                    <h3 id="target-title" class="font-bold text-slate-800 mb-3">Target:</h3>
+                    <p id="target-desc" class="text-sm text-slate-600 leading-relaxed">
+                        Balance the charges between a <b>cation</b> and an <b>anion</b>. 
+                        The compound forms once the total charge reaches zero!
+                    </p>
+                </div>
+                <div class="bg-indigo-900 text-white p-6 rounded-2xl shadow-lg">
+                    <h2 id="perf-title" class="text-lg font-bold mb-2">Performance</h2>
+                    <div id="progress-bar-container" class="w-full bg-indigo-800 rounded-full h-3">
+                        <div id="progress-bar" class="bg-emerald-400 h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-</div>
 
-<script>
-    let currentLang = 'en';
+    <div id="modal-overlay" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center hidden z-50">
+        <div class="bg-white p-6 md:p-8 rounded-3xl shadow-2xl max-w-md w-full mx-4" id="modal-content">
+            <div id="quiz-view" class="text-center">
+                <div id="modal-icon" class="inline-block p-4 rounded-full bg-emerald-100 text-emerald-600 mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <h2 id="modal-title" class="text-xl md:text-2xl font-bold text-slate-800 mb-2">Balanced!</h2>
+                <p id="compound-formula" class="text-xl md:text-2xl chem-formula text-indigo-600 font-bold mb-4"></p>
+                <p id="error-feedback" class="text-red-500 font-bold mb-4 hidden h-6">INCORRECT!</p>
+                <div id="quiz-options" class="grid grid-cols-1 gap-2"></div>
+                <p id="attempts-left" class="text-xs text-slate-400 mt-4">Attempts: 2</p>
+            </div>
 
-    const translations = {
-        en: {
-            mainTitle: "Ionic Formula Builder",
-            mainSubtitle: "Master the Cross Method step-by-step",
-            selectCation: "Select a Cation",
-            selectAnion: "Select an Anion",
-            startBtn: "Start Simulation",
-            resetBtn: "Cancel & Reset",
-            backBtn: "Back",
-            nextBtn: "Next Step",
-            crossBtn: "Cross Charges",
-            simplifyBtn: "Simplify Ratio",
-            finalizeBtn: "Finalize & Merge",
-            newBtn: "Start with a new compound",
-            step1Title: "Step 1: Identify the Ions",
-            step2Title: "Step 2: The Cross Method",
-            step3Title: "Step 3: Simplify the Ratio",
-            step4Title: "Step 4: Final Formula",
-            reminder: "💡 Reminder: Added brackets for polyatomic ions with subscripts > 1.",
-            step1Desc: (c, a) => `We have <strong>${c}</strong> and <strong>${a}</strong>. Let's look at their charges.`,
-            step2Desc: "Watch the charge values move! They cross over to become subscripts for the opposite ion.",
-            step3DescSimple: (r1, r2) => `The ratio <strong>${r1}:${r2}</strong> is shown. We keep the "1" to show the final balance.`,
-            step3DescReduced: (r1, r2, s1, s2) => `The ratio <strong>${r1}:${r2}</strong> simplifies to <strong>${s1}:${s2}</strong>.`,
-            step4Desc: "Final step: merge the ions and remove any subscripts of \"1\".",
-            success: "Success!",
-            resultText: (formula) => `The chemical formula is <span class="text-2xl font-bold text-slate-800">${formula}</span>.`
-        },
-        zh: {
-            mainTitle: "離子化合物化學式建構器",
-            mainSubtitle: "逐步掌握「交叉法」",
-            selectCation: "選擇陽離子",
-            selectAnion: "選擇陰離子",
-            startBtn: "開始模擬",
-            resetBtn: "取消並重置",
-            backBtn: "返回",
-            nextBtn: "下一步",
-            crossBtn: "交叉電荷",
-            simplifyBtn: "簡化比例",
-            finalizeBtn: "合併化學式",
-            newBtn: "建構新的化學式",
-            step1Title: "第一步：辨認離子",
-            step2Title: "第二步：交叉法",
-            step3Title: "第三步：簡化比例",
-            step4Title: "第四步：最終化學式",
-            reminder: "💡 提示：為下標大於 1 的多原子離子加上括號。",
-            step1Desc: (c, a) => `我們有 <strong>${c}</strong> 和 <strong>${a}</strong>。讓我們觀察它們的電荷。`,
-            step2Desc: "觀察電荷數值的移動！它們會交叉成為另一方離子的下標。",
-            step3DescSimple: (r1, r2) => `比例為 <strong>${r1}:${r2}</strong>。我們保留「1」以顯示最終的平衡。`,
-            step3DescReduced: (r1, r2, s1, s2) => `比例 <strong>${r1}:${r2}</strong> 可簡化為 <strong>${s1}:${s2}</strong>。`,
-            step4Desc: "最後一步：合併離子符號並隱藏數值為「1」的下標。",
-            success: "成功！",
-            resultText: (formula) => `化學式為 <span class="text-2xl font-bold text-slate-800">${formula}</span>。`
-        }
-    };
+            <div id="sudden-task-view" class="hidden text-center">
+                <div class="inline-block p-4 rounded-full bg-amber-100 text-amber-600 mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                </div>
+                <h2 id="sudden-title" class="text-2xl font-bold text-slate-800 mb-2">SUDDEN TASK!</h2>
+                <p id="sudden-desc" class="text-slate-500 mb-4">Identify the correct formula for:</p>
+                <h3 id="sudden-task-name" class="text-2xl font-bold text-indigo-600 mb-4"></h3>
+                <div id="sudden-task-options" class="grid grid-cols-2 gap-3 mb-4"></div>
+                <p id="sudden-task-feedback" class="text-red-500 font-bold hidden mb-2">INCORRECT!</p>
+                <p id="sudden-attempts-left" class="text-xs text-slate-400">Attempts: 2</p>
+            </div>
 
-    const cations = [
-        { name: {en: "Lithium ion", zh: "鋰離子"}, symbol: "Li", charge: 1, poly: false },
-        { name: {en: "Sodium ion", zh: "鈉離子"}, symbol: "Na", charge: 1, poly: false },
-        { name: {en: "Potassium ion", zh: "鉀離子"}, symbol: "K", charge: 1, poly: false },
-        { name: {en: "Copper(I) ion", zh: "銅(I)離子"}, symbol: "Cu", charge: 1, poly: false },
-        { name: {en: "Silver ion", zh: "銀離子"}, symbol: "Ag", charge: 1, poly: false },
-        { name: {en: "Mercury(I) ion", zh: "汞(I)離子"}, symbol: "Hg", charge: 1, poly: false },
-        { name: {en: "Ammonium ion", zh: "銨離子"}, symbol: "NH4", charge: 1, poly: true },
-        { name: {en: "Magnesium ion", zh: "鎂離子"}, symbol: "Mg", charge: 2, poly: false },
-        { name: {en: "Calcium ion", zh: "鈣離子"}, symbol: "Ca", charge: 2, poly: false },
-        { name: {en: "Barium ion", zh: "鋇離子"}, symbol: "Ba", charge: 2, poly: false },
-        { name: {en: "Zinc ion", zh: "鋅離子"}, symbol: "Zn", charge: 2, poly: false },
-        { name: {en: "Iron(II) ion", zh: "鐵(II)離子"}, symbol: "Fe", charge: 2, poly: false },
-        { name: {en: "Copper(II) ion", zh: "銅(II)離子"}, symbol: "Cu", charge: 2, poly: false },
-        { name: {en: "Cobalt(II) ion", zh: "鈷(II)離子"}, symbol: "Co", charge: 2, poly: false },
-        { name: {en: "Nickel(II) ion", zh: "鎳(II)離子"}, symbol: "Ni", charge: 2, poly: false },
-        { name: {en: "Manganese(II) ion", zh: "錳(II)離子"}, symbol: "Mn", charge: 2, poly: false },
-        { name: {en: "Mercury(II) ion", zh: "汞(II)離子"}, symbol: "Hg", charge: 2, poly: false },
-        { name: {en: "Lead(II) ion", zh: "鉛(II)離子"}, symbol: "Pb", charge: 2, poly: false },
-        { name: {en: "Aluminum ion", zh: "鋁離子"}, symbol: "Al", charge: 3, poly: false },
-        { name: {en: "Iron(III) ion", zh: "鐵(III)離子"}, symbol: "Fe", charge: 3, poly: false },
-        { name: {en: "Chromium(III) ion", zh: "鉻(III)離子"}, symbol: "Cr", charge: 3, poly: false }
-    ];
+            <div id="gameover-view" class="hidden text-center">
+                <div class="inline-block p-4 rounded-full bg-indigo-100 text-indigo-600 mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <h2 id="gameover-title" class="text-3xl font-bold text-slate-800 mb-2">Time Up!</h2>
+                <p class="text-slate-500 mb-6"><span id="gameover-score-text">You balanced</span> <span id="final-score" class="text-3xl font-bold text-indigo-600">0</span> <span id="gameover-unit-text">compounds!</span></p>
+                <div class="flex flex-col gap-3">
+                    <button id="btn-restart-final" onclick="startGame()" class="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-bold text-lg shadow-lg shadow-indigo-100 transition-all">Restart Challenge</button>
+                    <button id="btn-back-lib" onclick="backToLibrary()" class="w-full py-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl font-bold transition-all">Back to Ion Library</button>
+                </div>
+            </div>
+            
+            <div id="confirm-restart-view" class="hidden text-center">
+                <h2 id="confirm-title" class="text-2xl font-bold text-slate-800 mb-4">Restart Game?</h2>
+                <p id="confirm-desc" class="text-slate-500 mb-6">Your current score and progress will be lost.</p>
+                <div class="flex flex-col gap-3">
+                    <button id="btn-confirm-yes" onclick="startGame()" class="w-full py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-2xl font-bold transition-all">Yes, Restart</button>
+                    <button id="btn-confirm-no" onclick="closeModal()" class="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl font-bold transition-all">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-    const anions = [
-        { name: {en: "Fluoride ion", zh: "氟離子"}, symbol: "F", charge: -1, poly: false },
-        { name: {en: "Chloride ion", zh: "氯離子"}, symbol: "Cl", charge: -1, poly: false },
-        { name: {en: "Bromide ion", zh: "溴離子"}, symbol: "Br", charge: -1, poly: false },
-        { name: {en: "Iodide ion", zh: "碘離子"}, symbol: "I", charge: -1, poly: false },
-        { name: {en: "Nitrite ion", zh: "亞硝酸根離子"}, symbol: "NO2", charge: -1, poly: true },
-        { name: {en: "Nitrate ion", zh: "硝酸根離子"}, symbol: "NO3", charge: -1, poly: true },
-        { name: {en: "Hydroxide ion", zh: "氫氧根離子"}, symbol: "OH", charge: -1, poly: true },
-        { name: {en: "Hydrogencarbonate ion", zh: "碳酸氫根離子"}, symbol: "HCO3", charge: -1, poly: true },
-        { name: {en: "Hydrogensulphate ion", zh: "硫酸氫根離子"}, symbol: "HSO4", charge: -1, poly: true },
-        { name: {en: "Cyanide ion", zh: "氰根離子"}, symbol: "CN", charge: -1, poly: true },
-        { name: {en: "Permanganate Ion", zh: "高錳酸根離子"}, symbol: "MnO4", charge: -1, poly: true },
-        { name: {en: "Hypochlorite ion", zh: "次氯酸根離子"}, symbol: "ClO", charge: -1, poly: true },
-        { name: {en: "Chlorate ion", zh: "氯酸根離子"}, symbol: "ClO3", charge: -1, poly: true },
-        { name: {en: "Oxide ion", zh: "氧化物離子"}, symbol: "O", charge: -2, poly: false },
-        { name: {en: "Sulphide ion", zh: "硫化物離子"}, symbol: "S", charge: -2, poly: false },
-        { name: {en: "Sulphite ion", zh: "亞硫酸根離子"}, symbol: "SO3", charge: -2, poly: true },
-        { name: {en: "Sulphate ion", zh: "硫酸根離子"}, symbol: "SO4", charge: -2, poly: true },
-        { name: {en: "Thiosulphate ion", zh: "硫代硫酸根離子"}, symbol: "S2O3", charge: -2, poly: true },
-        { name: {en: "Carbonate ion", zh: "碳酸根離子"}, symbol: "CO3", charge: -2, poly: true },
-        { name: {en: "Silicate ion", zh: "矽酸根離子"}, symbol: "SiO3", charge: -2, poly: true },
-        { name: {en: "Chromate ion", zh: "鉻酸根離子"}, symbol: "CrO4", charge: -2, poly: true },
-        { name: {en: "Dichromate ion", zh: "重鉻酸根離子"}, symbol: "Cr2O7", charge: -2, poly: true },
-        { name: {en: "Nitride ion", zh: "氮化物離子"}, symbol: "N", charge: -3, poly: false },
-        { name: {en: "Phosphide ion", zh: "磷化物離子"}, symbol: "P", charge: -3, poly: false },
-        { name: {en: "Phosphate ion", zh: "磷酸根離子"}, symbol: "PO4", charge: -3, poly: true }
-    ];
+    <script>
+        const TRANSLATIONS = {
+            en: {
+                appTitle: "Ion Blaster",
+                headerDesc: "Master the language of ions and compounds",
+                libCtaTitle: "Ready to Challenge?",
+                libCtaDesc: "Choose difficulty and press start to begin the 90s round.",
+                libFootnote: "Simple mode will skip many uncommon polyatomic ions.",
+                modeSimple: "Simple",
+                modeDifficult: "Difficult",
+                playBtn: "Play Game ➔",
+                cationsTitle: "Cations (Positive)",
+                anionsTitle: "Anions (Negative)",
+                labelTime: "Time Left",
+                labelScore: "Score",
+                btnClear: "Clear Selection",
+                btnRestart: "Restart Game",
+                targetTitle: "Target:",
+                targetDesc: "Balance the charges between a <b>cation</b> and an <b>anion</b>. The compound forms once the total charge reaches zero!",
+                perfTitle: "Performance",
+                modalBalanced: "Balanced!",
+                modalIncorrect: "INCORRECT!",
+                modalAttempts: "Attempts:",
+                suddenTitle: "SUDDEN TASK!",
+                suddenDesc: "Identify the correct formula for:",
+                gameoverTitle: "Time Up!",
+                gameoverScore: "You balanced",
+                gameoverUnit: "compounds!",
+                btnRestartFinal: "Restart Challenge",
+                btnBackLib: "Back to Ion Library",
+                confirmTitle: "Restart Game?",
+                confirmDesc: "Your current score and progress will be lost.",
+                btnConfirmYes: "Yes, Restart",
+                btnConfirmNo: "Cancel",
+                musicOn: "Music On",
+                musicOff: "Music Off",
+                sfxOn: "SFX On",
+                sfxOff: "SFX Off",
+                langName: "English"
+            },
+            zh: {
+                appTitle: "離子大作戰",
+                headerDesc: "掌握離子與化合物的化學語言",
+                libCtaTitle: "準備好接受挑戰了嗎？",
+                libCtaDesc: "選擇難度並按下開始，進行 90 秒的挑戰賽。",
+                libFootnote: "簡單模式將會跳過許多不常見的多原子離子。",
+                modeSimple: "簡單",
+                modeDifficult: "困難",
+                playBtn: "開始遊戲 ➔",
+                cationsTitle: "陽離子 (正電荷)",
+                anionsTitle: "陰離子 (負電荷)",
+                labelTime: "剩餘時間",
+                labelScore: "得分",
+                btnClear: "清除選擇",
+                btnRestart: "重新開始",
+                targetTitle: "目標：",
+                targetDesc: "平衡 <b>陽離子</b> 與 <b>陰離子</b> 之間的電荷。當總電荷歸零時，化合物即告形成！",
+                perfTitle: "目前表現",
+                modalBalanced: "電荷平衡！",
+                modalIncorrect: "錯誤！",
+                modalAttempts: "剩餘機會：",
+                suddenTitle: "突擊任務！",
+                suddenDesc: "請找出下列物質的正確化學式：",
+                gameoverTitle: "時間到！",
+                gameoverScore: "你成功合成了",
+                gameoverUnit: "個化合物！",
+                btnRestartFinal: "再玩一次",
+                btnBackLib: "返回離子庫",
+                confirmTitle: "確定要重新開始？",
+                confirmDesc: "您目前的得分與進度將會遺失。",
+                btnConfirmYes: "是的，重新開始",
+                btnConfirmNo: "取消",
+                musicOn: "音樂：開啟",
+                musicOff: "音樂：關閉",
+                sfxOn: "音效：開啟",
+                sfxOff: "音效：關閉",
+                langName: "繁體中文"
+            }
+        };
 
-    let selectedCation = null;
-    let selectedAnion = null;
-    let currentStep = 0;
+        const CATIONS = [
+            { symbol: "Li+", name: "Lithium ion", zh: "鋰離子", charge: 1, formula: "Li", metal: "Lithium", metalZh: "鋰", fixed: true },
+            { symbol: "Na+", name: "Sodium ion", zh: "鈉離子", charge: 1, formula: "Na", metal: "Sodium", metalZh: "鈉", fixed: true },
+            { symbol: "K+", name: "Potassium ion", zh: "鉀離子", charge: 1, formula: "K", metal: "Potassium", metalZh: "鉀", fixed: true },
+            { symbol: "Cu+", name: "Copper(I) ion", zh: "銅(I)離子", charge: 1, formula: "Cu", metal: "Copper", metalZh: "銅", state: "(I)" },
+            { symbol: "Ag+", name: "Silver ion", zh: "銀離子", charge: 1, formula: "Ag", metal: "Silver", metalZh: "銀", fixed: true },
+            { symbol: "Hg+", name: "Mercury(I) ion", zh: "汞(I)離子", charge: 1, formula: "Hg", metal: "Mercury", metalZh: "汞", state: "(I)" },
+            { symbol: "NH4 +", name: "Ammonium ion", zh: "銨根離子", charge: 1, formula: "NH4", poly: true, metal: "Ammonium", metalZh: "銨", fixed: true },
+            { symbol: "Mg2+", name: "Magnesium ion", zh: "鎂離子", charge: 2, formula: "Mg", metal: "Magnesium", metalZh: "鎂", fixed: true },
+            { symbol: "Ca2+", name: "Calcium ion", zh: "鈣離子", charge: 2, formula: "Ca", metal: "Calcium", metalZh: "鈣", fixed: true },
+            { symbol: "Ba2+", name: "Barium ion", zh: "鋇離子", charge: 2, formula: "Ba", metal: "Barium", metalZh: "鋇", fixed: true },
+            { symbol: "Zn2+", name: "Zinc ion", zh: "鋅離子", charge: 2, formula: "Zn", metal: "Zinc", metalZh: "鋅", fixed: true },
+            { symbol: "Fe2+", name: "Iron(II) ion", zh: "鐵(II)離子", charge: 2, formula: "Fe", metal: "Iron", metalZh: "鐵", state: "(II)" },
+            { symbol: "Cu2+", name: "Copper(II) ion", zh: "銅(II)離子", charge: 2, formula: "Cu", metal: "Copper", metalZh: "銅", state: "(II)" },
+            { symbol: "Co2+", name: "Cobalt(II) ion", zh: "鈷(II)離子", charge: 2, formula: "Co", metal: "Cobalt", metalZh: "鈷", state: "(II)" },
+            { symbol: "Ni2+", name: "Nickel(II) ion", zh: "鎳(II)離子", charge: 2, formula: "Ni", metal: "Nickel", metalZh: "鎳", state: "(II)" },
+            { symbol: "Mn2+", name: "Manganese(II) ion", zh: "錳(II)離子", charge: 2, formula: "Mn", metal: "Manganese", metalZh: "錳", state: "(II)" },
+            { symbol: "Hg2+", name: "Mercury(II) ion", zh: "汞(II)離子", charge: 2, formula: "Hg", metal: "Mercury", metalZh: "汞", state: "(II)" },
+            { symbol: "Pb2+", name: "Lead(II) ion", zh: "鉛(II)離子", charge: 2, formula: "Pb", metal: "Lead", metalZh: "鉛", state: "(II)" },
+            { symbol: "Al3+", name: "Aluminum ion", zh: "鋁離子", charge: 3, formula: "Al", metal: "Aluminum", metalZh: "鋁", fixed: true },
+            { symbol: "Fe3+", name: "Iron(III) ion", zh: "鐵(III)離子", charge: 3, formula: "Fe", metal: "Iron", metalZh: "鐵", state: "(III)" },
+            { symbol: "Cr3+", name: "Chromium(III) ion", zh: "鉻(III)離子", charge: 3, formula: "Cr", metal: "Chromium", metalZh: "鉻", state: "(III)" }
+        ];
 
-    function gcd(a, b) { return b ? gcd(b, a % b) : a; }
+        const ANIONS = [
+            { symbol: "H-", name: "Hydride ion", zh: "氫離子", charge: -1, formula: "H", stem: "Hydr", stemZh: "氫", suffix: "ide" },
+            { symbol: "F-", name: "Fluoride ion", zh: "氟離子", charge: -1, formula: "F", stem: "Fluor", stemZh: "氟", suffix: "ide" },
+            { symbol: "Cl-", name: "Chloride ion", zh: "氯離子", charge: -1, formula: "Cl", stem: "Chlor", stemZh: "氯", suffix: "ide" },
+            { symbol: "Br-", name: "Bromide ion", zh: "溴離子", charge: -1, formula: "Br", stem: "Brom", stemZh: "溴", suffix: "ide" },
+            { symbol: "I-", name: "Iodide ion", zh: "碘離子", charge: -1, formula: "I", stem: "Iod", stemZh: "碘", suffix: "ide" },
+            { symbol: "NO2 -", name: "Nitrite ion", zh: "亞硝酸根離子", charge: -1, formula: "NO2", poly: true, stem: "Nitr", stemZh: "硝", suffix: "ite" },
+            { symbol: "NO3 -", name: "Nitrate ion", zh: "硝酸根離子", charge: -1, formula: "NO3", poly: true, stem: "Nitr", stemZh: "硝", suffix: "ate" },
+            { symbol: "OH-", name: "Hydroxide ion", zh: "氫氧根離子", charge: -1, formula: "OH", poly: true, stem: "Hydrox", stemZh: "氫氧", suffix: "ide" },
+            { symbol: "HCO3 -", name: "Hydrogencarbonate ion", zh: "碳酸氫根離子", charge: -1, formula: "HCO3", poly: true, stem: "Hydrogencarbon", stemZh: "碳酸氫", suffix: "ate" },
+            { symbol: "HSO4 -", name: "Hydrogensulphate ion", zh: "硫酸氫根離子", charge: -1, formula: "HSO4", poly: true, stem: "Hydrogensulph", stemZh: "硫酸氫", suffix: "ate", complex: true },
+            { symbol: "CN-", name: "Cyanide ion", zh: "氰化根離子", charge: -1, formula: "CN", stem: "Cyan", stemZh: "氰", suffix: "ide", complex: true },
+            { symbol: "MnO4 -", name: "Permanganate ion", zh: "過錳酸根離子", charge: -1, formula: "MnO4", poly: true, stem: "Permangan", stemZh: "過錳", suffix: "ate" },
+            { symbol: "ClO-", name: "Hypochlorite ion", zh: "次氯酸根離子", charge: -1, formula: "ClO", poly: true, stem: "Hypochlor", stemZh: "次氯", suffix: "ite", complex: true },
+            { symbol: "ClO3 -", name: "Chlorate ion", zh: "氯酸根離子", charge: -1, formula: "ClO3", poly: true, stem: "Chlor", stemZh: "氯", suffix: "ate", complex: true },
+            { symbol: "O2-", name: "Oxide ion", zh: "氧化物離子", charge: -2, formula: "O", stem: "Ox", stemZh: "氧", suffix: "ide" },
+            { symbol: "S2-", name: "Sulphide ion", zh: "硫化物離子", charge: -2, formula: "S", stem: "Sulph", stemZh: "硫", suffix: "ide" },
+            { symbol: "SO3 2-", name: "Sulphite ion", zh: "亞硫酸根離子", charge: -2, formula: "SO3", poly: true, stem: "Sulph", stemZh: "硫", suffix: "ite" },
+            { symbol: "SO4 2-", name: "Sulphate ion", zh: "硫酸根離子", charge: -2, formula: "SO4", poly: true, stem: "Sulph", stemZh: "硫", suffix: "ate" },
+            { symbol: "S2O3 2-", name: "Thiosulphate ion", zh: "硫代硫酸根離子", charge: -2, formula: "S2O3", poly: true, stem: "Thiosulph", stemZh: "硫代硫酸", suffix: "ate", complex: true },
+            { symbol: "CO3 2-", name: "Carbonate ion", zh: "碳酸根離子", charge: -2, formula: "CO3", poly: true, stem: "Carbon", stemZh: "碳", suffix: "ate" },
+            { symbol: "SiO3 2-", name: "Silicate ion", zh: "矽酸根離子", charge: -2, formula: "SiO3", poly: true, stem: "Silic", stemZh: "矽", suffix: "ate", complex: true },
+            { symbol: "CrO4 2-", name: "Chromate ion", zh: "鉻酸根離子", charge: -2, formula: "CrO4", poly: true, stem: "Chrom", stemZh: "鉻", suffix: "ate", complex: true },
+            { symbol: "Cr2O7 2-", name: "Dichromate ion", zh: "二鉻酸根離子", charge: -2, formula: "Cr2O7", poly: true, stem: "Dichrom", stemZh: "二鉻", suffix: "ate" },
+            { symbol: "N 3-", name: "Nitride ion", zh: "氮化物離子", charge: -3, formula: "N", stem: "Nitr", stemZh: "氮", suffix: "ide" },
+            { symbol: "P 3-", name: "Phosphide ion", zh: "磷化物離子", charge: -3, formula: "P", stem: "Phosph", stemZh: "磷", suffix: "ide" },
+            { symbol: "PO4 3-", name: "Phosphate ion", zh: "磷酸根離子", charge: -3, formula: "PO4", poly: true, stem: "Phosph", stemZh: "磷", suffix: "ate", complex: true }
+        ];
 
-    function formatSymbol(symbol) {
-        return symbol.replace(/(\d+)/g, '<span class="formula-subscript">$1</span>');
-    }
+        let gridData = [];
+        let selectedIndices = [];
+        let score = 0;
+        let compoundsBurst = 0;
+        let attempts = 0;
+        let suddenAttempts = 0;
+        let isSFXEnabled = true;
+        let isMusicEnabled = true;
+        let difficulty = 'difficult';
+        let timeLeft = 90;
+        let timerInterval = null;
+        let currentLang = 'en';
 
-    function formatCharge(val) {
-        const absVal = Math.abs(val);
-        const sign = val > 0 ? '+' : '-';
-        return `<span class="formula-superscript">${absVal === 1 ? '' : absVal}${sign}</span>`;
-    }
+        const SoundEngine = {
+            ctx: null,
+            musicGain: null,
+            isLoopRunning: false,
+            init() { 
+                if (this.ctx) {
+                    if (this.ctx.state === 'suspended') this.ctx.resume();
+                    return;
+                }
+                this.ctx = new (window.AudioContext || window.webkitAudioContext)(); 
+                this.musicGain = this.ctx.createGain();
+                this.musicGain.connect(this.ctx.destination);
+                this.musicGain.gain.value = 0.2;
+            },
+            play(type) {
+                if (!isSFXEnabled) return;
+                this.init();
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                if (type === 'click') {
+                    osc.type = 'sine'; osc.frequency.setValueAtTime(440, now); osc.frequency.exponentialRampToValueAtTime(110, now + 0.1);
+                    gain.gain.setValueAtTime(0.2, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                    osc.connect(gain); gain.connect(this.ctx.destination); osc.start(now); osc.stop(now + 0.1);
+                } else if (type === 'error') {
+                    osc.type = 'square'; osc.frequency.setValueAtTime(150, now); osc.frequency.setValueAtTime(110, now + 0.1);
+                    gain.gain.setValueAtTime(0.1, now); gain.gain.linearRampToValueAtTime(0, now + 0.3);
+                    osc.connect(gain); gain.connect(this.ctx.destination); osc.start(now); osc.stop(now + 0.3);
+                } else if (type === 'success') {
+                    osc.type = 'triangle'; osc.frequency.setValueAtTime(523.25, now); osc.frequency.exponentialRampToValueAtTime(1046.50, now + 0.4);
+                    gain.gain.setValueAtTime(0.2, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+                    osc.connect(gain); gain.connect(this.ctx.destination); osc.start(now); osc.stop(now + 0.5);
+                }
+            },
+            startDrumNBassLoop() {
+                this.init();
+                if (this.isLoopRunning) return;
+                this.isLoopRunning = true;
+                const tempo = 172; 
+                const beatDuration = 60 / tempo;
+                const barDuration = beatDuration * 4;
+                let nextBarTime = this.ctx.currentTime;
 
-    function updateLanguageUI() {
-        const t = translations[currentLang];
-        document.getElementById('lang-text').innerText = currentLang === 'en' ? "繁體中文" : "English";
-        document.getElementById('main-title').innerText = t.mainTitle;
-        document.getElementById('main-subtitle').innerText = t.mainSubtitle;
-        document.getElementById('title-cation').innerText = t.selectCation;
-        document.getElementById('title-anion').innerText = t.selectAnion;
-        document.getElementById('start-btn').innerText = t.startBtn;
-        document.getElementById('reset-btn').innerText = t.resetBtn;
-        document.getElementById('back-btn').innerText = t.backBtn;
-        
-        renderLists();
-        if (!document.getElementById('simulation-view').classList.contains('hidden')) {
-            runStep();
-        }
-    }
-
-    document.getElementById('lang-btn').onclick = () => {
-        currentLang = currentLang === 'en' ? 'zh' : 'en';
-        updateLanguageUI();
-    };
-
-    function renderLists() {
-        const cList = document.getElementById('cation-list');
-        const aList = document.getElementById('anion-list');
-        cList.innerHTML = '';
-        aList.innerHTML = '';
-        [cations, anions].forEach((list, idx) => {
-            const container = idx === 0 ? cList : aList;
-            list.forEach(ion => {
-                const isSelected = (idx === 0 && selectedCation === ion) || (idx === 1 && selectedAnion === ion);
-                const div = document.createElement('div');
-                div.className = `ion-card p-3 rounded-lg border bg-white text-sm text-center ${isSelected ? 'selected-ion' : ''}`;
-                div.innerHTML = `<div>${formatSymbol(ion.symbol)}${formatCharge(ion.charge)}</div><div class="text-[10px] text-slate-500 uppercase font-bold">${ion.name[currentLang]}</div>`;
-                div.onclick = () => {
-                    document.querySelectorAll(`#${container.id} .ion-card`).forEach(el => el.classList.remove('selected-ion'));
-                    div.classList.add('selected-ion');
-                    if (idx === 0) selectedCation = ion; else selectedAnion = ion;
-                    checkReady();
+                const scheduler = () => {
+                    while (nextBarTime < this.ctx.currentTime + 0.1) {
+                        this.playDNBBar(nextBarTime, tempo);
+                        nextBarTime += barDuration;
+                    }
+                    if (this.isLoopRunning) setTimeout(scheduler, 25);
                 };
-                container.appendChild(div);
+                scheduler();
+            },
+            playDNBBar(time, tempo) {
+                if (!isMusicEnabled) return;
+                const b = 60 / tempo;
+                
+                const kick = (t, vol=0.5) => {
+                    const o = this.ctx.createOscillator(); const g = this.ctx.createGain();
+                    o.frequency.setValueAtTime(180, t); o.frequency.exponentialRampToValueAtTime(45, t + 0.08);
+                    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.01, t + 0.12);
+                    o.connect(g); g.connect(this.musicGain); o.start(t); o.stop(t + 0.12);
+                };
+                const snare = (t, vol=0.35, pitch=1.0) => {
+                    const noise = this.ctx.createBufferSource();
+                    const buf = this.ctx.createBuffer(1, this.ctx.sampleRate * 0.1, this.ctx.sampleRate);
+                    const d = buf.getChannelData(0); for (let i=0; i<d.length; i++) d[i] = Math.random() * 2 - 1;
+                    noise.buffer = buf;
+                    const f = this.ctx.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = 1000 * pitch;
+                    const g = this.ctx.createGain(); g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+                    noise.connect(f); f.connect(g); g.connect(this.musicGain); noise.start(t); noise.stop(t + 0.1);
+                };
+                const hat = (t, vol=0.08) => {
+                    const o = this.ctx.createOscillator(); o.type = 'square'; o.frequency.value = 12000;
+                    const g = this.ctx.createGain(); g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.03);
+                    o.connect(g); g.connect(this.musicGain); o.start(t); o.stop(t + 0.03);
+                };
+
+                kick(time);
+                hat(time + b*0.25);
+                hat(time + b*0.5, 0.04);
+                hat(time + b*0.75);
+                snare(time + b);
+                hat(time + b*1.25);
+                snare(time + b*1.5, 0.08, 0.8);
+                kick(time + b*1.75, 0.3);
+                kick(time + b*2);
+                hat(time + b*2.25);
+                snare(time + b*2.5, 0.1, 1.2);
+                hat(time + b*2.75);
+                snare(time + b*3);
+                snare(time + b*3.25, 0.06);
+                snare(time + b*3.5, 0.12);
+                hat(time + b*3.75);
+
+                const progression = [46.25, 36.71, 55.00, 41.20]; 
+                const barNum = Math.floor(time / (b*4)) % 4;
+                const freq = progression[barNum];
+                
+                const bassO = this.ctx.createOscillator(); bassO.type = 'sawtooth';
+                bassO.frequency.setValueAtTime(freq, time);
+                
+                const bassF = this.ctx.createBiquadFilter(); bassF.type = 'lowpass';
+                bassF.frequency.setValueAtTime(200, time);
+                bassF.frequency.exponentialRampToValueAtTime(600, time + b*0.5); 
+                bassF.frequency.exponentialRampToValueAtTime(150, time + b*2);
+
+                const bassG = this.ctx.createGain();
+                bassG.gain.setValueAtTime(0.28, time);
+                bassG.gain.exponentialRampToValueAtTime(0.01, time + b*3.9);
+
+                bassO.connect(bassF); bassF.connect(bassG); bassG.connect(this.musicGain);
+                bassO.start(time); bassO.stop(time + b*4);
+            }
+        };
+
+        function toggleLanguage() {
+            currentLang = currentLang === 'en' ? 'zh' : 'en';
+            applyTranslations();
+            renderLibrary();
+        }
+
+        function applyTranslations() {
+            const t = TRANSLATIONS[currentLang];
+            document.getElementById('lang-status').innerText = t.langName;
+            document.getElementById('app-title').innerText = t.appTitle;
+            document.getElementById('header-desc').innerText = t.headerDesc;
+            document.getElementById('lib-cta-title').innerText = t.libCtaTitle;
+            document.getElementById('lib-cta-desc').innerText = t.libCtaDesc;
+            document.getElementById('lib-footnote').innerText = t.libFootnote;
+            document.getElementById('mode-simple').innerText = t.modeSimple;
+            document.getElementById('mode-difficult').innerText = t.modeDifficult;
+            document.getElementById('play-btn').innerText = t.playBtn;
+            document.getElementById('cations-title').innerHTML = `<span class="w-8 h-8 bg-sky-100 rounded-lg flex items-center justify-center text-lg">+</span> ${t.cationsTitle}`;
+            document.getElementById('anions-title').innerHTML = `<span class="w-8 h-8 bg-rose-100 rounded-lg flex items-center justify-center text-lg">-</span> ${t.anionsTitle}`;
+            
+            document.getElementById('label-time').innerText = t.labelTime;
+            document.getElementById('label-score').innerText = t.labelScore;
+            document.getElementById('btn-clear').innerText = t.btnClear;
+            document.getElementById('btn-restart').innerText = t.btnRestart;
+            document.getElementById('target-title').innerText = t.targetTitle;
+            document.getElementById('target-desc').innerHTML = t.targetDesc;
+            document.getElementById('perf-title').innerText = t.perfTitle;
+            
+            document.getElementById('modal-title').innerText = t.modalBalanced;
+            document.getElementById('error-feedback').innerText = t.modalIncorrect;
+            document.getElementById('attempts-left').innerText = `${t.modalAttempts} 2`;
+            
+            document.getElementById('sudden-title').innerText = t.suddenTitle;
+            document.getElementById('sudden-desc').innerText = t.suddenDesc;
+            document.getElementById('sudden-task-feedback').innerText = t.modalIncorrect;
+            
+            document.getElementById('gameover-title').innerText = t.gameoverTitle;
+            document.getElementById('gameover-score-text').innerText = t.gameoverScore;
+            document.getElementById('gameover-unit-text').innerText = t.gameoverUnit;
+            document.getElementById('btn-restart-final').innerText = t.btnRestartFinal;
+            document.getElementById('btn-back-lib').innerText = t.btnBackLib;
+            
+            document.getElementById('confirm-title').innerText = t.confirmTitle;
+            document.getElementById('confirm-desc').innerText = t.confirmDesc;
+            document.getElementById('btn-confirm-yes').innerText = t.btnConfirmYes;
+            document.getElementById('btn-confirm-no').innerText = t.btnConfirmNo;
+
+            document.getElementById('music-status').innerText = isMusicEnabled ? t.musicOn : t.musicOff;
+            document.getElementById('sfx-status').innerText = isSFXEnabled ? t.sfxOn : t.sfxOff;
+        }
+
+        function setDifficulty(mode) {
+            SoundEngine.init();
+            difficulty = mode;
+            document.getElementById('mode-simple').classList.toggle('active', mode === 'simple');
+            document.getElementById('mode-difficult').classList.toggle('active', mode === 'difficult');
+            renderLibrary();
+        }
+
+        function formatIonDisplay(text) {
+            const chargeMatch = text.match(/\s?([0-9]*[\+\-])$/);
+            if (!chargeMatch) return `<span class="chem-formula">${formatSubscripts(text)}</span>`;
+            const base = text.substring(0, text.length - chargeMatch[0].length).trim();
+            const charge = chargeMatch[0].trim();
+            return `<span class="chem-formula">${formatSubscripts(base)}<sup>${charge}</sup></span>`;
+        }
+
+        function formatSubscripts(text) { return text.replace(/([0-9]+)/g, '<sub>$1</sub>'); }
+
+        function renderLibrary() {
+            const cLib = document.getElementById('cation-library');
+            const aLib = document.getElementById('anion-library');
+            cLib.innerHTML = ''; aLib.innerHTML = '';
+            
+            CATIONS.forEach(ion => {
+                const name = currentLang === 'zh' ? ion.zh : ion.name;
+                cLib.innerHTML += `<div class="ion-card cation static rounded-xl shadow-sm"><span class="ion-symbol">${formatIonDisplay(ion.symbol)}</span><span class="ion-name text-sky-800">${name}</span></div>`;
             });
-        });
-    }
 
-    function checkReady() {
-        if (selectedCation && selectedAnion) document.getElementById('controls').classList.remove('hidden');
-    }
-
-    function clearMovingElements() {
-        document.querySelectorAll('.moving-charge').forEach(el => el.remove());
-    }
-
-    function resetSimulationState() {
-        selectedCation = null;
-        selectedAnion = null;
-        currentStep = 0;
-        
-        document.getElementById('simulation-view').classList.add('hidden');
-        document.getElementById('setup-view').classList.remove('hidden');
-        document.getElementById('controls').classList.add('hidden');
-        
-        const vCation = document.getElementById('v-cation');
-        const vAnion = document.getElementById('v-anion');
-        const vArea = document.getElementById('visual-area');
-        vCation.classList.remove('merged-style');
-        vAnion.classList.remove('merged-style');
-        vArea.classList.remove('merge-gap', 'animate-success');
-        
-        renderLists();
-        window.scrollTo(0, 0);
-    }
-
-    async function runStep() {
-        const t = translations[currentLang];
-        const vCation = document.getElementById('v-cation');
-        const vAnion = document.getElementById('v-anion');
-        const vOp = document.getElementById('v-operator');
-        const vArea = document.getElementById('visual-area');
-        const title = document.getElementById('step-title');
-        const desc = document.getElementById('step-description');
-        const nextBtn = document.getElementById('next-btn');
-        const backBtn = document.getElementById('back-btn');
-
-        const catVal = Math.abs(selectedCation.charge);
-        const aniVal = Math.abs(selectedAnion.charge);
-        const common = gcd(catVal, aniVal);
-        
-        const rawSubCat = aniVal;
-        const rawSubAni = catVal;
-        const simpCat = aniVal / common;
-        const simpAni = catVal / common;
-
-        clearMovingElements();
-        
-        if (currentStep === 0) {
-            backBtn.classList.add('hidden');
-        } else {
-            backBtn.classList.remove('hidden');
+            const filteredAnions = difficulty === 'simple' ? ANIONS.filter(a => !a.complex) : ANIONS;
+            filteredAnions.forEach(ion => {
+                const name = currentLang === 'zh' ? ion.zh : ion.name;
+                aLib.innerHTML += `<div class="ion-card anion static rounded-xl shadow-sm"><span class="ion-symbol">${formatIonDisplay(ion.symbol)}</span><span class="ion-name text-rose-800">${name}</span></div>`;
+            });
         }
 
-        switch(currentStep) {
-            case 0:
-                title.innerText = t.step1Title;
-                vCation.innerHTML = `${formatSymbol(selectedCation.symbol)}<span id="c-charge" class="formula-superscript">${catVal === 1 ? '' : catVal}+</span>`;
-                vAnion.innerHTML = `${formatSymbol(selectedAnion.symbol)}<span id="a-charge" class="formula-superscript">${aniVal === 1 ? '' : aniVal}-</span>`;
-                vOp.style.opacity = "1";
-                vOp.style.display = "block";
-                vArea.classList.remove('merge-gap');
-                vArea.classList.remove('animate-success');
-                vCation.className = "ion-box-mobile relative p-6 rounded-2xl bg-blue-50 border-2 border-blue-200 text-blue-800 transition-all duration-500 min-w-[100px] md:min-w-[120px] text-center";
-                vAnion.className = "ion-box-mobile relative p-6 rounded-2xl bg-red-50 border-2 border-red-200 text-red-800 transition-all duration-500 min-w-[100px] md:min-w-[120px] text-center";
-                desc.innerHTML = t.step1Desc(selectedCation.name[currentLang], selectedAnion.name[currentLang]);
-                nextBtn.innerText = t.crossBtn;
-                break;
+        function startGame() {
+            SoundEngine.init();
+            if (isMusicEnabled) SoundEngine.startDrumNBassLoop();
 
-            case 1:
-                title.innerText = t.step2Title;
-                vOp.style.opacity = "0.2";
-                vOp.style.display = "block";
-                vArea.classList.remove('merge-gap');
-                vCation.innerHTML = `${formatSymbol(selectedCation.symbol)}<span id="c-charge" class="formula-superscript">${catVal === 1 ? '' : catVal}+</span>`;
-                vAnion.innerHTML = `${formatSymbol(selectedAnion.symbol)}<span id="a-charge" class="formula-superscript">${aniVal === 1 ? '' : aniVal}-</span>`;
-                
-                desc.innerHTML = t.step2Desc;
-                
-                setTimeout(() => {
-                    const cChargeEl = document.getElementById('c-charge');
-                    const aChargeEl = document.getElementById('a-charge');
-                    if (!cChargeEl || !aChargeEl) return;
-                    const cRect = cChargeEl.getBoundingClientRect();
-                    const aRect = aChargeEl.getBoundingClientRect();
-                    const scrollY = window.scrollY;
+            document.getElementById('tab-library').classList.add('hidden');
+            document.getElementById('tab-play').classList.remove('hidden');
+            document.getElementById('modal-overlay').classList.add('hidden');
+            document.getElementById('quiz-view').classList.remove('hidden');
+            document.getElementById('gameover-view').classList.add('hidden');
+            document.getElementById('confirm-restart-view').classList.add('hidden');
+            document.getElementById('sudden-task-view').classList.add('hidden');
+            
+            score = 0;
+            compoundsBurst = 0;
+            timeLeft = 90;
+            updateScoreDisplay();
+            updateTimerDisplay();
+            initGrid();
+            startTimer();
+        }
 
-                    const floatC = document.createElement('div');
-                    floatC.className = 'moving-charge text-blue-600 font-bold text-4xl';
-                    floatC.innerText = catVal;
-                    floatC.style.left = `${cRect.left}px`;
-                    floatC.style.top = `${cRect.top + scrollY}px`;
-                    
-                    const floatA = document.createElement('div');
-                    floatA.className = 'moving-charge text-red-600 font-bold text-4xl';
-                    floatA.innerText = aniVal;
-                    floatA.style.left = `${aRect.left}px`;
-                    floatA.style.top = `${aRect.top + scrollY}px`;
+        function backToLibrary() {
+            clearInterval(timerInterval);
+            document.getElementById('tab-play').classList.add('hidden');
+            document.getElementById('tab-library').classList.remove('hidden');
+            document.getElementById('modal-overlay').classList.add('hidden');
+            renderLibrary();
+        }
 
-                    document.body.appendChild(floatC);
-                    document.body.appendChild(floatA);
+        function startTimer() {
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                updateTimerDisplay();
+                if (timeLeft <= 0) endGame();
+            }, 1000);
+        }
 
-                    cChargeEl.style.opacity = '0';
-                    aChargeEl.style.opacity = '0';
+        function updateTimerDisplay() {
+            const mins = Math.floor(timeLeft / 60);
+            const secs = timeLeft % 60;
+            const timerEl = document.getElementById('timer');
+            timerEl.innerText = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            if (timeLeft <= 10) timerEl.classList.add('timer-low');
+            else timerEl.classList.remove('timer-low');
+        }
 
-                    setTimeout(() => {
-                        const catContainer = vCation.getBoundingClientRect();
-                        const aniContainer = vAnion.getBoundingClientRect();
-                        floatC.style.left = `${aniContainer.right - (window.innerWidth < 640 ? 15 : 25)}px`;
-                        floatC.style.top = `${aniContainer.bottom - (window.innerWidth < 640 ? 15 : 25) + scrollY}px`;
-                        floatC.style.fontSize = window.innerWidth < 640 ? '1.4rem' : '1.8rem';
-                        floatA.style.left = `${catContainer.right - (window.innerWidth < 640 ? 15 : 25)}px`;
-                        floatA.style.top = `${catContainer.bottom - (window.innerWidth < 640 ? 15 : 25) + scrollY}px`;
-                        floatA.style.fontSize = window.innerWidth < 640 ? '1.4rem' : '1.8rem';
-                    }, 50);
-                }, 100);
+        function initGrid() {
+            const grid = document.getElementById('game-grid');
+            grid.innerHTML = ''; gridData = [];
+            selectedIndices = [];
+            const anionPool = difficulty === 'simple' ? ANIONS.filter(a => !a.complex) : ANIONS;
+            for (let i = 0; i < 25; i++) {
+                const isCation = Math.random() > 0.5;
+                const pool = isCation ? CATIONS : anionPool;
+                const ion = pool[Math.floor(Math.random() * pool.length)];
+                gridData.push({ ...ion, type: isCation ? 'cation' : 'anion' });
+            }
+            gridData.forEach((ion, index) => {
+                const card = document.createElement('div');
+                card.className = `ion-card ${ion.type} rounded-xl cursor-pointer shadow-sm`;
+                card.id = `card-${index}`;
+                card.innerHTML = `<span class="ion-symbol">${formatIonDisplay(ion.symbol)}</span>`;
+                card.onclick = () => selectIon(index);
+                grid.appendChild(card);
+            });
+        }
 
-                nextBtn.innerText = t.simplifyBtn;
-                break;
+        function selectIon(index) {
+            if (timeLeft <= 0) return;
+            SoundEngine.init();
+            SoundEngine.play('click');
+            const currentSelection = selectedIndices.map(i => gridData[i]);
+            const newIon = gridData[index];
+            const currentCation = currentSelection.find(ion => ion.type === 'cation');
+            const currentAnion = currentSelection.find(ion => ion.type === 'anion');
+            if (selectedIndices.includes(index)) {
+                selectedIndices = selectedIndices.filter(i => i !== index);
+            } else {
+                if (newIon.type === 'cation') { if (currentCation && currentCation.symbol !== newIon.symbol) return; }
+                else { if (currentAnion && currentAnion.symbol !== newIon.symbol) return; }
+                selectedIndices.push(index);
+            }
+            updateView();
+            checkAutoForm();
+        }
 
-            case 2:
-                title.innerText = t.step3Title;
-                vOp.style.opacity = "0.2";
-                vOp.style.display = "block";
-                vArea.classList.remove('merge-gap');
-                
-                let cBody3 = formatSymbol(selectedCation.symbol);
-                const showCatBrackets = simpCat > 1 && selectedCation.poly;
-                if (showCatBrackets) {
-                    cBody3 = `<span class="bracket-fade">(</span>${cBody3}<span class="bracket-fade">)</span>`;
-                }
-                
-                let aBody3 = formatSymbol(selectedAnion.symbol);
-                const showAniBrackets = simpAni > 1 && selectedAnion.poly;
-                if (showAniBrackets) {
-                    aBody3 = `<span class="bracket-fade">(</span>${aBody3}<span class="bracket-fade">)</span>`;
-                }
+        function updateView() {
+            document.querySelectorAll('.ion-card:not(.static)').forEach((card, idx) => {
+                if (selectedIndices.includes(idx)) card.classList.add('selected');
+                else card.classList.remove('selected');
+            });
+        }
 
-                let bracketReminder = (showCatBrackets || showAniBrackets) ? 
-                    `<div class='mt-2 text-sm text-blue-600 font-semibold'>${t.reminder}</div>` : "";
+        function checkAutoForm() {
+            if (selectedIndices.length === 0) return;
+            const net = selectedIndices.reduce((sum, idx) => sum + gridData[idx].charge, 0);
+            const selection = selectedIndices.map(i => gridData[i]);
+            const hasCation = selection.some(ion => ion.type === 'cation');
+            const hasAnion = selection.some(ion => ion.type === 'anion');
+            if (net === 0 && hasCation && hasAnion) setTimeout(checkCharge, 200);
+        }
 
-                if (common > 1) {
-                    vCation.innerHTML = `${cBody3}<span class="formula-subscript text-blue-600 inline-flex items-center">
-                        <span id="sub-cat-raw" class="strike-container">${rawSubCat}<span class="strike-line"></span></span>
-                        <span id="sub-cat-simp" class="simplify-fade ml-1">${simpCat}</span>
-                    </span>`;
-                    vAnion.innerHTML = `${aBody3}<span class="formula-subscript text-red-600 inline-flex items-center">
-                        <span id="sub-ani-raw" class="strike-container">${rawSubAni}<span class="strike-line"></span></span>
-                        <span id="sub-ani-simp" class="simplify-fade ml-1">${simpAni}</span>
-                    </span>`;
-                    
-                    desc.innerHTML = t.step3DescReduced(rawSubCat, rawSubAni, simpCat, simpAni) + bracketReminder;
-                    
-                    setTimeout(() => {
-                        const rc = document.getElementById('sub-cat-raw');
-                        const ra = document.getElementById('sub-ani-raw');
-                        if(rc) rc.classList.add('strike-active');
-                        if(ra) ra.classList.add('strike-active');
-                        setTimeout(() => {
-                            const sc = document.getElementById('sub-cat-simp');
-                            const sa = document.getElementById('sub-ani-simp');
-                            if(sc) sc.classList.add('simplify-visible');
-                            if(sa) sa.classList.add('simplify-visible');
-                        }, 500);
-                    }, 800);
+        function resetSelection() { selectedIndices = []; updateView(); }
 
+        function constructChineseName(cation, anionStem, suffixType) {
+            // suffixType: 'ate' -> 酸, 'ite' -> 亞酸, 'ide' -> 化
+            const cationPart = `${cation.metalZh}${cation.state || ''}`;
+            if (anionStem === "氫氧" && suffixType === 'ide') return `氫氧化${cationPart}`;
+            
+            let suffix = "";
+            let prefix = "";
+            if (suffixType === 'ate') suffix = "酸";
+            else if (suffixType === 'ite') { prefix = "亞"; suffix = "酸"; }
+            else if (suffixType === 'ide') suffix = "化";
+
+            // If it's a simple 'ide' like '氯化', the order is Prefix-Suffix-Cation
+            if (suffixType === 'ide') return `${anionStem}${suffix}${cationPart}`;
+            // If it's an 'ate' like '硫酸', it's Prefix-Suffix-Cation
+            return `${prefix}${anionStem}${suffix}${cationPart}`;
+        }
+
+        function getChineseName(cation, anion) {
+            return constructChineseName(cation, anion.stemZh, anion.suffix);
+        }
+
+        function checkCharge() {
+            attempts = 0;
+            const selection = selectedIndices.map(i => gridData[i]);
+            const cations = selection.filter(i => i.type === 'cation');
+            const anions = selection.filter(i => i.type === 'anion');
+            const cationData = cations[0];
+            const anionData = anions[0];
+            const formula = generateFormula(cationData, cations.length, anionData, anions.length);
+            
+            let correctName;
+            if (currentLang === 'zh') {
+                correctName = getChineseName(cationData, anionData);
+            } else {
+                correctName = `${cationData.metal}${cationData.state ? ' ' + cationData.state : ''} ${anionData.stem}${anionData.suffix}`;
+            }
+            
+            showQuiz(formula, correctName, cationData, anionData);
+        }
+
+        function generateFormula(cation, cCount, anion, aCount) {
+            const formatPart = (ion, count) => {
+                let base = ion.formula; if (count > 1 && ion.poly) base = `(${base})`;
+                return base + (count > 1 ? count : '');
+            };
+            return formatPart(cation, cCount) + formatPart(anion, aCount);
+        }
+
+        function showQuiz(formula, correctAnswer, cation, anion) {
+            const overlay = document.getElementById('modal-overlay');
+            const t = TRANSLATIONS[currentLang];
+            document.getElementById('quiz-view').classList.remove('hidden');
+            document.getElementById('gameover-view').classList.add('hidden');
+            document.getElementById('confirm-restart-view').classList.add('hidden');
+            document.getElementById('sudden-task-view').classList.add('hidden');
+
+            document.getElementById('compound-formula').innerHTML = formatSubscripts(formula);
+            document.getElementById('error-feedback').classList.add('hidden');
+            document.getElementById('attempts-left').innerText = `${t.modalAttempts} 2`;
+            const container = document.getElementById('quiz-options');
+            container.innerHTML = '';
+            
+            let optionsSet = new Set([correctAnswer]);
+
+            if (currentLang === 'en') {
+                // English Distractors
+                if (cation.fixed) {
+                    optionsSet.add(`${cation.metal} ${cation.charge === 1 ? "(I)" : "(II)"} ${anion.stem}${anion.suffix}`);
                 } else {
-                    vCation.innerHTML = `${cBody3}<span class="formula-subscript text-blue-600">${simpCat}</span>`;
-                    vAnion.innerHTML = `${aBody3}<span class="formula-subscript text-red-600">${simpAni}</span>`;
-                    desc.innerHTML = t.step3DescSimple(simpCat, simpAni) + bracketReminder;
+                    const otherStates = CATIONS.filter(c => c.metal === cation.metal && c.state !== cation.state);
+                    if (otherStates.length > 0) optionsSet.add(`${cation.metal} ${otherStates[0].state} ${anion.stem}${anion.suffix}`);
+                    optionsSet.add(`${cation.metal} ${anion.stem}${anion.suffix}`); 
                 }
+                const suffixes = ["ate", "ite", "ide"];
+                suffixes.forEach(s => { if (s !== anion.suffix && optionsSet.size < 4) optionsSet.add(`${cation.metal}${cation.state ? ' ' + cation.state : ''} ${anion.stem}${s}`); });
+            } else {
+                // Chinese Distractors with Suffix Logic (x酸, 亞x酸, x化)
+                const types = ["ate", "ite", "ide"];
+                types.forEach(ty => {
+                    if (ty !== anion.suffix) optionsSet.add(constructChineseName(cation, anion.stemZh, ty));
+                });
                 
+                // Cation state distractors
+                const states = ["(I)", "(II)", "(III)"];
+                states.forEach(s => { 
+                    if (s !== cation.state && optionsSet.size < 4) {
+                        optionsSet.add(constructChineseName({...cation, state: s}, anion.stemZh, anion.suffix));
+                    }
+                });
+            }
+
+            let options = Array.from(optionsSet).slice(0, 4).sort(() => Math.random() - 0.5);
+
+            options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = "quiz-opt-btn w-full py-2 px-4 rounded-xl border-2 border-slate-200 hover:border-indigo-500 hover:bg-indigo-50 font-semibold transition-all text-slate-700 text-sm";
+                btn.innerText = opt;
+                btn.onclick = () => {
+                    if (opt === correctAnswer) handleSuccess();
+                    else handleFailure(btn);
+                };
+                container.appendChild(btn);
+            });
+            overlay.classList.remove('hidden');
+        }
+
+        function handleFailure(btn) {
+            SoundEngine.play('error');
+            attempts++;
+            const t = TRANSLATIONS[currentLang];
+            const feedback = document.getElementById('error-feedback');
+            const attemptsEl = document.getElementById('attempts-left');
+            const modalContent = document.getElementById('modal-content');
+            feedback.classList.remove('hidden');
+            modalContent.classList.add('shake');
+            setTimeout(() => modalContent.classList.remove('shake'), 500);
+            btn.classList.add('bg-red-100', 'border-red-400', 'text-red-700');
+            btn.disabled = true;
+            attemptsEl.innerText = `${t.modalAttempts} ${2 - attempts}`;
+            if (attempts >= 2) {
                 setTimeout(() => {
-                    document.querySelectorAll('.bracket-fade').forEach(el => el.classList.add('bracket-visible'));
-                }, 100);
+                    document.getElementById('modal-overlay').classList.add('hidden');
+                    burstSelectedIons();
+                    resetSelection();
+                }, 1000);
+            }
+        }
 
-                nextBtn.innerText = t.finalizeBtn;
-                break;
+        function handleSuccess() {
+            SoundEngine.play('success');
+            score++;
+            compoundsBurst++;
+            updateScoreDisplay();
+            burstSelectedIons();
+            selectedIndices = [];
+            updateView();
+            if (compoundsBurst % 5 === 0) setTimeout(showSuddenTask, 300);
+            else document.getElementById('modal-overlay').classList.add('hidden');
+        }
 
-            case 3:
-                title.innerText = t.step4Title;
-                vOp.style.opacity = "0.2";
-                
-                let cStep4 = formatSymbol(selectedCation.symbol);
-                if (simpCat > 1 && selectedCation.poly) cStep4 = `(${cStep4})`;
-                let catSubscriptHtml = `<span id="final-sub-cat" class="formula-subscript ${simpCat === 1 ? 'subscript-fade-out' : ''}">${simpCat}</span>`;
-                
-                let aStep4 = formatSymbol(selectedAnion.symbol);
-                if (simpAni > 1 && selectedAnion.poly) aStep4 = `(${aStep4})`;
-                let aniSubscriptHtml = `<span id="final-sub-ani" class="formula-subscript ${simpAni === 1 ? 'subscript-fade-out' : ''}">${simpAni}</span>`;
-
-                vCation.innerHTML = cStep4 + catSubscriptHtml;
-                vAnion.innerHTML = aStep4 + aniSubscriptHtml;
-                
-                desc.innerHTML = t.step4Desc;
-
+        function burstSelectedIons() {
+            const anionPool = difficulty === 'simple' ? ANIONS.filter(a => !a.complex) : ANIONS;
+            selectedIndices.forEach(idx => {
+                const card = document.getElementById(`card-${idx}`);
+                card.classList.add('burst-effect');
                 setTimeout(() => {
-                    vOp.style.opacity = "0";
-                    vCation.classList.add('merged-style');
-                    vAnion.classList.add('merged-style');
-                    vArea.classList.add('merge-gap');
-                    
-                    const fsc = document.getElementById('final-sub-cat');
-                    const fsa = document.getElementById('final-sub-ani');
-                    if (simpCat === 1 && fsc) fsc.classList.add('fade-hidden');
-                    if (simpAni === 1 && fsa) fsa.classList.add('fade-hidden');
-                    
-                    setTimeout(() => {
-                        if(currentStep === 3) vOp.style.display = "none";
-                        vArea.classList.add('animate-success');
-                        
-                        let successC = formatSymbol(selectedCation.symbol);
-                        if (simpCat > 1) {
-                            if (selectedCation.poly) successC = `(${successC})`;
-                            successC += `<span class="formula-subscript">${simpCat}</span>`;
-                        }
-                        let successA = formatSymbol(selectedAnion.symbol);
-                        if (simpAni > 1) {
-                            if (selectedAnion.poly) successA = `(${successA})`;
-                            successA += `<span class="formula-subscript">${simpAni}</span>`;
-                        }
-                        
-                        desc.innerHTML = `
-                            <div class="text-3xl font-bold text-green-600 mb-2">${t.success}</div>
-                            ${t.resultText(successC + successA)}
-                        `;
-                    }, 800);
-                }, 500);
-
-                nextBtn.innerText = t.newBtn;
-                break;
+                    const isCation = Math.random() > 0.5;
+                    const pool = isCation ? CATIONS : anionPool;
+                    gridData[idx] = { ...pool[Math.floor(Math.random() * pool.length)], type: isCation ? 'cation' : 'anion' };
+                    card.className = `ion-card ${gridData[idx].type} rounded-xl cursor-pointer shadow-sm text-center opacity-0 scale-50`;
+                    card.innerHTML = `<span class="ion-symbol">${formatIonDisplay(gridData[idx].symbol)}</span>`;
+                    card.classList.remove('selected'); 
+                    requestAnimationFrame(() => card.classList.remove('opacity-0', 'scale-50', 'burst-effect'));
+                }, 400);
+            });
         }
-    }
 
-    document.getElementById('start-btn').onclick = () => {
-        document.getElementById('setup-view').classList.add('hidden');
-        document.getElementById('controls').classList.add('hidden');
-        document.getElementById('simulation-view').classList.remove('hidden');
-        currentStep = 0;
-        runStep();
-    };
+        function showSuddenTask() {
+            suddenAttempts = 0;
+            const t = TRANSLATIONS[currentLang];
+            const anionPool = difficulty === 'simple' ? ANIONS.filter(a => !a.complex) : ANIONS;
+            const cation = CATIONS[Math.floor(Math.random() * CATIONS.length)];
+            const anion = anionPool[Math.floor(Math.random() * anionPool.length)];
+            const gcd = (a, b) => b ? gcd(b, a % b) : a;
+            const cCharge = Math.abs(cation.charge);
+            const aCharge = Math.abs(anion.charge);
+            const common = (cCharge * aCharge) / gcd(cCharge, aCharge);
+            const cCount = common / cCharge;
+            const aCount = common / aCharge;
+            const correctFormula = generateFormula(cation, cCount, anion, aCount);
+            
+            const compoundName = currentLang === 'zh' ? getChineseName(cation, anion) : `${cation.metal}${cation.state ? ' ' + cation.state : ''} ${anion.stem}${anion.suffix}`;
 
-    document.getElementById('next-btn').onclick = () => {
-        if (currentStep < 3) {
-            currentStep++;
-            runStep();
-        } else {
-            resetSimulationState();
+            document.getElementById('quiz-view').classList.add('hidden');
+            document.getElementById('sudden-task-view').classList.remove('hidden');
+            document.getElementById('sudden-task-name').innerText = compoundName;
+            document.getElementById('sudden-task-feedback').classList.add('hidden');
+            document.getElementById('sudden-attempts-left').innerText = `${t.modalAttempts} 2`;
+            
+            const optionsContainer = document.getElementById('sudden-task-options');
+            optionsContainer.innerHTML = '';
+            let optionsSet = new Set([correctFormula]);
+            optionsSet.add(cation.formula + anion.formula); 
+            optionsSet.add(cation.formula + (aCharge > 1 ? aCharge : '') + anion.formula + (cCharge > 1 ? cCharge : '')); 
+            while(optionsSet.size < 4) {
+                const randomC = CATIONS[Math.floor(Math.random() * CATIONS.length)].formula;
+                const randomA = ANIONS[Math.floor(Math.random() * ANIONS.length)].formula;
+                optionsSet.add(randomC + randomA);
+            }
+            const options = Array.from(optionsSet).sort(() => Math.random() - 0.5);
+            options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = "py-4 px-2 rounded-xl border-2 border-slate-200 hover:border-amber-500 hover:bg-amber-50 font-bold transition-all text-slate-800 chem-formula";
+                btn.innerHTML = formatSubscripts(opt);
+                btn.onclick = () => {
+                    if (opt === correctFormula) {
+                        SoundEngine.play('success');
+                        score += 2; updateScoreDisplay();
+                        document.getElementById('modal-overlay').classList.add('hidden');
+                    } else {
+                        SoundEngine.play('error');
+                        suddenAttempts++;
+                        document.getElementById('sudden-task-feedback').classList.remove('hidden');
+                        document.getElementById('sudden-attempts-left').innerText = `${t.modalAttempts} ${2 - suddenAttempts}`;
+                        btn.classList.add('bg-red-50', 'border-red-300');
+                        btn.disabled = true;
+                        if (suddenAttempts >= 2) setTimeout(() => document.getElementById('modal-overlay').classList.add('hidden'), 1000);
+                    }
+                };
+                optionsContainer.appendChild(btn);
+            });
         }
-    };
 
-    document.getElementById('back-btn').onclick = () => {
-        if (currentStep > 0) {
-            currentStep--;
-            runStep();
+        function updateScoreDisplay() {
+            document.getElementById('game-score').innerText = score;
+            document.getElementById('progress-bar').style.width = Math.min(100, score * 10) + '%';
         }
-    };
 
-    document.getElementById('reset-btn').onclick = () => resetSimulationState();
-    
-    // Initial UI render
-    updateLanguageUI();
-
-    window.addEventListener('resize', () => {
-        if (currentStep === 1) {
-            clearMovingElements();
-            runStep();
+        function endGame() {
+            clearInterval(timerInterval);
+            document.getElementById('final-score').innerText = score;
+            document.getElementById('quiz-view').classList.add('hidden');
+            document.getElementById('confirm-restart-view').classList.add('hidden');
+            document.getElementById('sudden-task-view').classList.add('hidden');
+            document.getElementById('gameover-view').classList.remove('hidden');
+            document.getElementById('modal-overlay').classList.remove('hidden');
         }
-    });
-</script>
+
+        function confirmRestart() {
+            document.getElementById('quiz-view').classList.add('hidden');
+            document.getElementById('gameover-view').classList.add('hidden');
+            document.getElementById('sudden-task-view').classList.add('hidden');
+            document.getElementById('confirm-restart-view').classList.remove('hidden');
+            document.getElementById('modal-overlay').classList.remove('hidden');
+        }
+
+        function closeModal() { document.getElementById('modal-overlay').classList.add('hidden'); }
+
+        function toggleSFX() {
+            SoundEngine.init();
+            isSFXEnabled = !isSFXEnabled;
+            const btn = document.getElementById('sfx-toggle');
+            applyTranslations();
+            btn.classList.toggle('muted', !isSFXEnabled);
+        }
+
+        function toggleMusic() {
+            SoundEngine.init();
+            isMusicEnabled = !isMusicEnabled;
+            const btn = document.getElementById('music-toggle');
+            applyTranslations();
+            btn.classList.toggle('muted', !isMusicEnabled);
+            if (isMusicEnabled) SoundEngine.startDrumNBassLoop();
+        }
+
+        window.onload = () => {
+            applyTranslations();
+            renderLibrary();
+        };
+    </script>
 </body>
 </html>
