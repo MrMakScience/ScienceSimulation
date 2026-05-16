@@ -2,682 +2,658 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Metal Reactions in Water Simulation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ionic Formula Cross Method Simulator</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        
         body {
-            background-color: #0f172a;
-            color: #f8fafc;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            touch-action: pan-y;
-            overflow-x: hidden;
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+            scroll-behavior: smooth;
         }
 
-        #canvas-container {
-            position: relative;
-            width: 100%;
-            height: 40vh;
-            min-height: 300px;
-            background: #cbd5e1; 
-            border-bottom: 8px solid #1e293b;
-            overflow: hidden;
-            display: flex;
-            align-items: flex-end;
-            justify-content: center;
-            padding-bottom: 10px;
-            touch-action: pan-y;
-        }
-
-        /* Language Toggle Button */
-        #lang-toggle {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            z-index: 100;
-            background: rgba(30, 41, 59, 0.8);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            color: white;
-            padding: 8px 12px;
-            border-radius: 20px;
+        .ion-card {
+            transition: all 0.2s ease;
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 14px;
-            font-weight: bold;
-            backdrop-filter: blur(4px);
-            transition: all 0.2s;
-        }
-        #lang-toggle:hover {
-            background: rgba(51, 65, 85, 0.9);
         }
 
-        .trough {
+        .ion-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        }
+
+        .selected-ion {
+            border: 2px solid #3b82f6;
+            background-color: #eff6ff;
+        }
+
+        .step-container {
+            min-height: 400px;
+        }
+
+        .formula-subscript {
+            vertical-align: sub;
+            font-size: 0.6em;
+            font-weight: bold;
+            line-height: 0;
+        }
+
+        .formula-superscript {
+            vertical-align: super;
+            font-size: 0.6em;
+            font-weight: bold;
+            line-height: 0;
+        }
+
+        .moving-charge {
+            position: absolute;
+            transition: all 2s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 50;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+
+        /* Bracket Fade-in Animation */
+        .bracket-fade {
+            opacity: 0;
+            display: inline-block;
+            transition: opacity 1s ease-in-out;
+        }
+
+        .bracket-visible {
+            opacity: 1;
+        }
+
+        #visual-area {
+            transition: gap 0.8s ease-in-out;
+            max-width: 100%;
+        }
+
+        .merge-gap {
+            gap: 0 !important;
+        }
+
+        .merged-style {
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+            border-color: transparent !important;
+            background-color: transparent !important;
+            background: none !important;
+            min-width: 0 !important;
+        }
+
+        /* Strike-through animation */
+        .strike-container {
             position: relative;
-            width: 80%; 
-            max-width: 600px;
-            height: 65%; 
-            background: transparent;
-            border: 4px solid rgba(255, 255, 255, 0.6);
-            border-top: none;
-            border-bottom-left-radius: 12px;
-            border-bottom-right-radius: 12px;
-            z-index: 10;
+            display: inline-block;
         }
 
-        #water-body {
+        .strike-line {
             position: absolute;
-            bottom: 0;
+            top: 50%;
             left: 0;
-            width: 100%;
-            height: 70%; 
-            background: linear-gradient(180deg, rgba(56, 189, 248, 0.4) 0%, rgba(3, 105, 161, 0.6) 100%);
-            z-index: -1;
-            border-bottom-left-radius: 8px;
-            border-bottom-right-radius: 8px;
-        }
-
-        .water-surface {
-            position: absolute;
-            bottom: 70%;
-            left: 0;
-            width: 100%;
-            height: 3px;
-            background: rgba(255, 255, 255, 0.95);
-            box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
-            z-index: 15;
-            pointer-events: none;
-            transform: translateY(50%);
-        }
-
-        .control-panel {
-            padding: 20px;
-            background: #1e293b;
-            min-height: 60vh;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .metal-btn {
-            transition: all 0.2s;
-            letter-spacing: 1px;
-            font-weight: bold;
-            flex: 1 1 140px;
-        }
-
-        #observation-box {
-            background: #0f172a;
-            border-left: 4px solid #38bdf8;
-            padding: 15px;
-            border-radius: 4px;
-            min-height: 150px;
-            font-family: monospace;
-        }
-
-        .particle {
-            position: absolute;
-            pointer-events: none;
-            border-radius: 50%;
-        }
-
-        .bubble {
-            position: absolute;
-            background: rgba(255, 255, 255, 0.6);
-            border: 1px solid rgba(255, 255, 255, 0.8);
-            border-radius: 50%;
-            pointer-events: none;
-        }
-
-        #h2-setup {
-            position: absolute;
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 120px;
-            height: 220px;
-            display: none;
-            z-index: 18;
-            pointer-events: none;
-        }
-
-        #funnel {
-            position: absolute;
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 100px;
-            height: 80px;
-            background: rgba(255, 255, 255, 0.15);
-            border: 2px solid rgba(255, 255, 255, 0.4);
-            clip-path: polygon(0% 100%, 100% 100%, 65% 20%, 35% 20%);
-        }
-
-        #test-tube {
-            position: absolute;
-            top: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 30px;
-            height: 160px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 2px solid rgba(255, 255, 255, 0.5);
-            border-top-left-radius: 15px;
-            border-top-right-radius: 15px;
-            overflow: hidden;
-        }
-
-        #tube-water {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(56, 189, 248, 0.3);
-            transition: height 0.1s linear;
-        }
-
-        #litmus-paper {
-            position: absolute;
-            width: 40px;
-            height: 120px;
-            background: #f87171;
-            border: 1px solid #b91c1c;
-            cursor: grab;
-            z-index: 50; 
-            display: none;
-            user-select: none;
-            box-shadow: 2px 2px 10px rgba(0,0,0,0.3);
-            overflow: hidden;
-            touch-action: none; 
-        }
-
-        #litmus-wet-part {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 0%;
+            width: 0;
+            height: 4px;
             background: #ef4444;
-            transition: background 0.5s ease;
+            transform: translateY(-50%) rotate(-15deg);
+            transition: width 0.5s ease-out;
         }
 
-        #litmus-paper.turned-blue #litmus-wet-part {
-            background: #3b82f6;
+        .strike-active .strike-line {
+            width: 110%;
         }
 
-        @media (min-width: 768px) {
-            #canvas-container { height: 50vh; }
-            .trough { width: 50%; }
+        .simplify-fade {
+            opacity: 0;
+            transition: opacity 0.5s ease-in;
+        }
+
+        .simplify-visible {
+            opacity: 1;
+        }
+
+        /* Fade out for subscript 1 */
+        .subscript-fade-out {
+            transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+        }
+
+        .fade-hidden {
+            opacity: 0 !important;
+            transform: translateY(-5px);
+        }
+
+        @keyframes pulse-success {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .animate-success {
+            animation: pulse-success 0.5s ease-in-out;
+        }
+
+        /* Mobile specific fixes */
+        @media (max-width: 640px) {
+            #visual-area {
+                gap: 1rem;
+                font-size: 2.25rem;
+            }
+            .ion-box-mobile {
+                padding: 0.75rem !important;
+                min-width: 80px !important;
+            }
         }
     </style>
 </head>
-<body>
+<body class="p-4 md:p-8">
 
-    <div id="canvas-container">
-        <!-- Language Switcher -->
-        <button id="lang-toggle" onclick="toggleLanguage()">
+<div class="max-w-6xl mx-auto">
+    <!-- Language Toggle Button -->
+    <div class="flex justify-end mb-2">
+        <button id="lang-btn" class="flex items-center gap-2 bg-white border border-slate-200 px-3 py-1.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors shadow-sm">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
             <span id="lang-text">繁體中文</span>
         </button>
+    </div>
 
-        <div class="trough" id="main-trough">
-            <div id="water-body"></div>
-            <div class="water-surface" id="surface-line"></div>
-            
-            <div id="h2-setup">
-                <div id="test-tube">
-                    <div id="tube-water"></div>
-                </div>
-                <div id="funnel"></div>
-            </div>
-            
-            <div id="simulation-area" class="absolute inset-0 overflow-visible pointer-events-none"></div>
+    <header class="text-center mb-8">
+        <h1 id="main-title" class="text-3xl font-bold text-slate-800">Ionic Formula Builder</h1>
+        <p id="main-subtitle" class="text-slate-600">Master the Cross Method step-by-step</p>
+    </header>
+
+    <!-- Selection View -->
+    <div id="setup-view" class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+            <h2 id="title-cation" class="text-xl font-semibold mb-4 text-blue-700 border-b pb-2">Select a Cation</h2>
+            <div id="cation-list" class="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-[500px] overflow-y-auto pr-2"></div>
         </div>
 
-        <div id="litmus-paper" style="left: 20px; top: 20px;">
-            <div id="litmus-wet-part"></div>
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+            <h2 id="title-anion" class="text-xl font-semibold mb-4 text-red-700 border-b pb-2">Select an Anion</h2>
+            <div id="anion-list" class="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-[500px] overflow-y-auto pr-2"></div>
         </div>
     </div>
 
-    <div class="control-panel">
-        <div class="flex flex-col gap-6">
-            <div class="flex flex-wrap justify-center gap-3">
-                <button onclick="startReaction('sodium')" class="metal-btn bg-yellow-600 hover:bg-yellow-500 text-white py-4 px-6 rounded-xl shadow-lg active:scale-95" data-t="btn-na">Sodium (Na)</button>
-                <button onclick="startReaction('potassium')" class="metal-btn bg-purple-600 hover:bg-purple-500 text-white py-4 px-6 rounded-xl shadow-lg active:scale-95" data-t="btn-k">Potassium (K)</button>
-                <button onclick="startReaction('calcium')" class="metal-btn bg-gray-400 hover:bg-gray-300 text-slate-900 py-4 px-6 rounded-xl shadow-lg active:scale-95" data-t="btn-ca">Calcium (Ca)</button>
-                <button onclick="resetSim()" class="metal-btn bg-red-800 hover:bg-red-700 text-white py-4 px-6 rounded-xl shadow-lg active:scale-95" data-t="btn-reset">Reset</button>
-            </div>
-
-            <div class="flex flex-wrap justify-center items-center gap-8 border-t border-slate-700 pt-6">
-                <label class="flex items-center cursor-pointer group">
-                    <input type="checkbox" value="" class="sr-only peer" id="litmus-toggle" onchange="toggleLitmus()">
-                    <div class="relative w-14 h-7 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-red-500"></div>
-                    <span class="ms-3 text-lg font-bold text-slate-300 group-active:text-white" data-t="label-litmus">Red Litmus Paper</span>
-                </label>
-
-                <div id="setup-toggle-container" class="opacity-30 pointer-events-none transition-all">
-                    <label class="flex items-center cursor-pointer group">
-                        <input type="checkbox" value="" class="sr-only peer" id="setup-toggle" onchange="toggleSetup()">
-                        <div class="relative w-14 h-7 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-blue-500"></div>
-                        <span class="ms-3 text-lg font-bold text-slate-300 group-active:text-white" data-t="label-h2">H<sub>2</sub> collection set-up</span>
-                    </label>
-                </div>
-            </div>
-        </div>
-
-        <div id="observation-box">
-            <h3 class="text-sky-400 font-bold mb-2" data-t="title-obs">Observations:</h3>
-            <ul id="observation-list" class="text-sm list-disc list-inside space-y-1">
-                <li data-t="default-obs">Select a metal to begin.</li>
-            </ul>
-            <div id="equation-container" class="mt-4 flex flex-col items-center gap-1 border-t border-slate-800 pt-3">
-                <div id="chemical-equation" class="text-lg font-bold italic text-sky-200"></div>
-                <div id="word-equation" class="text-xs text-sky-400 opacity-80 uppercase tracking-widest"></div>
-            </div>
-        </div>
+    <div id="controls" class="mt-8 flex justify-center hidden">
+        <button id="start-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-full font-bold shadow-lg transition-all transform hover:scale-105">
+            Start Simulation
+        </button>
     </div>
 
-    <script>
-        const simArea = document.getElementById('simulation-area');
-        const obsList = document.getElementById('observation-list');
-        const chemicalEqDiv = document.getElementById('chemical-equation');
-        const wordEqDiv = document.getElementById('word-equation');
-        const troughElement = document.getElementById('main-trough');
-        const waterBody = document.getElementById('water-body');
-        const litmusPaper = document.getElementById('litmus-paper');
-        const litmusWetPart = document.getElementById('litmus-wet-part');
-        const h2Setup = document.getElementById('h2-setup');
-        const tubeWater = document.getElementById('tube-water');
-        const setupToggleCont = document.getElementById('setup-toggle-container');
-        const setupToggle = document.getElementById('setup-toggle');
-        const langText = document.getElementById('lang-text');
+    <!-- Simulation View -->
+    <div id="simulation-view" class="mt-8 bg-white p-4 md:p-8 rounded-2xl shadow-xl border border-slate-200 hidden">
+        <div class="flex justify-between items-center mb-8">
+            <h2 id="step-title" class="text-2xl font-bold text-slate-800">Step 1: Identify Charges</h2>
+            <button id="reset-btn" class="text-slate-500 hover:text-red-600 text-sm font-medium">Cancel & Reset</button>
+        </div>
+
+        <div class="step-container flex flex-col items-center justify-center relative overflow-visible">
+            <div id="visual-area" class="flex items-center gap-12 md:gap-48 text-5xl md:text-7xl font-bold mb-12 relative w-full justify-center">
+                <div id="v-cation" class="ion-box-mobile relative p-6 rounded-2xl bg-blue-50 border-2 border-blue-200 text-blue-800 transition-all duration-500 min-w-[100px] md:min-w-[120px] text-center"></div>
+                <div id="v-operator" class="text-slate-300 transition-opacity duration-500">+</div>
+                <div id="v-anion" class="ion-box-mobile relative p-6 rounded-2xl bg-red-50 border-2 border-red-200 text-red-800 transition-all duration-500 min-w-[100px] md:min-w-[120px] text-center"></div>
+            </div>
+
+            <div id="step-description" class="text-center w-full max-w-2xl bg-slate-50 p-6 rounded-xl border border-slate-100 min-h-[100px]">
+                <p class="text-lg text-slate-700"></p>
+            </div>
+        </div>
+
+        <div class="mt-8 flex justify-center gap-4">
+            <button id="back-btn" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-6 py-3 rounded-lg font-semibold transition-all hidden">
+                Back
+            </button>
+            <button id="next-btn" class="bg-slate-800 hover:bg-slate-900 text-white px-10 py-3 rounded-lg font-semibold transition-all">
+                Next Step
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentLang = 'en';
+
+    const translations = {
+        en: {
+            mainTitle: "Ionic Formula Builder",
+            mainSubtitle: "Master the Cross Method step-by-step",
+            selectCation: "Select a Cation",
+            selectAnion: "Select an Anion",
+            startBtn: "Start Simulation",
+            resetBtn: "Cancel & Reset",
+            backBtn: "Back",
+            nextBtn: "Next Step",
+            crossBtn: "Cross Charges",
+            simplifyBtn: "Simplify Ratio",
+            finalizeBtn: "Finalize & Merge",
+            newBtn: "Start with a new compound",
+            step1Title: "Step 1: Identify the Ions",
+            step2Title: "Step 2: The Cross Method",
+            step3Title: "Step 3: Simplify the Ratio",
+            step4Title: "Step 4: Final Formula",
+            reminder: "💡 Reminder: Added brackets for polyatomic ions with subscripts > 1.",
+            step1Desc: (c, a) => `We have <strong>${c}</strong> and <strong>${a}</strong>. Let's look at their charges.`,
+            step2Desc: "Watch the charge values move! They cross over to become subscripts for the opposite ion.",
+            step3DescSimple: (r1, r2) => `The ratio <strong>${r1}:${r2}</strong> is shown. We keep the "1" to show the final balance.`,
+            step3DescReduced: (r1, r2, s1, s2) => `The ratio <strong>${r1}:${r2}</strong> simplifies to <strong>${s1}:${s2}</strong>.`,
+            step4Desc: "Final step: merge the ions and remove any subscripts of \"1\".",
+            success: "Success!",
+            resultText: (formula) => `The chemical formula is <span class="text-2xl font-bold text-slate-800">${formula}</span>.`
+        },
+        zh: {
+            mainTitle: "離子化合物化學式建構器",
+            mainSubtitle: "逐步掌握「交叉法」",
+            selectCation: "選擇陽離子",
+            selectAnion: "選擇陰離子",
+            startBtn: "開始模擬",
+            resetBtn: "取消並重置",
+            backBtn: "返回",
+            nextBtn: "下一步",
+            crossBtn: "交叉電荷",
+            simplifyBtn: "簡化比例",
+            finalizeBtn: "合併化學式",
+            newBtn: "建構新的化學式",
+            step1Title: "第一步：辨認離子",
+            step2Title: "第二步：交叉法",
+            step3Title: "第三步：簡化比例",
+            step4Title: "第四步：最終化學式",
+            reminder: "💡 提示：為下標大於 1 的多原子離子加上括號。",
+            step1Desc: (c, a) => `我們有 <strong>${c}</strong> 和 <strong>${a}</strong>。讓我們觀察它們的電荷。`,
+            step2Desc: "觀察電荷數值的移動！它們會交叉成為另一方離子的下標。",
+            step3DescSimple: (r1, r2) => `比例為 <strong>${r1}:${r2}</strong>。我們保留「1」以顯示最終的平衡。`,
+            step3DescReduced: (r1, r2, s1, s2) => `比例 <strong>${r1}:${r2}</strong> 可簡化為 <strong>${s1}:${s2}</strong>。`,
+            step4Desc: "最後一步：合併離子符號並隱藏數值為「1」的下標。",
+            success: "成功！",
+            resultText: (formula) => `化學式為 <span class="text-2xl font-bold text-slate-800">${formula}</span>。`
+        }
+    };
+
+    const cations = [
+        { name: {en: "Lithium ion", zh: "鋰離子"}, symbol: "Li", charge: 1, poly: false },
+        { name: {en: "Sodium ion", zh: "鈉離子"}, symbol: "Na", charge: 1, poly: false },
+        { name: {en: "Potassium ion", zh: "鉀離子"}, symbol: "K", charge: 1, poly: false },
+        { name: {en: "Copper(I) ion", zh: "銅(I)離子"}, symbol: "Cu", charge: 1, poly: false },
+        { name: {en: "Silver ion", zh: "銀離子"}, symbol: "Ag", charge: 1, poly: false },
+        { name: {en: "Mercury(I) ion", zh: "汞(I)離子"}, symbol: "Hg", charge: 1, poly: false },
+        { name: {en: "Ammonium ion", zh: "銨離子"}, symbol: "NH4", charge: 1, poly: true },
+        { name: {en: "Magnesium ion", zh: "鎂離子"}, symbol: "Mg", charge: 2, poly: false },
+        { name: {en: "Calcium ion", zh: "鈣離子"}, symbol: "Ca", charge: 2, poly: false },
+        { name: {en: "Barium ion", zh: "鋇離子"}, symbol: "Ba", charge: 2, poly: false },
+        { name: {en: "Zinc ion", zh: "鋅離子"}, symbol: "Zn", charge: 2, poly: false },
+        { name: {en: "Iron(II) ion", zh: "鐵(II)離子"}, symbol: "Fe", charge: 2, poly: false },
+        { name: {en: "Copper(II) ion", zh: "銅(II)離子"}, symbol: "Cu", charge: 2, poly: false },
+        { name: {en: "Cobalt(II) ion", zh: "鈷(II)離子"}, symbol: "Co", charge: 2, poly: false },
+        { name: {en: "Nickel(II) ion", zh: "鎳(II)離子"}, symbol: "Ni", charge: 2, poly: false },
+        { name: {en: "Manganese(II) ion", zh: "錳(II)離子"}, symbol: "Mn", charge: 2, poly: false },
+        { name: {en: "Mercury(II) ion", zh: "汞(II)離子"}, symbol: "Hg", charge: 2, poly: false },
+        { name: {en: "Lead(II) ion", zh: "鉛(II)離子"}, symbol: "Pb", charge: 2, poly: false },
+        { name: {en: "Aluminum ion", zh: "鋁離子"}, symbol: "Al", charge: 3, poly: false },
+        { name: {en: "Iron(III) ion", zh: "鐵(III)離子"}, symbol: "Fe", charge: 3, poly: false },
+        { name: {en: "Chromium(III) ion", zh: "鉻(III)離子"}, symbol: "Cr", charge: 3, poly: false }
+    ];
+
+    const anions = [
+        { name: {en: "Fluoride ion", zh: "氟離子"}, symbol: "F", charge: -1, poly: false },
+        { name: {en: "Chloride ion", zh: "氯離子"}, symbol: "Cl", charge: -1, poly: false },
+        { name: {en: "Bromide ion", zh: "溴離子"}, symbol: "Br", charge: -1, poly: false },
+        { name: {en: "Iodide ion", zh: "碘離子"}, symbol: "I", charge: -1, poly: false },
+        { name: {en: "Nitrite ion", zh: "亞硝酸根離子"}, symbol: "NO2", charge: -1, poly: true },
+        { name: {en: "Nitrate ion", zh: "硝酸根離子"}, symbol: "NO3", charge: -1, poly: true },
+        { name: {en: "Hydroxide ion", zh: "氫氧根離子"}, symbol: "OH", charge: -1, poly: true },
+        { name: {en: "Hydrogencarbonate ion", zh: "碳酸氫根離子"}, symbol: "HCO3", charge: -1, poly: true },
+        { name: {en: "Hydrogensulphate ion", zh: "硫酸氫根離子"}, symbol: "HSO4", charge: -1, poly: true },
+        { name: {en: "Cyanide ion", zh: "氰根離子"}, symbol: "CN", charge: -1, poly: true },
+        { name: {en: "Permanganate Ion", zh: "高錳酸根離子"}, symbol: "MnO4", charge: -1, poly: true },
+        { name: {en: "Hypochlorite ion", zh: "次氯酸根離子"}, symbol: "ClO", charge: -1, poly: true },
+        { name: {en: "Chlorate ion", zh: "氯酸根離子"}, symbol: "ClO3", charge: -1, poly: true },
+        { name: {en: "Oxide ion", zh: "氧化物離子"}, symbol: "O", charge: -2, poly: false },
+        { name: {en: "Sulphide ion", zh: "硫化物離子"}, symbol: "S", charge: -2, poly: false },
+        { name: {en: "Sulphite ion", zh: "亞硫酸根離子"}, symbol: "SO3", charge: -2, poly: true },
+        { name: {en: "Sulphate ion", zh: "硫酸根離子"}, symbol: "SO4", charge: -2, poly: true },
+        { name: {en: "Thiosulphate ion", zh: "硫代硫酸根離子"}, symbol: "S2O3", charge: -2, poly: true },
+        { name: {en: "Carbonate ion", zh: "碳酸根離子"}, symbol: "CO3", charge: -2, poly: true },
+        { name: {en: "Silicate ion", zh: "矽酸根離子"}, symbol: "SiO3", charge: -2, poly: true },
+        { name: {en: "Chromate ion", zh: "鉻酸根離子"}, symbol: "CrO4", charge: -2, poly: true },
+        { name: {en: "Dichromate ion", zh: "重鉻酸根離子"}, symbol: "Cr2O7", charge: -2, poly: true },
+        { name: {en: "Nitride ion", zh: "氮化物離子"}, symbol: "N", charge: -3, poly: false },
+        { name: {en: "Phosphide ion", zh: "磷化物離子"}, symbol: "P", charge: -3, poly: false },
+        { name: {en: "Phosphate ion", zh: "磷酸根離子"}, symbol: "PO4", charge: -3, poly: true }
+    ];
+
+    let selectedCation = null;
+    let selectedAnion = null;
+    let currentStep = 0;
+
+    function gcd(a, b) { return b ? gcd(b, a % b) : a; }
+
+    function formatSymbol(symbol) {
+        return symbol.replace(/(\d+)/g, '<span class="formula-subscript">$1</span>');
+    }
+
+    function formatCharge(val) {
+        const absVal = Math.abs(val);
+        const sign = val > 0 ? '+' : '-';
+        return `<span class="formula-superscript">${absVal === 1 ? '' : absVal}${sign}</span>`;
+    }
+
+    function updateLanguageUI() {
+        const t = translations[currentLang];
+        document.getElementById('lang-text').innerText = currentLang === 'en' ? "繁體中文" : "English";
+        document.getElementById('main-title').innerText = t.mainTitle;
+        document.getElementById('main-subtitle').innerText = t.mainSubtitle;
+        document.getElementById('title-cation').innerText = t.selectCation;
+        document.getElementById('title-anion').innerText = t.selectAnion;
+        document.getElementById('start-btn').innerText = t.startBtn;
+        document.getElementById('reset-btn').innerText = t.resetBtn;
+        document.getElementById('back-btn').innerText = t.backBtn;
         
-        let audioCtx = null;
-        let reactionInterval = null;
-        let activeMetal = null;
-        let isSolutionAlkaline = false;
-        let gasVolumeInTube = 100;
-        let currentLang = 'en';
-
-        const TRANSLATIONS = {
-            en: {
-                toggle: '繁體中文',
-                'btn-na': 'Sodium (Na)',
-                'btn-k': 'Potassium (K)',
-                'btn-ca': 'Calcium (Ca)',
-                'btn-reset': 'Reset',
-                'label-litmus': 'Red Litmus Paper',
-                'label-h2': 'H2 collection set-up',
-                'title-obs': 'Observations:',
-                'default-obs': 'Select a metal to begin.'
-            },
-            zh: {
-                toggle: 'English',
-                'btn-na': '鈉 (Na)',
-                'btn-k': '鉀 (K)',
-                'btn-ca': '鈣 (Ca)',
-                'btn-reset': '重設',
-                'label-litmus': '紅色石蕊試紙',
-                'label-h2': '氫氣收集裝置',
-                'title-obs': '實驗觀察：',
-                'default-obs': '請選擇一種金屬開始。'
-            }
-        };
-
-        const DATA = {
-            sodium: {
-                en: {
-                    equation: "2Na(s) + 2H₂O(l) → 2NaOH(aq) + H₂(g)",
-                    wordEquation: "Sodium + Water → Sodium hydroxide + Hydrogen",
-                    observations: ["Na melts to form a silvery ball.", "Hissing sound is generated.", "Na moves rapidly on water surface.", "Na burns with golden yellow flame.", "Solution turns red litmus blue."]
-                },
-                zh: {
-                    equation: "2Na(s) + 2H₂O(l) → 2NaOH(aq) + H₂(g)",
-                    wordEquation: "鈉 + 水 → 氫氧化鈉 + 氫",
-                    observations: ["鈉熔化成一個銀色的小球。", "產生嘶嘶聲。", "鈉在水面上快速移動。", "鈉燃燒時發出金黃色火焰。", "溶液令紅色石蕊試紙變藍。"]
-                },
-                color: "#cbd5e1", flameColor: "rgba(255, 215, 0, 0.9)",
-                behavior: "float", shrinkSpeed: 0.08, moveSpeed: 4, bubbleProb: 0.5, hissPitch: 1400, hissVol: 0.03
-            },
-            potassium: {
-                en: {
-                    equation: "2K(s) + 2H₂O(l) → 2KOH(aq) + H₂(g)",
-                    wordEquation: "Potassium + Water → Potassium hydroxide + Hydrogen",
-                    observations: ["K melts to form a silvery ball.", "Hissing sound is generated.", "K moves rapidly on water surface.", "K burns with lilac flame.", "Solution turns red litmus blue."]
-                },
-                zh: {
-                    equation: "2K(s) + 2H₂O(l) → 2KOH(aq) + H₂(g)",
-                    wordEquation: "鉀 + 水 → 氫氧化鉀 + 氫",
-                    observations: ["鉀熔化成一個銀色的小球。", "產生嘶嘶聲。", "鉀在水面上快速移動。", "鉀燃燒時發出淡紫色火焰。", "溶液令紅色石蕊試紙變藍。"]
-                },
-                color: "#cbd5e1", flameColor: "rgba(230, 190, 255, 0.9)",
-                behavior: "float", shrinkSpeed: 0.22, moveSpeed: 8, bubbleProb: 0.95, hissPitch: 2200, hissVol: 0.12
-            },
-            calcium: {
-                en: {
-                    equation: "Ca(s) + 2H₂O(l) → Ca(OH)₂(aq) + H₂(g)",
-                    wordEquation: "Calcium + Water → Calcium hydroxide + Hydrogen",
-                    observations: ["Ca sinks and reacts steadily.", "Colourless gas bubbles are evolved.", "Solution turns red litmus blue."]
-                },
-                zh: {
-                    equation: "Ca(s) + 2H₂O(l) → Ca(OH)₂(aq) + H₂(g)",
-                    wordEquation: "鈣 + 水 → 氫氧化鈣 + 氫",
-                    observations: ["鈣沉入水底並穩定反應。", "產生無色氣泡。", "溶液令紅色石蕊試紙變藍。"]
-                },
-                color: "#94a3b8", flameColor: "transparent",
-                behavior: "sink", shrinkSpeed: 0.07, moveSpeed: 0, bubbleProb: 1.0, hissPitch: 0, hissVol: 0
-            }
-        };
-
-        function toggleLanguage() {
-            currentLang = currentLang === 'en' ? 'zh' : 'en';
-            
-            // Update the button text to show the OTHER language choice
-            langText.innerText = TRANSLATIONS[currentLang].toggle;
-
-            // Update all elements with [data-t]
-            document.querySelectorAll('[data-t]').forEach(el => {
-                const key = el.getAttribute('data-t');
-                const text = TRANSLATIONS[currentLang][key];
-                if (text) {
-                    // Check if the text contains H2 and needs subscripting
-                    if (text.includes('H2')) {
-                        el.innerHTML = text.replace(/H2/g, 'H<sub>2</sub>');
-                    } else {
-                        el.innerText = text;
-                    }
-                }
-            });
-
-            // Update observation box and equations if a reaction is active or in default state
-            if (activeMetal) {
-                const metalData = DATA[activeMetal][currentLang];
-                obsList.innerHTML = '';
-                metalData.observations.forEach(t => {
-                    const li = document.createElement('li');
-                    li.innerText = t;
-                    obsList.appendChild(li);
-                });
-                chemicalEqDiv.innerHTML = metalData.equation;
-                wordEqDiv.innerHTML = metalData.wordEquation;
-            } else {
-                obsList.innerHTML = `<li data-t="default-obs">${TRANSLATIONS[currentLang]['default-obs']}</li>`;
-            }
+        renderLists();
+        if (!document.getElementById('simulation-view').classList.contains('hidden')) {
+            runStep();
         }
+    }
 
-        let isDragging = false;
-        let dragOffset = { x: 0, y: 0 };
+    document.getElementById('lang-btn').onclick = () => {
+        currentLang = currentLang === 'en' ? 'zh' : 'en';
+        updateLanguageUI();
+    };
 
-        function startDrag(clientX, clientY) {
-            isDragging = true;
-            const rect = litmusPaper.getBoundingClientRect();
-            dragOffset.x = clientX - rect.left;
-            dragOffset.y = clientY - rect.top;
-        }
-
-        function handleDrag(clientX, clientY) {
-            if (!isDragging) return;
-            const containerRect = document.getElementById('canvas-container').getBoundingClientRect();
-            litmusPaper.style.left = (clientX - containerRect.left - dragOffset.x) + 'px';
-            litmusPaper.style.top = (clientY - containerRect.top - dragOffset.y) + 'px';
-            checkLitmusSubmersion();
-        }
-
-        litmusPaper.addEventListener('mousedown', e => startDrag(e.clientX, e.clientY));
-        window.addEventListener('mousemove', e => handleDrag(e.clientX, e.clientY));
-        window.addEventListener('mouseup', () => isDragging = false);
-
-        litmusPaper.addEventListener('touchstart', e => {
-            const touch = e.touches[0];
-            startDrag(touch.clientX, touch.clientY);
-            e.stopPropagation();
-        }, { passive: false });
-
-        window.addEventListener('touchmove', e => {
-            if (!isDragging) return;
-            const touch = e.touches[0];
-            handleDrag(touch.clientX, touch.clientY);
-            e.preventDefault();
-        }, { passive: false });
-
-        window.addEventListener('touchend', () => isDragging = false);
-
-        function checkLitmusSubmersion() {
-            const paperRect = litmusPaper.getBoundingClientRect();
-            const waterRect = waterBody.getBoundingClientRect();
-            const troughRect = troughElement.getBoundingClientRect();
-            const withinX = paperRect.right > troughRect.left && paperRect.left < troughRect.right;
-            if (withinX && paperRect.bottom > waterRect.top) {
-                const overlap = Math.min(paperRect.bottom, waterRect.bottom) - waterRect.top;
-                const pct = Math.max(0, Math.min(100, (overlap / paperRect.height) * 100));
-                if (pct > (parseFloat(litmusWetPart.style.height) || 0)) litmusWetPart.style.height = pct + '%';
-                if (isSolutionAlkaline) litmusPaper.classList.add('turned-blue');
-            }
-        }
-
-        function toggleLitmus() {
-            litmusPaper.style.display = document.getElementById('litmus-toggle').checked ? 'block' : 'none';
-        }
-
-        function toggleSetup() {
-            h2Setup.style.display = setupToggle.checked ? 'block' : 'none';
-        }
-
-        function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
-
-        function playExplosion(x, y, color) {
-            if (!audioCtx) return;
-            const now = audioCtx.currentTime;
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.frequency.setValueAtTime(150, now);
-            osc.frequency.exponentialRampToValueAtTime(40, now + 0.3);
-            gain.gain.setValueAtTime(1.5, now);
-            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
-            osc.connect(gain); gain.connect(audioCtx.destination);
-            osc.start(); osc.stop(now + 0.5);
-            
-            for(let i=0; i<30; i++) {
-                const spark = document.createElement('div');
-                spark.className = 'particle';
-                const s = Math.random() * 8 + 2;
-                spark.style.width = s + 'px'; spark.style.height = s + 'px';
-                spark.style.backgroundColor = i % 2 ? color : '#fff';
-                spark.style.left = x + 'px'; spark.style.top = y + 'px';
-                simArea.appendChild(spark);
-                const ang = Math.random() * Math.PI * 2;
-                const d = Math.random() * 150 + 50;
-                const start = Date.now();
-                const anim = () => {
-                    const p = (Date.now() - start) / 1000;
-                    if(p >= 1) { spark.remove(); return; }
-                    spark.style.left = (x + Math.cos(ang) * d * p) + 'px';
-                    spark.style.top = (y + Math.sin(ang) * d * p + (p * p * 300)) + 'px';
-                    spark.style.opacity = 1 - p;
-                    requestAnimationFrame(anim);
+    function renderLists() {
+        const cList = document.getElementById('cation-list');
+        const aList = document.getElementById('anion-list');
+        cList.innerHTML = '';
+        aList.innerHTML = '';
+        [cations, anions].forEach((list, idx) => {
+            const container = idx === 0 ? cList : aList;
+            list.forEach(ion => {
+                const isSelected = (idx === 0 && selectedCation === ion) || (idx === 1 && selectedAnion === ion);
+                const div = document.createElement('div');
+                div.className = `ion-card p-3 rounded-lg border bg-white text-sm text-center ${isSelected ? 'selected-ion' : ''}`;
+                div.innerHTML = `<div>${formatSymbol(ion.symbol)}${formatCharge(ion.charge)}</div><div class="text-[10px] text-slate-500 uppercase font-bold">${ion.name[currentLang]}</div>`;
+                div.onclick = () => {
+                    document.querySelectorAll(`#${container.id} .ion-card`).forEach(el => el.classList.remove('selected-ion'));
+                    div.classList.add('selected-ion');
+                    if (idx === 0) selectedCation = ion; else selectedAnion = ion;
+                    checkReady();
                 };
-                requestAnimationFrame(anim);
-            }
-        }
-
-        function playHiss(active, type) {
-            if (!audioCtx || !active || (type && DATA[type].hissPitch === 0)) {
-                if (this.hissNode) {
-                    this.hissNode.gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
-                    this.hissNode = null;
-                }
-                return;
-            }
-            if (this.hissNode) return;
-            const bufferSize = audioCtx.sampleRate * 2;
-            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-            const data = buffer.getChannelData(0);
-            for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
-            const noise = audioCtx.createBufferSource();
-            noise.buffer = buffer; noise.loop = true;
-            const filter = audioCtx.createBiquadFilter();
-            filter.type = 'highpass'; filter.frequency.value = DATA[type].hissPitch;
-            const gain = audioCtx.createGain(); gain.gain.value = DATA[type].hissVol;
-            noise.connect(filter); filter.connect(gain); gain.connect(audioCtx.destination);
-            noise.start();
-            this.hissNode = { noise, gain };
-        }
-
-        function createBubble(x, y) {
-            const bubble = document.createElement('div');
-            bubble.className = 'bubble';
-            const size = Math.random() * 5 + 2;
-            bubble.style.width = size + 'px'; bubble.style.height = size + 'px';
-            bubble.style.left = x + 'px'; bubble.style.bottom = (troughElement.offsetHeight - y) + 'px';
-            simArea.appendChild(bubble);
-
-            const start = Date.now();
-            const duration = 1200;
-            const surfaceBottomPct = 70;
-
-            const anim = () => {
-                const p = (Date.now() - start) / duration;
-                if (p >= 1) { bubble.remove(); return; }
-                let curBottomPx = (troughElement.offsetHeight - y) + (p * 200);
-                let curBottomPct = (curBottomPx / troughElement.offsetHeight) * 100;
-                
-                if (setupToggle.checked && activeMetal === 'calcium') {
-                    const tubeHeight = 160; 
-                    const setupHeight = 220;
-                    if (curBottomPx > (setupHeight - tubeHeight) && Math.abs(x - troughElement.offsetWidth/2) < 15) {
-                        gasVolumeInTube = Math.max(0, gasVolumeInTube - 0.2);
-                        tubeWater.style.height = gasVolumeInTube + '%';
-                        bubble.remove(); return;
-                    }
-                }
-                if (curBottomPct >= surfaceBottomPct) { bubble.remove(); return; }
-                bubble.style.bottom = curBottomPx + 'px';
-                bubble.style.opacity = 1 - p;
-                requestAnimationFrame(anim);
-            };
-            requestAnimationFrame(anim);
-        }
-
-        function createFlame(x, y, color, scale = 1) {
-            const flame = document.createElement('div');
-            flame.className = 'particle';
-            const size = (Math.random() * 20 + 10) * scale;
-            flame.style.width = size + 'px'; flame.style.height = size + 'px';
-            flame.style.left = (x - size/2) + 'px'; flame.style.top = (y - size/2) + 'px';
-            flame.style.backgroundColor = color; flame.style.filter = 'blur(5px)';
-            simArea.appendChild(flame);
-            const start = Date.now();
-            const anim = () => {
-                const p = (Date.now() - start) / 250;
-                if (p >= 1) { flame.remove(); return; }
-                flame.style.transform = `translateY(${-p * 30}px) scale(${1-p})`;
-                flame.style.opacity = 1 - p;
-                requestAnimationFrame(anim);
-            };
-            requestAnimationFrame(anim);
-        }
-
-        function resetSim() {
-            clearInterval(reactionInterval);
-            simArea.innerHTML = '';
-            obsList.innerHTML = `<li data-t="default-obs">${TRANSLATIONS[currentLang]['default-obs']}</li>`;
-            chemicalEqDiv.innerHTML = ''; wordEqDiv.innerHTML = '';
-            playHiss(false);
-            activeMetal = null;
-            isSolutionAlkaline = false;
-            litmusPaper.classList.remove('turned-blue');
-            litmusWetPart.style.height = '0%';
-            setupToggleCont.style.opacity = "0.3";
-            setupToggleCont.style.pointerEvents = "none";
-            setupToggle.checked = false;
-            h2Setup.style.display = 'none';
-            gasVolumeInTube = 100;
-            tubeWater.style.height = '100%';
-        }
-
-        function startReaction(type) {
-            initAudio();
-            resetSim();
-            activeMetal = type;
-            const metal = DATA[type];
-            const metalLang = metal[currentLang];
-
-            if (type === 'calcium') {
-                setupToggleCont.style.opacity = "1";
-                setupToggleCont.style.pointerEvents = "auto";
-            }
-            obsList.innerHTML = '';
-            metalLang.observations.forEach(t => {
-                const li = document.createElement('li');
-                li.innerText = t;
-                obsList.appendChild(li);
+                container.appendChild(div);
             });
-            chemicalEqDiv.innerHTML = metalLang.equation;
-            wordEqDiv.innerHTML = metalLang.wordEquation;
+        });
+    }
 
-            const el = document.createElement('div');
-            el.id = 'metal-piece';
-            el.className = 'absolute z-30 shadow-md border border-white/20 transition-[border-radius] duration-1000';
-            let size = 30;
-            let posX = troughElement.offsetWidth / 2 - size/2;
-            let posY = -50; 
-            const surfaceTopPct = 30;
-            const surfaceY = (troughElement.offsetHeight * surfaceTopPct) / 100;
-            const floorY = troughElement.offsetHeight - 4;
-            el.style.width = size + 'px'; el.style.height = size + 'px';
-            el.style.backgroundColor = metal.color;
-            el.style.left = posX + 'px'; el.style.top = posY + 'px';
-            simArea.appendChild(el);
+    function checkReady() {
+        if (selectedCation && selectedAnion) document.getElementById('controls').classList.remove('hidden');
+    }
 
-            let reacting = false;
-            let angle = Math.random() * Math.PI * 2;
-            let melted = false;
-            let grounded = false;
+    function clearMovingElements() {
+        document.querySelectorAll('.moving-charge').forEach(el => el.remove());
+    }
 
-            reactionInterval = setInterval(() => {
-                if (!reacting) {
-                    let target = metal.behavior === 'float' ? surfaceY - (size/2) : surfaceY;
-                    if (posY < target) posY += 8;
-                    else { posY = target; reacting = true; isSolutionAlkaline = true; playHiss(true, type); }
-                } else {
-                    size -= metal.shrinkSpeed;
-                    if (!melted && type !== 'calcium' && size < 28) {
-                        melted = true;
-                        el.style.borderRadius = '50%';
-                        el.style.boxShadow = 'inset -3px -3px 8px rgba(0,0,0,0.5), 0 0 10px rgba(255,255,255,0.7)';
-                    }
-                    if (type === 'potassium' && size <= 12) {
-                        playExplosion(posX + size/2, posY + size/2, metal.flameColor);
-                        clearInterval(reactionInterval); el.remove(); playHiss(false); return;
-                    }
-                    if (size <= 4) { clearInterval(reactionInterval); el.remove(); playHiss(false); return; }
+    function resetSimulationState() {
+        selectedCation = null;
+        selectedAnion = null;
+        currentStep = 0;
+        
+        document.getElementById('simulation-view').classList.add('hidden');
+        document.getElementById('setup-view').classList.remove('hidden');
+        document.getElementById('controls').classList.add('hidden');
+        
+        const vCation = document.getElementById('v-cation');
+        const vAnion = document.getElementById('v-anion');
+        const vArea = document.getElementById('visual-area');
+        vCation.classList.remove('merged-style');
+        vAnion.classList.remove('merged-style');
+        vArea.classList.remove('merge-gap', 'animate-success');
+        
+        renderLists();
+        window.scrollTo(0, 0);
+    }
 
-                    if (metal.behavior === 'float') {
-                        posY = surfaceY - (size * 0.7);
-                        posX += Math.cos(angle) * metal.moveSpeed;
-                        if (Math.random() > 0.9) angle = Math.random() * Math.PI * 2;
-                        const L = 10;
-                        const R = troughElement.offsetWidth - size - 10;
-                        if (posX < L || posX > R) angle += Math.PI;
-                        posX = Math.max(L, Math.min(R, posX));
-                        createFlame(posX + size/2, posY + size/2, metal.flameColor, type === 'potassium' ? 1.5 : 1);
-                        if (Math.random() < metal.bubbleProb) createBubble(posX + size/2, posY + size);
-                    } else {
-                        if (!grounded) {
-                            if (posY < floorY - size) posY += 6;
-                            else { posY = floorY - size; grounded = true; }
-                        } else posY = floorY - size;
-                        if (Math.random() < metal.bubbleProb) createBubble(posX + Math.random() * size, posY);
-                    }
-                }
-                el.style.width = size + 'px'; el.style.height = size + 'px';
-                el.style.left = posX + 'px'; el.style.top = posY + 'px';
-                checkLitmusSubmersion();
-            }, 40);
+    async function runStep() {
+        const t = translations[currentLang];
+        const vCation = document.getElementById('v-cation');
+        const vAnion = document.getElementById('v-anion');
+        const vOp = document.getElementById('v-operator');
+        const vArea = document.getElementById('visual-area');
+        const title = document.getElementById('step-title');
+        const desc = document.getElementById('step-description');
+        const nextBtn = document.getElementById('next-btn');
+        const backBtn = document.getElementById('back-btn');
+
+        const catVal = Math.abs(selectedCation.charge);
+        const aniVal = Math.abs(selectedAnion.charge);
+        const common = gcd(catVal, aniVal);
+        
+        const rawSubCat = aniVal;
+        const rawSubAni = catVal;
+        const simpCat = aniVal / common;
+        const simpAni = catVal / common;
+
+        clearMovingElements();
+        
+        if (currentStep === 0) {
+            backBtn.classList.add('hidden');
+        } else {
+            backBtn.classList.remove('hidden');
         }
-    </script>
+
+        switch(currentStep) {
+            case 0:
+                title.innerText = t.step1Title;
+                vCation.innerHTML = `${formatSymbol(selectedCation.symbol)}<span id="c-charge" class="formula-superscript">${catVal === 1 ? '' : catVal}+</span>`;
+                vAnion.innerHTML = `${formatSymbol(selectedAnion.symbol)}<span id="a-charge" class="formula-superscript">${aniVal === 1 ? '' : aniVal}-</span>`;
+                vOp.style.opacity = "1";
+                vOp.style.display = "block";
+                vArea.classList.remove('merge-gap');
+                vArea.classList.remove('animate-success');
+                vCation.className = "ion-box-mobile relative p-6 rounded-2xl bg-blue-50 border-2 border-blue-200 text-blue-800 transition-all duration-500 min-w-[100px] md:min-w-[120px] text-center";
+                vAnion.className = "ion-box-mobile relative p-6 rounded-2xl bg-red-50 border-2 border-red-200 text-red-800 transition-all duration-500 min-w-[100px] md:min-w-[120px] text-center";
+                desc.innerHTML = t.step1Desc(selectedCation.name[currentLang], selectedAnion.name[currentLang]);
+                nextBtn.innerText = t.crossBtn;
+                break;
+
+            case 1:
+                title.innerText = t.step2Title;
+                vOp.style.opacity = "0.2";
+                vOp.style.display = "block";
+                vArea.classList.remove('merge-gap');
+                vCation.innerHTML = `${formatSymbol(selectedCation.symbol)}<span id="c-charge" class="formula-superscript">${catVal === 1 ? '' : catVal}+</span>`;
+                vAnion.innerHTML = `${formatSymbol(selectedAnion.symbol)}<span id="a-charge" class="formula-superscript">${aniVal === 1 ? '' : aniVal}-</span>`;
+                
+                desc.innerHTML = t.step2Desc;
+                
+                setTimeout(() => {
+                    const cChargeEl = document.getElementById('c-charge');
+                    const aChargeEl = document.getElementById('a-charge');
+                    if (!cChargeEl || !aChargeEl) return;
+                    const cRect = cChargeEl.getBoundingClientRect();
+                    const aRect = aChargeEl.getBoundingClientRect();
+                    const scrollY = window.scrollY;
+
+                    const floatC = document.createElement('div');
+                    floatC.className = 'moving-charge text-blue-600 font-bold text-4xl';
+                    floatC.innerText = catVal;
+                    floatC.style.left = `${cRect.left}px`;
+                    floatC.style.top = `${cRect.top + scrollY}px`;
+                    
+                    const floatA = document.createElement('div');
+                    floatA.className = 'moving-charge text-red-600 font-bold text-4xl';
+                    floatA.innerText = aniVal;
+                    floatA.style.left = `${aRect.left}px`;
+                    floatA.style.top = `${aRect.top + scrollY}px`;
+
+                    document.body.appendChild(floatC);
+                    document.body.appendChild(floatA);
+
+                    cChargeEl.style.opacity = '0';
+                    aChargeEl.style.opacity = '0';
+
+                    setTimeout(() => {
+                        const catContainer = vCation.getBoundingClientRect();
+                        const aniContainer = vAnion.getBoundingClientRect();
+                        floatC.style.left = `${aniContainer.right - (window.innerWidth < 640 ? 15 : 25)}px`;
+                        floatC.style.top = `${aniContainer.bottom - (window.innerWidth < 640 ? 15 : 25) + scrollY}px`;
+                        floatC.style.fontSize = window.innerWidth < 640 ? '1.4rem' : '1.8rem';
+                        floatA.style.left = `${catContainer.right - (window.innerWidth < 640 ? 15 : 25)}px`;
+                        floatA.style.top = `${catContainer.bottom - (window.innerWidth < 640 ? 15 : 25) + scrollY}px`;
+                        floatA.style.fontSize = window.innerWidth < 640 ? '1.4rem' : '1.8rem';
+                    }, 50);
+                }, 100);
+
+                nextBtn.innerText = t.simplifyBtn;
+                break;
+
+            case 2:
+                title.innerText = t.step3Title;
+                vOp.style.opacity = "0.2";
+                vOp.style.display = "block";
+                vArea.classList.remove('merge-gap');
+                
+                let cBody3 = formatSymbol(selectedCation.symbol);
+                const showCatBrackets = simpCat > 1 && selectedCation.poly;
+                if (showCatBrackets) {
+                    cBody3 = `<span class="bracket-fade">(</span>${cBody3}<span class="bracket-fade">)</span>`;
+                }
+                
+                let aBody3 = formatSymbol(selectedAnion.symbol);
+                const showAniBrackets = simpAni > 1 && selectedAnion.poly;
+                if (showAniBrackets) {
+                    aBody3 = `<span class="bracket-fade">(</span>${aBody3}<span class="bracket-fade">)</span>`;
+                }
+
+                let bracketReminder = (showCatBrackets || showAniBrackets) ? 
+                    `<div class='mt-2 text-sm text-blue-600 font-semibold'>${t.reminder}</div>` : "";
+
+                if (common > 1) {
+                    vCation.innerHTML = `${cBody3}<span class="formula-subscript text-blue-600 inline-flex items-center">
+                        <span id="sub-cat-raw" class="strike-container">${rawSubCat}<span class="strike-line"></span></span>
+                        <span id="sub-cat-simp" class="simplify-fade ml-1">${simpCat}</span>
+                    </span>`;
+                    vAnion.innerHTML = `${aBody3}<span class="formula-subscript text-red-600 inline-flex items-center">
+                        <span id="sub-ani-raw" class="strike-container">${rawSubAni}<span class="strike-line"></span></span>
+                        <span id="sub-ani-simp" class="simplify-fade ml-1">${simpAni}</span>
+                    </span>`;
+                    
+                    desc.innerHTML = t.step3DescReduced(rawSubCat, rawSubAni, simpCat, simpAni) + bracketReminder;
+                    
+                    setTimeout(() => {
+                        const rc = document.getElementById('sub-cat-raw');
+                        const ra = document.getElementById('sub-ani-raw');
+                        if(rc) rc.classList.add('strike-active');
+                        if(ra) ra.classList.add('strike-active');
+                        setTimeout(() => {
+                            const sc = document.getElementById('sub-cat-simp');
+                            const sa = document.getElementById('sub-ani-simp');
+                            if(sc) sc.classList.add('simplify-visible');
+                            if(sa) sa.classList.add('simplify-visible');
+                        }, 500);
+                    }, 800);
+
+                } else {
+                    vCation.innerHTML = `${cBody3}<span class="formula-subscript text-blue-600">${simpCat}</span>`;
+                    vAnion.innerHTML = `${aBody3}<span class="formula-subscript text-red-600">${simpAni}</span>`;
+                    desc.innerHTML = t.step3DescSimple(simpCat, simpAni) + bracketReminder;
+                }
+                
+                setTimeout(() => {
+                    document.querySelectorAll('.bracket-fade').forEach(el => el.classList.add('bracket-visible'));
+                }, 100);
+
+                nextBtn.innerText = t.finalizeBtn;
+                break;
+
+            case 3:
+                title.innerText = t.step4Title;
+                vOp.style.opacity = "0.2";
+                
+                let cStep4 = formatSymbol(selectedCation.symbol);
+                if (simpCat > 1 && selectedCation.poly) cStep4 = `(${cStep4})`;
+                let catSubscriptHtml = `<span id="final-sub-cat" class="formula-subscript ${simpCat === 1 ? 'subscript-fade-out' : ''}">${simpCat}</span>`;
+                
+                let aStep4 = formatSymbol(selectedAnion.symbol);
+                if (simpAni > 1 && selectedAnion.poly) aStep4 = `(${aStep4})`;
+                let aniSubscriptHtml = `<span id="final-sub-ani" class="formula-subscript ${simpAni === 1 ? 'subscript-fade-out' : ''}">${simpAni}</span>`;
+
+                vCation.innerHTML = cStep4 + catSubscriptHtml;
+                vAnion.innerHTML = aStep4 + aniSubscriptHtml;
+                
+                desc.innerHTML = t.step4Desc;
+
+                setTimeout(() => {
+                    vOp.style.opacity = "0";
+                    vCation.classList.add('merged-style');
+                    vAnion.classList.add('merged-style');
+                    vArea.classList.add('merge-gap');
+                    
+                    const fsc = document.getElementById('final-sub-cat');
+                    const fsa = document.getElementById('final-sub-ani');
+                    if (simpCat === 1 && fsc) fsc.classList.add('fade-hidden');
+                    if (simpAni === 1 && fsa) fsa.classList.add('fade-hidden');
+                    
+                    setTimeout(() => {
+                        if(currentStep === 3) vOp.style.display = "none";
+                        vArea.classList.add('animate-success');
+                        
+                        let successC = formatSymbol(selectedCation.symbol);
+                        if (simpCat > 1) {
+                            if (selectedCation.poly) successC = `(${successC})`;
+                            successC += `<span class="formula-subscript">${simpCat}</span>`;
+                        }
+                        let successA = formatSymbol(selectedAnion.symbol);
+                        if (simpAni > 1) {
+                            if (selectedAnion.poly) successA = `(${successA})`;
+                            successA += `<span class="formula-subscript">${simpAni}</span>`;
+                        }
+                        
+                        desc.innerHTML = `
+                            <div class="text-3xl font-bold text-green-600 mb-2">${t.success}</div>
+                            ${t.resultText(successC + successA)}
+                        `;
+                    }, 800);
+                }, 500);
+
+                nextBtn.innerText = t.newBtn;
+                break;
+        }
+    }
+
+    document.getElementById('start-btn').onclick = () => {
+        document.getElementById('setup-view').classList.add('hidden');
+        document.getElementById('controls').classList.add('hidden');
+        document.getElementById('simulation-view').classList.remove('hidden');
+        currentStep = 0;
+        runStep();
+    };
+
+    document.getElementById('next-btn').onclick = () => {
+        if (currentStep < 3) {
+            currentStep++;
+            runStep();
+        } else {
+            resetSimulationState();
+        }
+    };
+
+    document.getElementById('back-btn').onclick = () => {
+        if (currentStep > 0) {
+            currentStep--;
+            runStep();
+        }
+    };
+
+    document.getElementById('reset-btn').onclick = () => resetSimulationState();
+    
+    // Initial UI render
+    updateLanguageUI();
+
+    window.addEventListener('resize', () => {
+        if (currentStep === 1) {
+            clearMovingElements();
+            runStep();
+        }
+    });
+</script>
 </body>
 </html>

@@ -9,7 +9,6 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Noto+Serif:ital,wght@0,700;1,700&display=swap');
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
         
-        /* Fix for mobile diagram visibility: uses scale to fit screen */
         .diagram-container { 
             min-height: 320px; 
             display: flex; 
@@ -20,14 +19,10 @@
         }
         
         @media (max-width: 640px) {
-            .diagram-container {
-                transform: scale(0.75);
-                margin: -40px 0; /* Compensation for scale */
-            }
+            .diagram-container { transform: scale(0.75); margin: -40px 0; }
             .ion-box { gap: 5px; }
         }
 
-        /* Animated components for Step 3 */
         .bracket { border-top: 2px solid black; border-bottom: 2px solid black; width: 15px; height: 160px; opacity: 0; transition: all 0.5s ease; flex-shrink: 0; }
         .bracket.visible { opacity: 1; }
         .bracket-left { border-left: 2px solid black; border-radius: 10px 0 0 10px; }
@@ -40,7 +35,6 @@
         .ion-count { font-size: 1.6rem; margin-right: 8px; font-weight: bold; opacity: 0; transform: translateX(-10px); transition: all 0.5s ease; position: relative; }
         .ion-count.visible { opacity: 1; transform: translateX(0); }
         
-        /* Flying number animation */
         .flying-number {
             position: fixed;
             font-size: 1.8rem;
@@ -51,7 +45,6 @@
             transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        /* Strike-through animation */
         .strike-line {
             position: absolute;
             top: 50%;
@@ -77,30 +70,17 @@
         .equation-box { animation: fadeIn 0.5s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        .action-btn {
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            transform: scale(1);
-        }
-        .action-btn:hover {
-            transform: scale(1.05);
-        }
-        .action-btn:active {
-            transform: scale(0.95);
-        }
+        .action-btn { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); transform: scale(1); }
+        .action-btn:hover { transform: scale(1.05); }
+        .action-btn:active { transform: scale(0.95); }
 
         .counter-btn {
             @apply flex items-center justify-center w-10 h-10 bg-indigo-50 text-indigo-600 rounded-lg border-2 border-indigo-100 hover:bg-indigo-600 hover:text-white hover:border-indigo-600 transition-colors duration-200 active:scale-90;
         }
 
-        @keyframes pulse-soft {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.02); }
-        }
-        .drawing-notice {
-            animation: pulse-soft 2s infinite ease-in-out;
-        }
+        @keyframes pulse-soft { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.02); } }
+        .drawing-notice { animation: pulse-soft 2s infinite ease-in-out; }
 
-        /* Message box fix: moves it to the top so it doesn't block buttons */
         #msg-box {
             position: fixed;
             top: 20px;
@@ -114,24 +94,29 @@
 </head>
 <body class="p-4 md:p-8">
     <div id="app" class="max-w-4xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200">
-        <header class="bg-indigo-600 p-6 text-white text-center">
-            <h1 class="text-2xl font-bold">Ionic Diagram Lab</h1>
-            <p class="text-indigo-100 text-sm mt-1">Mastering Dot-and-Cross Electron Diagrams</p>
+        <header class="bg-indigo-600 p-6 text-white text-center relative">
+            <button onclick="toggleLanguage()" class="absolute top-4 right-4 bg-indigo-500 hover:bg-indigo-400 p-2 rounded-lg transition-colors flex items-center gap-2 text-xs font-bold border border-indigo-400">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 002 2h2.935M12 21a9 9 0 100-18 9 9 0 000 18z" />
+                </svg>
+                <span id="lang-label">繁體中文</span>
+            </button>
+
+            <h1 class="text-2xl font-bold" data-t="title">Ionic Diagram Lab</h1>
+            <p class="text-indigo-100 text-sm mt-1" data-t="subtitle">Mastering Dot-and-Cross Electron Diagrams</p>
         </header>
 
         <main class="p-6">
             <div id="step-container">
-                <!-- Step 0: Selection -->
                 <div id="step-0" class="step">
-                    <h2 class="text-xl font-semibold mb-4 text-slate-800 text-center">Select Elements to Combine</h2>
+                    <h2 class="text-xl font-semibold mb-4 text-slate-800 text-center" data-t="selectElements">Select Elements to Combine</h2>
                     <div class="grid grid-cols-2 sm:grid-cols-3 gap-4" id="compound-list"></div>
                 </div>
 
-                <!-- Step 1: Octet Rule -->
                 <div id="step-1" class="step hidden">
                     <div class="flex justify-between items-center mb-6">
-                        <button onclick="goBack(0)" class="text-indigo-600 hover:underline flex items-center">&larr; Back</button>
-                        <span class="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-xs font-bold uppercase">Step 1: Valence Shell</span>
+                        <button onclick="goBack(0)" class="text-indigo-600 hover:underline flex items-center">&larr; <span data-t="back">Back</span></button>
+                        <span class="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-xs font-bold uppercase" data-t="step1Label">Step 1: Valence Shell</span>
                     </div>
                     
                     <h2 id="step-1-title" class="text-xl font-semibold mb-6 text-center text-slate-800"></h2>
@@ -142,13 +127,13 @@
                             <div id="nm-valence-card" class="bg-orange-50 p-6 rounded-xl border border-orange-100 flex flex-col items-center"></div>
                         </div>
                         <div class="flex justify-center gap-4">
-                            <button id="step-1-check" onclick="checkStep1()" class="bg-indigo-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-indigo-700 transition relative z-10">Check Stability Logic</button>
+                            <button id="step-1-check" onclick="checkStep1()" class="bg-indigo-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-indigo-700 transition relative z-10" data-t="checkStep1">Check Stability Logic</button>
                         </div>
                     </div>
 
                     <div id="step-1-summary-area" class="hidden equation-box">
                         <div class="bg-slate-50 border-2 border-indigo-100 rounded-2xl p-8 mb-8 text-center">
-                            <h3 class="text-lg font-bold text-indigo-800 mb-6 uppercase tracking-wider">Ion Formation Summary</h3>
+                            <h3 class="text-lg font-bold text-indigo-800 mb-6 uppercase tracking-wider" data-t="ionSummary">Ion Formation Summary</h3>
                             <div class="flex flex-col md:flex-row justify-center items-stretch gap-6 md:gap-12 mb-6">
                                 <div class="flex-1">
                                     <div class="chem-eqn text-2xl md:text-3xl bg-white p-6 rounded-xl shadow-sm border border-blue-200" id="m-eqn"></div>
@@ -159,21 +144,20 @@
                                     <div id="nm-desc" class="text-orange-600 font-bold text-sm italic mt-2"></div>
                                 </div>
                             </div>
-                            <p class="text-slate-500 text-xs italic font-semibold pt-4 border-t border-slate-200">Note: Charges like 1+ are shown as +.</p>
+                            <p class="text-slate-500 text-xs italic font-semibold pt-4 border-t border-slate-200" data-t="chargeNote">Note: Charges like 1+ are shown as +.</p>
                         </div>
-                        <div class="flex justify-center"><button onclick="proceedToStep2()" class="bg-indigo-600 text-white px-10 py-4 rounded-xl font-bold hover:bg-indigo-700 transition shadow-lg flex items-center gap-2">Proceed <span class="text-xl">→</span></button></div>
+                        <div class="flex justify-center"><button onclick="proceedToStep2()" class="bg-indigo-600 text-white px-10 py-4 rounded-xl font-bold hover:bg-indigo-700 transition shadow-lg flex items-center gap-2"><span data-t="proceed">Proceed</span> <span class="text-xl">→</span></button></div>
                     </div>
                 </div>
 
-                <!-- Step 2: Charge Balancing -->
                 <div id="step-2" class="step hidden text-center">
                     <div class="flex justify-between items-center mb-6">
-                        <button onclick="goBackToSelection()" class="text-indigo-600 hover:underline">&larr; Back</button>
-                        <span class="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-xs font-bold uppercase">Step 2: Neutral Compound</span>
+                        <button onclick="goBackToSelection()" class="text-indigo-600 hover:underline">&larr; <span data-t="back">Back</span></button>
+                        <span class="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-xs font-bold uppercase" data-t="step2Label">Step 2: Neutral Compound</span>
                     </div>
                     
-                    <h2 class="text-xl font-semibold mb-2">Balance the Overall Charge</h2>
-                    <p class="text-slate-500 mb-6 text-sm">Total positive charge must equal total negative charge.</p>
+                    <h2 class="text-xl font-semibold mb-2" data-t="balanceTitle">Balance the Overall Charge</h2>
+                    <p class="text-slate-500 mb-6 text-sm" data-t="balanceSub">Total positive charge must equal total negative charge.</p>
                     
                     <div class="flex flex-col items-center gap-4 mb-8">
                         <div class="flex items-center gap-4 text-lg">
@@ -182,9 +166,8 @@
                             <div class="p-4 bg-slate-100 rounded-lg chem-eqn min-w-[70px]"><span id="s2-nm-sym" class="font-bold"></span><sup><span id="s2-nm-chg"></span></sup></div>
                         </div>
                         <div class="flex flex-wrap justify-center gap-8 mt-4">
-                            <!-- Metal Counter -->
                             <div class="flex flex-col items-center">
-                                <label class="block text-[10px] font-bold text-slate-500 mb-2 uppercase tracking-wider">Metal Ions</label>
+                                <label class="block text-[10px] font-bold text-slate-500 mb-2 uppercase tracking-wider" data-t="metalIons">Metal Ions</label>
                                 <div class="flex items-center gap-2">
                                     <button onclick="updateCounter('m', -1)" class="counter-btn">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M20 12H4" /></svg>
@@ -195,9 +178,8 @@
                                     </button>
                                 </div>
                             </div>
-                            <!-- Non-Metal Counter -->
                             <div class="flex flex-col items-center">
-                                <label class="block text-[10px] font-bold text-slate-500 mb-2 uppercase tracking-wider">Non-Metal Ions</label>
+                                <label class="block text-[10px] font-bold text-slate-500 mb-2 uppercase tracking-wider" data-t="nonMetalIons">Non-Metal Ions</label>
                                 <div class="flex items-center gap-2">
                                     <button onclick="updateCounter('nm', -1)" class="counter-btn">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M20 12H4" /></svg>
@@ -210,27 +192,25 @@
                             </div>
                         </div>
                     </div>
-                    <button onclick="checkStep2()" class="bg-indigo-600 text-white px-10 py-4 rounded-xl font-bold hover:bg-indigo-700 shadow-lg transition relative z-10">Check Ratio Accuracy</button>
+                    <button onclick="checkStep2()" class="bg-indigo-600 text-white px-10 py-4 rounded-xl font-bold hover:bg-indigo-700 shadow-lg transition relative z-10" data-t="checkRatio">Check Ratio Accuracy</button>
                 </div>
 
-                <!-- Step 3: Final Diagram -->
                 <div id="step-3" class="step hidden">
                     <div class="flex justify-between items-center mb-4">
-                        <button onclick="goBack(2)" class="text-indigo-600 hover:underline">&larr; Back</button>
-                        <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest">Construction Guidance</span>
+                        <button onclick="goBack(2)" class="text-indigo-600 hover:underline">&larr; <span data-t="back">Back</span></button>
+                        <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest" data-t="step3Label">Construction Guidance</span>
                     </div>
 
                     <div class="drawing-notice bg-amber-50 border-2 border-amber-200 rounded-2xl p-4 mb-4 flex items-center justify-center gap-3 shadow-sm">
                         <span class="text-xl">✏️</span>
-                        <p class="text-amber-900 font-bold text-sm md:text-base">Draw together with the simulation!</p>
+                        <p class="text-amber-900 font-bold text-sm md:text-base" data-t="drawingNotice">Draw together with the simulation!</p>
                         <span class="text-xl">📝</span>
                     </div>
 
-                    <div id="prev-work-summary" class="bg-slate-100 border border-slate-200 rounded-xl p-3 mb-4 text-center text-base font-bold chem-eqn text-slate-700">
-                    </div>
+                    <div id="prev-work-summary" class="bg-slate-100 border border-slate-200 rounded-xl p-3 mb-4 text-center text-base font-bold chem-eqn text-slate-700"></div>
 
                     <div class="bg-indigo-900 text-indigo-100 p-4 rounded-xl mb-6 text-center shadow-lg min-h-[64px] flex items-center justify-center italic text-sm">
-                        <span id="anim-guidance">Initializing diagram...</span>
+                        <span id="anim-guidance" data-t="initDiagram">Initializing diagram...</span>
                     </div>
 
                     <div class="bg-white border-2 border-slate-100 rounded-2xl mb-8 overflow-hidden py-10 relative">
@@ -239,10 +219,10 @@
 
                     <div class="flex justify-center p-4">
                         <button id="anim-next-btn" onclick="runNextAnimStep()" class="action-btn bg-indigo-600 text-white px-12 py-5 rounded-2xl font-bold text-xl hover:bg-indigo-700 transition shadow-xl flex items-center gap-3">
-                            Next Step 
+                            <span data-t="nextStep">Next Step</span>
                         </button>
                         <button id="reset-sim-btn" onclick="resetSim()" class="hidden action-btn bg-slate-800 text-white px-12 py-5 rounded-2xl font-bold text-xl hover:bg-black transition shadow-xl">
-                            New Simulation
+                            <span data-t="newSim">New Simulation</span>
                         </button>
                     </div>
                 </div>
@@ -250,34 +230,149 @@
         </main>
     </div>
 
-    <!-- Moved to top to avoid blocking mobile buttons -->
     <div id="msg-box" class="bg-slate-900 text-white px-6 py-3 rounded-full shadow-2xl opacity-0"></div>
 
     <script>
-        const compounds = [
-            { id: 1, m: 'Na', nm: 'Cl', mVal: 1, nmVal: 7, mConf: '2,8,1', nmConf: '2,8,7', mStable: '2,8', nmStable: '2,8,8', name: 'Sodium Chloride' },
-            { id: 2, m: 'K', nm: 'O', mVal: 1, nmVal: 6, mConf: '2,8,8,1', nmConf: '2,6', mStable: '2,8,8', nmStable: '2,8', name: 'Potassium Oxide' },
-            { id: 3, m: 'Na', nm: 'N', mVal: 1, nmVal: 5, mConf: '2,8,1', nmConf: '2,5', mStable: '2,8', nmStable: '2,8', name: 'Sodium Nitride' },
-            { id: 4, m: 'Ca', nm: 'S', mVal: 2, nmVal: 6, mConf: '2,8,8,2', nmConf: '2,8,6', mStable: '2,8,8', nmStable: '2,8,8', name: 'Calcium Sulfide' },
-            { id: 5, m: 'Mg', nm: 'F', mVal: 2, nmVal: 7, mConf: '2,8,2', nmConf: '2,7', mStable: '2,8', nmStable: '2,8', name: 'Magnesium Fluoride' },
-            { id: 6, m: 'Ca', nm: 'P', mVal: 2, nmVal: 5, mConf: '2,8,8,2', nmConf: '2,8,5', mStable: '2,8,8', nmStable: '2,8,8', name: 'Calcium Phosphide' },
-            { id: 7, m: 'Al', nm: 'Cl', mVal: 3, nmVal: 7, mConf: '2,8,3', nmConf: '2,8,7', mStable: '2,8', nmStable: '2,8,8', name: 'Aluminium Chloride' },
-            { id: 8, m: 'Al', nm: 'O', mVal: 3, nmVal: 6, mConf: '2,8,3', nmConf: '2,6', mStable: '2,8', nmStable: '2,8', name: 'Aluminium Oxide' }
-        ];
-
         let currentCompound = null;
+        let currentLang = 'en';
         let userSteps = { mDelta: 0, nmDelta: 0, mRatio: 1, nmRatio: 1 };
         let animStepIdx = 0;
 
-        function init() {
-            const list = document.getElementById('compound-list');
-            compounds.forEach(c => {
-                const btn = document.createElement('button');
-                btn.className = "p-4 border-2 border-slate-100 rounded-xl hover:border-indigo-500 hover:bg-indigo-50 transition text-center group flex flex-col items-center justify-center";
-                btn.onclick = () => selectCompound(c);
-                btn.innerHTML = `<div class="font-bold text-lg group-hover:text-indigo-700 chem-eqn">${c.m} & ${c.nm}</div><div class="text-[10px] text-slate-400 mt-1">${c.name}</div>`;
-                list.appendChild(btn);
+        const translations = {
+            en: {
+                title: "Ionic Diagram Lab",
+                subtitle: "Mastering Dot-and-Cross Electron Diagrams",
+                langBtn: "繁體中文",
+                selectElements: "Select Elements to Combine",
+                back: "Back",
+                step1Label: "Step 1: Stability of Outermost Shell",
+                checkStep1: "Check Stability Logic",
+                ionSummary: "Ion Formation Summary",
+                chargeNote: "Note: Charges like 1+ are shown as +.",
+                proceed: "Proceed",
+                step2Label: "Step 2: Make the Compound charge neutral",
+                balanceTitle: "Balance the Overall Charge",
+                balanceSub: "Total positive charge must equal total negative charge.",
+                metalIons: "Metal Ions",
+                nonMetalIons: "Non-Metal Ions",
+                checkRatio: "Check Ratio Accuracy",
+                step3Label: "Construction Guidance",
+                drawingNotice: "Draw together with the simulation!",
+                initDiagram: "Initializing diagram...",
+                nextStep: "Next Step",
+                newSim: "New Simulation",
+                combining: "Combining",
+                metal: "Metal",
+                nonmetal: "Non-metal",
+                original: "Original",
+                stable: "Stable",
+                lose: "Lose",
+                gain: "Gain",
+                select: "Select...",
+                errorStability: "The final electronic arrangement is not stable! Check again!",
+                errorCharge: "Total charge is not zero. Adjust the numbers!",
+                anim1: "1. For the cation, enclose the metal in brackets with the charge outside.",
+                anim2: "2. Draw the non-metal shell with original outermost shell electrons (×).",
+                anim3: "3. Add the electrons gained from the metal (•).",
+                anim4: "4. Add the anion brackets and the total charge outside.",
+                anim5: "5. Place the ratio numbers from our calculation! Remember: if the ratio is '1', we cancel it out because it is implied!",
+            },
+            zh: {
+                title: "離子鍵電子圖教學",
+                subtitle: "掌握如何繪畫電子圖",
+                langBtn: "English",
+                selectElements: "選擇要結合的元素",
+                back: "返回",
+                step1Label: "步驟 1：最外層層電子的穩定性",
+                checkStep1: "檢查穩定性邏輯",
+                ionSummary: "離子形成摘要",
+                chargeNote: "注意：1+ 等電荷會簡寫為 +。",
+                proceed: "下一步",
+                step2Label: "步驟 2：令化合物的電荷變0",
+                balanceTitle: "平衡總電荷",
+                balanceSub: "正電荷總數必須等於負電荷總數。",
+                metalIons: "金屬離子",
+                nonMetalIons: "非金屬離子",
+                checkRatio: "檢查比例準確度",
+                step3Label: "繪圖指引",
+                drawingNotice: "請跟隨模擬動畫一起動手畫電子圖！",
+                initDiagram: "正在初始化圖表...",
+                nextStep: "下一步",
+                newSim: "重新開始",
+                combining: "正在結合",
+                metal: "金屬",
+                nonmetal: "非金屬",
+                original: "原始電子組態",
+                stable: "穩定電子組態",
+                lose: "失去",
+                gain: "得到",
+                select: "請選擇...",
+                errorStability: "最終電子組態不穩定，請再檢查！",
+                errorCharge: "總電荷不為零，請調整數量！",
+                anim1: "1. 繪畫陽離子時候，用方括號圍住金屬，並將電荷標示在外面。",
+                anim2: "2. 畫出非金屬的外殼及其原始最外層電子 (×)。",
+                anim3: "3. 加入從金屬獲得的電子 (•) 以完成八隅體。",
+                anim4: "4. 加入陰離子方括號及標示總電荷。",
+                anim5: "5. 標上計算出的比例數字。記住：如果比例是「1」，我們會將其消去，因為電子圖已經隱含了這個意思。",
+            }
+        };
+
+        const compounds = [
+            { id: 1, m: 'Na', nm: 'Cl', mVal: 1, nmVal: 7, mConf: '2,8,1', nmConf: '2,8,7', mStable: '2,8', nmStable: '2,8,8', name: 'Sodium Chloride', nameZh: '氯化鈉' },
+            { id: 2, m: 'K', nm: 'O', mVal: 1, nmVal: 6, mConf: '2,8,8,1', nmConf: '2,6', mStable: '2,8,8', nmStable: '2,8', name: 'Potassium Oxide', nameZh: '氧化鉀' },
+            { id: 3, m: 'Na', nm: 'N', mVal: 1, nmVal: 5, mConf: '2,8,1', nmConf: '2,5', mStable: '2,8', nmStable: '2,8', name: 'Sodium Nitride', nameZh: '氮化鈉' },
+            { id: 4, m: 'Ca', nm: 'S', mVal: 2, nmVal: 6, mConf: '2,8,8,2', nmConf: '2,8,6', mStable: '2,8,8', nmStable: '2,8,8', name: 'Calcium Sulfide', nameZh: '硫化鈣' },
+            { id: 5, m: 'Mg', nm: 'F', mVal: 2, nmVal: 7, mConf: '2,8,2', nmConf: '2,7', mStable: '2,8', nmStable: '2,8', name: 'Magnesium Fluoride', nameZh: '氟化鎂' },
+            { id: 6, m: 'Ca', nm: 'P', mVal: 2, nmVal: 5, mConf: '2,8,8,2', nmConf: '2,8,5', mStable: '2,8,8', nmStable: '2,8,8', name: 'Calcium Phosphide', nameZh: '磷化鈣' },
+            { id: 7, m: 'Al', nm: 'Cl', mVal: 3, nmVal: 7, mConf: '2,8,3', nmConf: '2,8,7', mStable: '2,8', nmStable: '2,8,8', name: 'Aluminium Chloride', nameZh: '氯化鋁' },
+            { id: 8, m: 'Al', nm: 'O', mVal: 3, nmVal: 6, mConf: '2,8,3', nmConf: '2,6', mStable: '2,8', nmStable: '2,8', name: 'Aluminium Oxide', nameZh: '氧化鋁' }
+        ];
+
+        function toggleLanguage() {
+            currentLang = currentLang === 'en' ? 'zh' : 'en';
+            applyTranslations();
+        }
+
+        function applyTranslations() {
+            const t = translations[currentLang];
+            document.getElementById('lang-label').innerText = t.langBtn;
+            
+            document.querySelectorAll('[data-t]').forEach(el => {
+                const key = el.getAttribute('data-t');
+                if (t[key]) el.innerText = t[key];
             });
+
+            // Update Compound List (Home Screen)
+            const list = document.getElementById('compound-list');
+            if (list) {
+                list.innerHTML = '';
+                compounds.forEach(c => {
+                    const btn = document.createElement('button');
+                    btn.className = "p-4 border-2 border-slate-100 rounded-xl hover:border-indigo-500 hover:bg-indigo-50 transition text-center group flex flex-col items-center justify-center";
+                    btn.onclick = () => selectCompound(c);
+                    const name = currentLang === 'en' ? c.name : c.nameZh;
+                    btn.innerHTML = `<div class="font-bold text-lg group-hover:text-indigo-700 chem-eqn">${c.m} & ${c.nm}</div><div class="text-[10px] text-slate-400 mt-1">${name}</div>`;
+                    list.appendChild(btn);
+                });
+            }
+
+            if (currentCompound) {
+                const step1Title = document.getElementById('step-1-title');
+                if (step1Title) step1Title.innerText = `${t.combining} ${currentCompound.m} ${currentLang === 'en' ? 'and' : '與'} ${currentCompound.nm}`;
+                
+                const mSelectEl = document.getElementById('m-select');
+                if (mSelectEl) {
+                    const mVal = mSelectEl.value;
+                    const nmVal = document.getElementById('nm-select').value;
+                    selectCompound(currentCompound);
+                    document.getElementById('m-select').value = mVal;
+                    document.getElementById('nm-select').value = nmVal;
+                }
+            }
+        }
+
+        function init() {
+            applyTranslations();
         }
 
         function formatCharge(val, type) {
@@ -287,37 +382,39 @@
 
         function selectCompound(c) {
             currentCompound = c;
+            const t = translations[currentLang];
             showStep(1);
             document.getElementById('step-1-selection-area').classList.remove('hidden');
             document.getElementById('step-1-summary-area').classList.add('hidden');
-            document.getElementById('step-1-title').innerText = `Combining ${c.m} and ${c.nm}`;
+            document.getElementById('step-1-title').innerText = `${t.combining} ${c.m} ${currentLang === 'en' ? 'and' : '與'} ${c.nm}`;
             
             document.getElementById('m-valence-card').innerHTML = `
-                <h3 class="font-bold text-blue-700 text-lg mb-2 chem-eqn">${c.m} (Metal)</h3>
-                <div class="text-[11px] bg-white p-2 rounded border w-full mb-3"><p class="text-slate-400">Original: ${c.mConf}</p><p class="font-bold text-blue-600">Stable: ${c.mStable}</p></div>
+                <h3 class="font-bold text-blue-700 text-lg mb-2 chem-eqn">${c.m} (${t.metal})</h3>
+                <div class="text-[11px] bg-white p-2 rounded border w-full mb-3"><p class="text-slate-400">${t.original}: ${c.mConf}</p><p class="font-bold text-blue-600">${t.stable}: ${c.mStable}</p></div>
                 <select id="m-select" class="p-2 w-full rounded border-2 border-blue-200 text-sm">
-                    <option value="0">Select...</option><option value="1">Lose 1</option><option value="2">Lose 2</option><option value="3">Lose 3</option>
+                    <option value="0">${t.select}</option><option value="1">${t.lose} 1</option><option value="2">${t.lose} 2</option><option value="3">${t.lose} 3</option>
                 </select>`;
 
             document.getElementById('nm-valence-card').innerHTML = `
-                <h3 class="font-bold text-orange-700 text-lg mb-2 chem-eqn">${c.nm} (Non-metal)</h3>
-                <div class="text-[11px] bg-white p-2 rounded border w-full mb-3"><p class="text-slate-400">Original: ${c.nmConf}</p><p class="font-bold text-orange-600">Stable: ${c.nmStable}</p></div>
+                <h3 class="font-bold text-orange-700 text-lg mb-2 chem-eqn">${c.nm} (${t.nonmetal})</h3>
+                <div class="text-[11px] bg-white p-2 rounded border w-full mb-3"><p class="text-slate-400">${t.original}: ${c.nmConf}</p><p class="font-bold text-orange-600">${t.stable}: ${c.nmStable}</p></div>
                 <select id="nm-select" class="p-2 w-full rounded border-2 border-orange-200 text-sm">
-                    <option value="0">Select...</option><option value="1">Gain 1</option><option value="2">Gain 2</option><option value="3">Gain 3</option>
+                    <option value="0">${t.select}</option><option value="1">${t.gain} 1</option><option value="2">${t.gain} 2</option><option value="3">${t.gain} 3</option>
                 </select>`;
         }
 
         function checkStep1() {
             const m = parseInt(document.getElementById('m-select').value);
             const nm = parseInt(document.getElementById('nm-select').value);
+            const t = translations[currentLang];
             if (m !== currentCompound.mVal || nm !== (8 - currentCompound.nmVal)) {
-                showMessage("Check stability goals!", "error"); return;
+                showMessage(t.errorStability, "error"); return;
             }
             userSteps.mDelta = m; userSteps.nmDelta = nm;
             document.getElementById('m-eqn').innerHTML = `${currentCompound.m} → ${currentCompound.m}<sup>${formatCharge(m, 'pos')}</sup> + ${m > 1 ? m : ''}e<sup>-</sup>`;
             document.getElementById('nm-eqn').innerHTML = `${currentCompound.nm} + ${nm > 1 ? nm : ''}e<sup>-</sup> → ${currentCompound.nm}<sup>${formatCharge(nm, 'neg')}</sup>`;
-            document.getElementById('m-desc').innerText = `Lose ${m} e-`;
-            document.getElementById('nm-desc').innerText = `Gain ${nm} e-`;
+            document.getElementById('m-desc').innerText = `${t.lose} ${m} e-`;
+            document.getElementById('nm-desc').innerText = `${t.gain} ${nm} e-`;
             document.getElementById('step-1-selection-area').classList.add('hidden');
             document.getElementById('step-1-summary-area').classList.remove('hidden');
         }
@@ -344,11 +441,12 @@
         }
 
         function checkStep2() {
+            const t = translations[currentLang];
             if (userSteps.mRatio * userSteps.mDelta === userSteps.nmRatio * userSteps.nmDelta) {
                 startFinalAnimation();
                 showStep(3);
             } else {
-                showMessage("Total charge is not zero. Adjust the numbers!", "error");
+                showMessage(t.errorCharge, "error");
             }
         }
 
@@ -425,25 +523,26 @@
             });
         }
 
-        const animationSteps = [
-            { text: "1. For the cation, enclose the metal in brackets with the charge outside.", action: () => { document.querySelectorAll('#m-wrap .bracket').forEach(b => b.classList.add('visible')); document.getElementById('m-charge-tag').classList.add('visible'); } },
-            { text: "2. Draw the non-metal shell with original valence electrons (×).", action: () => { document.getElementById('nm-shell-visual').classList.add('visible'); document.querySelectorAll('.e-cross').forEach(e => e.classList.add('visible')); } },
-            { text: "3. Add the electrons gained from the metal (●).", action: () => { document.querySelectorAll('.e-dot').forEach(e => e.classList.add('visible')); } },
-            { text: "4. Add the anion brackets and the total charge outside.", action: () => { document.querySelectorAll('#nm-wrap .bracket').forEach(b => b.classList.add('visible')); document.getElementById('nm-charge-tag').classList.add('visible'); } },
-            { text: "5. Place the ratio numbers from our calculation!", action: async () => {
-                const btn = document.getElementById('anim-next-btn');
-                btn.disabled = true; btn.classList.add('opacity-50');
-                await flyNumber('source-m-count', 'target-m-count', userSteps.mRatio);
-                await flyNumber('source-nm-count', 'target-nm-count', userSteps.nmRatio);
-                btn.disabled = false; btn.classList.remove('opacity-50');
-                if (userSteps.mRatio === 1) { document.getElementById('target-m-count').classList.add('striking'); setTimeout(()=>document.getElementById('target-m-count').classList.add('fade-out'), 400); }
-                if (userSteps.nmRatio === 1) { document.getElementById('target-nm-count').classList.add('striking'); setTimeout(()=>document.getElementById('target-nm-count').classList.add('fade-out'), 400); }
-                document.getElementById('anim-next-btn').classList.add('hidden');
-                document.getElementById('reset-sim-btn').classList.remove('hidden');
-            } }
-        ];
-
         function runNextAnimStep() {
+            const t = translations[currentLang];
+            const animationSteps = [
+                { text: t.anim1, action: () => { document.querySelectorAll('#m-wrap .bracket').forEach(b => b.classList.add('visible')); document.getElementById('m-charge-tag').classList.add('visible'); } },
+                { text: t.anim2, action: () => { document.getElementById('nm-shell-visual').classList.add('visible'); document.querySelectorAll('.e-cross').forEach(e => e.classList.add('visible')); } },
+                { text: t.anim3, action: () => { document.querySelectorAll('.e-dot').forEach(e => e.classList.add('visible')); } },
+                { text: t.anim4, action: () => { document.querySelectorAll('#nm-wrap .bracket').forEach(b => b.classList.add('visible')); document.getElementById('nm-charge-tag').classList.add('visible'); } },
+                { text: t.anim5, action: async () => {
+                    const btn = document.getElementById('anim-next-btn');
+                    btn.disabled = true; btn.classList.add('opacity-50');
+                    await flyNumber('source-m-count', 'target-m-count', userSteps.mRatio);
+                    await flyNumber('source-nm-count', 'target-nm-count', userSteps.nmRatio);
+                    btn.disabled = false; btn.classList.remove('opacity-50');
+                    if (userSteps.mRatio === 1) { document.getElementById('target-m-count').classList.add('striking'); setTimeout(()=>document.getElementById('target-m-count').classList.add('fade-out'), 400); }
+                    if (userSteps.nmRatio === 1) { document.getElementById('target-nm-count').classList.add('striking'); setTimeout(()=>document.getElementById('target-nm-count').classList.add('fade-out'), 400); }
+                    document.getElementById('anim-next-btn').classList.add('hidden');
+                    document.getElementById('reset-sim-btn').classList.remove('hidden');
+                } }
+            ];
+
             if (animStepIdx < animationSteps.length) {
                 const step = animationSteps[animStepIdx];
                 document.getElementById('anim-guidance').innerText = step.text;
@@ -459,7 +558,7 @@
 
         function goBackToSelection() { showStep(1); }
         function goBack(n) { showStep(n); }
-        function resetSim() { currentCompound = null; showStep(0); }
+        function resetSim() { currentCompound = null; showStep(0); applyTranslations(); }
 
         function showMessage(text, type = "success") {
             const box = document.getElementById('msg-box');
