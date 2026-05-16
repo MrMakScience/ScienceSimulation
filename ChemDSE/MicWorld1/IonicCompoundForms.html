@@ -33,8 +33,9 @@
             transition: opacity 0.5s ease-in;
         }
         .bracket-visible { opacity: 1; }
-        .bracket-left { left: -20px; border-right: 0; }
-        .bracket-right { right: -20px; border-left: 0; }
+        /* Spacing set to -35px to avoid electron obstruction in Period 3 atoms */
+        .bracket-left { left: -35px; border-right: 0; }
+        .bracket-right { right: -35px; border-left: 0; }
         
         .charge-display {
             position: absolute;
@@ -52,10 +53,21 @@
 
     <div class="max-w-4xl w-full bg-slate-800 rounded-3xl shadow-2xl overflow-hidden border border-slate-700">
         <div class="bg-slate-700 p-4 md:p-6 flex flex-col sm:flex-row justify-between items-center gap-4">
-            <div>
-                <h1 class="text-xl md:text-2xl font-bold text-blue-400">Ionic Bond Simulator</h1>
-                <p class="text-slate-300 text-xs md:text-sm">Understanding Electron Transfer</p>
+            <div class="flex items-center gap-3">
+                <div>
+                    <h1 id="main-title" class="text-xl md:text-2xl font-bold text-blue-400">Ionic Bond Simulator</h1>
+                    <p id="main-subtitle" class="text-slate-300 text-xs md:text-sm">Understanding Electron Transfer</p>
+                </div>
+                
+                <!-- Updated Language Toggle Panel -->
+                <button onclick="toggleLanguage()" class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-800/80 hover:bg-slate-600 transition-all border border-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.15)] group" title="Switch Language / 切換語言">
+                    <div class="p-1 rounded-full bg-blue-600/20 group-hover:bg-blue-600/40 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-blue-400"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                    </div>
+                    <span id="lang-label" class="text-xs font-bold uppercase tracking-wider text-slate-300 group-hover:text-white">EN</span>
+                </button>
             </div>
+            
             <div class="flex gap-1 md:gap-2" id="example-selector">
                 <button onclick="selectExample('LiS')" id="btn-LiS" class="px-3 py-1.5 md:px-4 md:py-2 rounded-lg bg-blue-600 hover:bg-blue-500 transition-colors text-xs md:text-sm font-medium">Li + S</button>
                 <button onclick="selectExample('AlO')" id="btn-AlO" class="px-3 py-1.5 md:px-4 md:py-2 rounded-lg bg-slate-600 hover:bg-blue-500 transition-colors text-xs md:text-sm font-medium">Al + O</button>
@@ -74,7 +86,7 @@
 
             <div class="flex justify-between items-center">
                 <div class="flex items-center gap-2">
-                    <span class="hidden xs:inline text-[10px] text-slate-400 uppercase tracking-widest">Progress</span>
+                    <span id="progress-label" class="hidden xs:inline text-[10px] text-slate-400 uppercase tracking-widest">Progress</span>
                     <div class="flex gap-1" id="progress-dots">
                         <div class="w-2.5 h-2.5 rounded-full bg-blue-500"></div>
                         <div class="w-2.5 h-2.5 rounded-full bg-slate-600"></div>
@@ -84,10 +96,10 @@
                 
                 <div class="flex gap-2 md:gap-4">
                     <button id="prev-btn" onclick="prevStep()" class="hidden px-4 py-2 md:px-6 md:py-3 rounded-xl bg-slate-700 hover:bg-slate-600 transition-all flex items-center gap-2 text-sm">
-                        <span>← Back</span>
+                        <span id="prev-text">← Back</span>
                     </button>
                     <button id="next-btn" onclick="nextStep()" class="px-5 py-2 md:px-8 md:py-3 rounded-xl bg-blue-600 hover:bg-blue-500 shadow-lg shadow-blue-900/20 transition-all font-bold flex items-center gap-2 text-sm">
-                        <span>Next Step</span><span class="text-lg">→</span>
+                        <span id="next-text">Next Step</span><span class="text-lg">→</span>
                     </button>
                 </div>
             </div>
@@ -95,18 +107,76 @@
     </div>
 
     <script>
+        const translations = {
+            en: {
+                title: "Ionic Bond Simulator",
+                subtitle: "Understanding Electron Transfer",
+                langLabel: "EN",
+                progress: "Progress",
+                back: "← Back",
+                next: "Next Step →",
+                restart: "Restart ⟳",
+                steps: ["Step 1: Individual Atoms", "Step 2: Identifying electron gain/lose", "Step 3: Transfer & Ion Formation"],
+                metalNames: { Lithium: "Lithium", Aluminum: "Aluminum", Sodium: "Sodium" },
+                nonMetalNames: { Sulfur: "Sulfur", Oxygen: "Oxygen", Chlorine: "Chlorine" },
+                prefLose: "lose",
+                prefGain: "gain",
+                note2: "Metals lose electrons to form cations; Non-metals gain to form anions.",
+                step1: (m, nm) => `Atoms of ${m} and ${nm} are unstable. They react to achieve a stable noble gas electronic arrangement.`,
+                step2: (m, nm) => `${m} loses outermost shell electrons, while ${nm} gains them to fill its outermost shell.`,
+                step3: (mCount, mName, mPlural, mVal, ePlural, nmCount, nmName, nmPlural) => `Ionic bond is formed when ${mCount} ${mName} ${mPlural} each transfer ${mVal} ${ePlural} to ${nmCount} ${nmName} ${nmPlural}, which forms ${mName} ions and ${nmName} ions with stable electronic arrangement of noble gas atoms.`
+            },
+            zh: {
+                title: "離子鍵的形成",
+                subtitle: "理解電子轉移過程",
+                langLabel: "中文",
+                progress: "進度",
+                back: "← 返回",
+                next: "下一步 →",
+                restart: "重新開始 ⟳",
+                steps: ["步驟 1: 獨立原子", "步驟 2: 確定電子得失傾向", "步驟 3: 電子轉移與離子形成"],
+                metalNames: { Lithium: "鋰", Aluminum: "鋁", Sodium: "鈉" },
+                nonMetalNames: { Sulfur: "硫", Oxygen: "氧", Chlorine: "氯" },
+                prefLose: "失去",
+                prefGain: "得到",
+                note2: "金屬失去電子形成陽離子；非金屬得到電子形成陰離子。",
+                step1: (m, nm) => `${m}和${nm}的原子是不穩定的。它們透過反應來達到穩定的貴氣體原子的電子排佈。`,
+                step2: (m, nm) => `${m}會失去最外層電子，而${nm}會得到電子以填滿其最外層。`,
+                step3: (mCount, mName, mPlural, mVal, ePlural, nmCount, nmName, nmPlural) => `當 ${mCount} 個${mName}原子各自轉移 ${mVal} 個電子給 ${nmCount} 個${nmName}原子時，便形成了離子鍵。這產生了具有穩定貴氣體電子排佈的${mName}離子和${nmName}離子。`
+            }
+        };
+
+        let currentLang = 'en';
+        let currentExample = 'LiS';
+        let currentStep = 1;
+
         const config = {
             LiS: { metal: { name: 'Lithium', symbol: 'Li', electrons: [2, 1], color: '#60a5fa', count: 2 }, nonMetal: { name: 'Sulfur', symbol: 'S', electrons: [2, 8, 6], color: '#facc15', count: 1 }, formula: 'Li₂S' },
             AlO: { metal: { name: 'Aluminum', symbol: 'Al', electrons: [2, 8, 3], color: '#94a3b8', count: 2 }, nonMetal: { name: 'Oxygen', symbol: 'O', electrons: [2, 6], color: '#f87171', count: 3 }, formula: 'Al₂O₃' },
             NaCl: { metal: { name: 'Sodium', symbol: 'Na', electrons: [2, 8, 1], color: '#fb923c', count: 1 }, nonMetal: { name: 'Chlorine', symbol: 'Cl', electrons: [2, 8, 7], color: '#4ade80', count: 1 }, formula: 'NaCl' }
         };
 
-        let currentExample = 'LiS';
-        let currentStep = 1;
+        function toggleLanguage() {
+            currentLang = currentLang === 'en' ? 'zh' : 'en';
+            updateUIStrings();
+            render();
+        }
+
+        function updateUIStrings() {
+            const t = translations[currentLang];
+            document.getElementById('main-title').innerText = t.title;
+            document.getElementById('main-subtitle').innerText = t.subtitle;
+            document.getElementById('lang-label').innerText = t.langLabel;
+            document.getElementById('progress-label').innerText = t.progress;
+            document.getElementById('prev-text').innerText = t.back;
+        }
 
         function selectExample(key) {
             currentExample = key; currentStep = 1;
-            ['LiS', 'AlO', 'NaCl'].forEach(k => document.getElementById(`btn-${k}`).className = k === key ? "px-3 py-1.5 md:px-4 md:py-2 rounded-lg bg-blue-600 hover:bg-blue-500 transition-colors text-xs md:text-sm font-medium" : "px-3 py-1.5 md:px-4 md:py-2 rounded-lg bg-slate-600 hover:bg-blue-500 transition-colors text-xs md:text-sm font-medium");
+            ['LiS', 'AlO', 'NaCl'].forEach(k => {
+                const btn = document.getElementById(`btn-${k}`);
+                btn.className = k === key ? "px-3 py-1.5 md:px-4 md:py-2 rounded-lg bg-blue-600 hover:bg-blue-500 transition-colors text-xs md:text-sm font-medium" : "px-3 py-1.5 md:px-4 md:py-2 rounded-lg bg-slate-600 hover:bg-blue-500 transition-colors text-xs md:text-sm font-medium";
+            });
             render();
         }
 
@@ -116,37 +186,39 @@
         function render() {
             const stage = document.getElementById('stage');
             const data = config[currentExample];
+            const t = translations[currentLang];
             const dots = document.getElementById('progress-dots').children;
             for(let i=0; i<3; i++) dots[i].className = `w-2.5 h-2.5 rounded-full ${i < currentStep ? 'bg-blue-500' : 'bg-slate-600'}`;
 
             stage.innerHTML = '';
             document.getElementById('prev-btn').classList.toggle('hidden', currentStep === 1);
-            document.getElementById('next-btn').innerHTML = currentStep === 3 ? 'Restart ⟳' : 'Next Step →';
+            document.getElementById('next-text').innerText = currentStep === 3 ? t.restart : t.next;
             
             const stepTitle = document.getElementById('step-title');
             const stepText = document.getElementById('step-text');
             const stepNote = document.getElementById('step-note');
             stepNote.innerText = "";
 
+            const mName = t.metalNames[data.metal.name];
+            const nmName = t.nonMetalNames[data.nonMetal.name];
+
             if (currentStep === 1) {
-                stepTitle.innerText = "Step 1: Individual Atoms";
-                stepText.innerText = `Atoms of ${data.metal.name} and ${data.nonMetal.name} are unstable. They react to achieve a stable noble gas electronic arrangement.`;
+                stepTitle.innerText = t.steps[0];
+                stepText.innerText = t.step1(mName, nmName);
                 drawAtoms(stage, data, false, false);
             } else if (currentStep === 2) {
-                stepTitle.innerText = "Step 2: Identifying Preferences";
-                stepText.innerText = `${data.metal.name} loses outermost shell electrons, while ${data.nonMetal.name} gains them to fill its outermost shell.`;
-                stepNote.innerText = "Metals lose electrons to form positive ions; Non-metals gain to form negative ions.";
+                stepTitle.innerText = t.steps[1];
+                stepText.innerText = t.step2(mName, nmName);
+                stepNote.innerText = t.note2;
                 drawAtoms(stage, data, true, false);
             } else {
-                stepTitle.innerText = "Step 3: Transfer & Ion Formation";
-                
+                stepTitle.innerText = t.steps[2];
                 const mVal = data.metal.electrons[data.metal.electrons.length - 1];
-                const mPlural = data.metal.count > 1 ? "atoms" : "atom";
-                const nmPlural = data.nonMetal.count > 1 ? "atoms" : "atom";
-                const ePlural = mVal > 1 ? "electrons" : "electron";
-
-                stepText.innerText = `Ionic bond is formed when ${data.metal.count} ${data.metal.name} ${mPlural} each transfer ${mVal} ${ePlural} to ${data.nonMetal.count} ${data.nonMetal.name} ${nmPlural}, which forms ${data.metal.name} ions and ${data.nonMetal.name} ions with stable electronic arrangement of noble gas.`;
+                const mPlural = currentLang === 'en' ? (data.metal.count > 1 ? "atoms" : "atom") : "";
+                const nmPlural = currentLang === 'en' ? (data.nonMetal.count > 1 ? "atoms" : "atom") : "";
+                const ePlural = currentLang === 'en' ? (mVal > 1 ? "electrons" : "electron") : "";
                 
+                stepText.innerText = t.step3(data.metal.count, mName, mPlural, mVal, ePlural, data.nonMetal.count, nmName, nmPlural);
                 drawAtoms(stage, data, true, true);
             }
         }
@@ -200,10 +272,17 @@
         function createAtomUI(atomData, type, showPrefs, animate) {
             const wrapper = document.createElement('div');
             wrapper.className = "relative flex items-center justify-center";
-            
-            const availableSpace = (window.innerWidth < 640) ? (window.innerWidth / 2) - 40 : 200;
+            const isMobile = window.innerWidth < 640;
+            const availableSpace = isMobile ? (window.innerWidth / 2) - 40 : 200;
             const baseSize = 180;
-            const responsiveScale = Math.min(0.9, availableSpace / baseSize) * (animate && atomData.count > 1 ? 0.7 : 0.95);
+            let responsiveScale = Math.min(0.9, availableSpace / baseSize);
+            
+            if (isMobile) {
+                if (animate) responsiveScale *= (atomData.count > 1 ? 0.55 : 0.75);
+                else responsiveScale *= 0.9;
+            } else {
+                responsiveScale *= (animate && atomData.count > 1 ? 0.7 : 0.95);
+            }
             
             wrapper.style.width = `${baseSize * responsiveScale}px`;
             wrapper.style.height = `${baseSize * responsiveScale}px`;
@@ -255,10 +334,10 @@
             if (showPrefs && !animate) {
                 const lb = document.createElement('div');
                 lb.className = "preference-label lowercase-label absolute left-1/2 -translate-x-1/2 whitespace-nowrap px-3 py-1.5 rounded-lg bg-slate-700 text-sm md:text-base font-black border-2 border-white/30 z-[100] transition-all";
-                // Moved labels further down to ensure no blocking of Period 3 orbits
                 lb.style.bottom = "-55px"; 
                 const v = atomData.electrons[atomData.electrons.length - 1];
-                lb.innerHTML = type === 'metal' ? `lose ${v} e-` : `gain ${8-v} e-`;
+                const t = translations[currentLang];
+                lb.innerHTML = type === 'metal' ? `${t.prefLose} ${v} e-` : `${t.prefGain} ${8-v} e-`;
                 lb.classList.add(type === 'metal' ? "text-blue-300" : "text-yellow-300");
                 wrapper.appendChild(lb);
             }
@@ -275,7 +354,10 @@
         }
 
         window.addEventListener('resize', render);
-        window.onload = () => render();
+        window.onload = () => {
+            updateUIStrings();
+            render();
+        };
     </script>
 </body>
 </html>
