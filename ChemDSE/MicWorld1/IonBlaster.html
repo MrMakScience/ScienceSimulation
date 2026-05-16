@@ -180,6 +180,10 @@
 
     <div class="max-w-5xl w-full relative">
         <div class="absolute top-0 right-0 z-10 flex flex-col items-end gap-2 p-2">
+            <button id="lang-toggle" onclick="toggleLanguage()" class="control-btn text-emerald-600">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                <span id="lang-status">English</span>
+            </button>
             <button id="music-toggle" onclick="toggleMusic()" class="control-btn text-indigo-600">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
                 <span id="music-status">Music On</span>
@@ -191,35 +195,35 @@
         </div>
 
         <header class="text-center mb-6">
-            <h1 class="text-3xl md:text-5xl font-bold text-slate-800 mb-2">Ion Blaster</h1>
+            <h1 id="app-title" class="text-3xl md:text-5xl font-bold text-slate-800 mb-2">Ion Blaster</h1>
             <p id="header-desc" class="text-slate-500 mb-4">Master the language of ions and compounds</p>
         </header>
 
         <div id="tab-library" class="space-y-8">
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-indigo-50 p-6 rounded-3xl border-2 border-indigo-100">
                 <div class="space-y-1">
-                    <h3 class="text-xl font-bold text-indigo-900">Ready to Challenge?</h3>
-                    <p class="text-indigo-700">Choose difficulty and press start to begin the 90s round.</p>
+                    <h3 id="lib-cta-title" class="text-xl font-bold text-indigo-900">Ready to Challenge?</h3>
+                    <p id="lib-cta-desc" class="text-indigo-700">Choose difficulty and press start to begin the 90s round.</p>
                     <div class="mode-switch mt-3">
                         <button id="mode-simple" onclick="setDifficulty('simple')">Simple</button>
                         <button id="mode-difficult" class="active" onclick="setDifficulty('difficult')">Difficult</button>
                     </div>
-                    <p class="text-xs text-indigo-400 mt-2 italic">Simple mode will skip many uncommon polyatomic ions.</p>
+                    <p id="lib-footnote" class="text-xs text-indigo-400 mt-2 italic">Simple mode will skip many uncommon polyatomic ions.</p>
                 </div>
-                <button onclick="startGame()" class="px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-xl font-bold shadow-lg shadow-indigo-200 transition-all transform hover:scale-105 active:scale-95">
+                <button id="play-btn" onclick="startGame()" class="px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-xl font-bold shadow-lg shadow-indigo-200 transition-all transform hover:scale-105 active:scale-95">
                     Play Game ➔
                 </button>
             </div>
 
             <section>
-                <h2 class="text-2xl font-bold text-sky-700 mb-4 flex items-center gap-2">
+                <h2 id="cations-title" class="text-2xl font-bold text-sky-700 mb-4 flex items-center gap-2">
                     <span class="w-8 h-8 bg-sky-100 rounded-lg flex items-center justify-center text-lg">+</span> 
                     Cations (Positive)
                 </h2>
                 <div id="cation-library" class="library-grid bg-white p-4 md:p-6 rounded-2xl shadow-lg border border-slate-200" style="container-type: inline-size;"></div>
             </section>
             <section>
-                <h2 class="text-2xl font-bold text-rose-700 mb-4 flex items-center gap-2">
+                <h2 id="anions-title" class="text-2xl font-bold text-rose-700 mb-4 flex items-center gap-2">
                     <span class="w-8 h-8 bg-rose-100 rounded-lg flex items-center justify-center text-lg">-</span> 
                     Anions (Negative)
                 </h2>
@@ -231,11 +235,11 @@
             <div class="w-full flex-1">
                 <div class="flex justify-between items-center mb-4 bg-white px-6 py-3 rounded-2xl shadow-sm border border-slate-100">
                     <div class="flex flex-col">
-                        <span class="text-xs uppercase font-bold text-slate-400">Time Left</span>
+                        <span id="label-time" class="text-xs uppercase font-bold text-slate-400">Time Left</span>
                         <span id="timer" class="text-2xl font-mono font-bold text-slate-700">01:30</span>
                     </div>
                     <div class="flex flex-col items-end">
-                        <span class="text-xs uppercase font-bold text-slate-400">Score</span>
+                        <span id="label-score" class="text-xs uppercase font-bold text-slate-400">Score</span>
                         <span id="game-score" class="text-2xl font-mono font-bold text-indigo-600">0</span>
                     </div>
                 </div>
@@ -243,21 +247,21 @@
                 <div id="game-grid" class="grid-container bg-white p-2 md:p-4 rounded-2xl shadow-xl border border-slate-200" style="container-type: inline-size;"></div>
                 
                 <div class="mt-4 flex justify-between items-center bg-white p-3 rounded-xl shadow-md border border-slate-100">
-                    <button onclick="resetSelection()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg font-semibold transition-colors text-sm">Clear Selection</button>
-                    <button onclick="confirmRestart()" class="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg font-semibold transition-colors text-sm">Restart Game</button>
+                    <button id="btn-clear" onclick="resetSelection()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg font-semibold transition-colors text-sm">Clear Selection</button>
+                    <button id="btn-restart" onclick="confirmRestart()" class="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg font-semibold transition-colors text-sm">Restart Game</button>
                 </div>
             </div>
 
             <div class="w-full lg:w-72 space-y-4">
                 <div class="bg-white p-6 rounded-2xl shadow-md border border-slate-200">
-                    <h3 class="font-bold text-slate-800 mb-3">Target:</h3>
-                    <p class="text-sm text-slate-600 leading-relaxed">
+                    <h3 id="target-title" class="font-bold text-slate-800 mb-3">Target:</h3>
+                    <p id="target-desc" class="text-sm text-slate-600 leading-relaxed">
                         Balance the charges between a <b>cation</b> and an <b>anion</b>. 
                         The compound forms once the total charge reaches zero!
                     </p>
                 </div>
                 <div class="bg-indigo-900 text-white p-6 rounded-2xl shadow-lg">
-                    <h2 class="text-lg font-bold mb-2">Performance</h2>
+                    <h2 id="perf-title" class="text-lg font-bold mb-2">Performance</h2>
                     <div id="progress-bar-container" class="w-full bg-indigo-800 rounded-full h-3">
                         <div id="progress-bar" class="bg-emerald-400 h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
                     </div>
@@ -287,8 +291,8 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
                     </svg>
                 </div>
-                <h2 class="text-2xl font-bold text-slate-800 mb-2">SUDDEN TASK!</h2>
-                <p class="text-slate-500 mb-4">Identify the correct formula for:</p>
+                <h2 id="sudden-title" class="text-2xl font-bold text-slate-800 mb-2">SUDDEN TASK!</h2>
+                <p id="sudden-desc" class="text-slate-500 mb-4">Identify the correct formula for:</p>
                 <h3 id="sudden-task-name" class="text-2xl font-bold text-indigo-600 mb-4"></h3>
                 <div id="sudden-task-options" class="grid grid-cols-2 gap-3 mb-4"></div>
                 <p id="sudden-task-feedback" class="text-red-500 font-bold hidden mb-2">INCORRECT!</p>
@@ -301,77 +305,156 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                 </div>
-                <h2 class="text-3xl font-bold text-slate-800 mb-2">Time Up!</h2>
-                <p class="text-slate-500 mb-6">You balanced <span id="final-score" class="text-3xl font-bold text-indigo-600">0</span> compounds!</p>
+                <h2 id="gameover-title" class="text-3xl font-bold text-slate-800 mb-2">Time Up!</h2>
+                <p class="text-slate-500 mb-6"><span id="gameover-score-text">You balanced</span> <span id="final-score" class="text-3xl font-bold text-indigo-600">0</span> <span id="gameover-unit-text">compounds!</span></p>
                 <div class="flex flex-col gap-3">
-                    <button onclick="startGame()" class="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-bold text-lg shadow-lg shadow-indigo-100 transition-all">Restart Challenge</button>
-                    <button onclick="backToLibrary()" class="w-full py-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl font-bold transition-all">Back to Ion Library</button>
+                    <button id="btn-restart-final" onclick="startGame()" class="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-bold text-lg shadow-lg shadow-indigo-100 transition-all">Restart Challenge</button>
+                    <button id="btn-back-lib" onclick="backToLibrary()" class="w-full py-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl font-bold transition-all">Back to Ion Library</button>
                 </div>
             </div>
             
             <div id="confirm-restart-view" class="hidden text-center">
-                <h2 class="text-2xl font-bold text-slate-800 mb-4">Restart Game?</h2>
-                <p class="text-slate-500 mb-6">Your current score and progress will be lost.</p>
+                <h2 id="confirm-title" class="text-2xl font-bold text-slate-800 mb-4">Restart Game?</h2>
+                <p id="confirm-desc" class="text-slate-500 mb-6">Your current score and progress will be lost.</p>
                 <div class="flex flex-col gap-3">
-                    <button onclick="startGame()" class="w-full py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-2xl font-bold transition-all">Yes, Restart</button>
-                    <button onclick="closeModal()" class="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl font-bold transition-all">Cancel</button>
+                    <button id="btn-confirm-yes" onclick="startGame()" class="w-full py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-2xl font-bold transition-all">Yes, Restart</button>
+                    <button id="btn-confirm-no" onclick="closeModal()" class="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl font-bold transition-all">Cancel</button>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
+        const TRANSLATIONS = {
+            en: {
+                appTitle: "Ion Blaster",
+                headerDesc: "Master the language of ions and compounds",
+                libCtaTitle: "Ready to Challenge?",
+                libCtaDesc: "Choose difficulty and press start to begin the 90s round.",
+                libFootnote: "Simple mode will skip many uncommon polyatomic ions.",
+                modeSimple: "Simple",
+                modeDifficult: "Difficult",
+                playBtn: "Play Game ➔",
+                cationsTitle: "Cations (Positive)",
+                anionsTitle: "Anions (Negative)",
+                labelTime: "Time Left",
+                labelScore: "Score",
+                btnClear: "Clear Selection",
+                btnRestart: "Restart Game",
+                targetTitle: "Target:",
+                targetDesc: "Balance the charges between a <b>cation</b> and an <b>anion</b>. The compound forms once the total charge reaches zero!",
+                perfTitle: "Performance",
+                modalBalanced: "Balanced!",
+                modalIncorrect: "INCORRECT!",
+                modalAttempts: "Attempts:",
+                suddenTitle: "SUDDEN TASK!",
+                suddenDesc: "Identify the correct formula for:",
+                gameoverTitle: "Time Up!",
+                gameoverScore: "You balanced",
+                gameoverUnit: "compounds!",
+                btnRestartFinal: "Restart Challenge",
+                btnBackLib: "Back to Ion Library",
+                confirmTitle: "Restart Game?",
+                confirmDesc: "Your current score and progress will be lost.",
+                btnConfirmYes: "Yes, Restart",
+                btnConfirmNo: "Cancel",
+                musicOn: "Music On",
+                musicOff: "Music Off",
+                sfxOn: "SFX On",
+                sfxOff: "SFX Off",
+                langName: "English"
+            },
+            zh: {
+                appTitle: "離子大作戰",
+                headerDesc: "掌握離子化合物的化學式建構方法",
+                libCtaTitle: "準備好接受挑戰了嗎？",
+                libCtaDesc: "選擇難度並按下開始，進行 90 秒的挑戰賽。",
+                libFootnote: "簡單模式將會跳過許多不常見的多原子離子。",
+                modeSimple: "簡單",
+                modeDifficult: "困難",
+                playBtn: "開始遊戲 ➔",
+                cationsTitle: "陽離子 (正電荷)",
+                anionsTitle: "陰離子 (負電荷)",
+                labelTime: "剩餘時間",
+                labelScore: "得分",
+                btnClear: "清除選擇",
+                btnRestart: "重新開始",
+                targetTitle: "目標：",
+                targetDesc: "平衡 <b>陽離子</b> 與 <b>陰離子</b> 之間的電荷。當總電荷歸零時，化合物即會形成！",
+                perfTitle: "目前表現",
+                modalBalanced: "電荷平衡！",
+                modalIncorrect: "錯誤！",
+                modalAttempts: "剩餘機會：",
+                suddenTitle: "突擊任務！",
+                suddenDesc: "請找出下列物質的正確化學式：",
+                gameoverTitle: "時間到！",
+                gameoverScore: "你成功合成了",
+                gameoverUnit: "個化合物！",
+                btnRestartFinal: "再玩一次",
+                btnBackLib: "返回離子庫",
+                confirmTitle: "確定要重新開始？",
+                confirmDesc: "您目前的得分與進度將會遺失。",
+                btnConfirmYes: "是的，重新開始",
+                btnConfirmNo: "取消",
+                musicOn: "音樂：開啟",
+                musicOff: "音樂：關閉",
+                sfxOn: "音效：開啟",
+                sfxOff: "音效：關閉",
+                langName: "繁體中文"
+            }
+        };
+
         const CATIONS = [
-            { symbol: "Li+", name: "Lithium ion", charge: 1, formula: "Li", metal: "Lithium", fixed: true },
-            { symbol: "Na+", name: "Sodium ion", charge: 1, formula: "Na", metal: "Sodium", fixed: true },
-            { symbol: "K+", name: "Potassium ion", charge: 1, formula: "K", metal: "Potassium", fixed: true },
-            { symbol: "Cu+", name: "Copper(I) ion", charge: 1, formula: "Cu", metal: "Copper", state: "(I)" },
-            { symbol: "Ag+", name: "Silver ion", charge: 1, formula: "Ag", metal: "Silver", fixed: true },
-            { symbol: "Hg+", name: "Mercury(I) ion", charge: 1, formula: "Hg", metal: "Mercury", state: "(I)" },
-            { symbol: "NH4 +", name: "Ammonium ion", charge: 1, formula: "NH4", poly: true, metal: "Ammonium", fixed: true },
-            { symbol: "Mg2+", name: "Magnesium ion", charge: 2, formula: "Mg", metal: "Magnesium", fixed: true },
-            { symbol: "Ca2+", name: "Calcium ion", charge: 2, formula: "Ca", metal: "Calcium", fixed: true },
-            { symbol: "Ba2+", name: "Barium ion", charge: 2, formula: "Ba", metal: "Barium", fixed: true },
-            { symbol: "Zn2+", name: "Zinc ion", charge: 2, formula: "Zn", metal: "Zinc", fixed: true },
-            { symbol: "Fe2+", name: "Iron(II) ion", charge: 2, formula: "Fe", metal: "Iron", state: "(II)" },
-            { symbol: "Cu2+", name: "Copper(II) ion", charge: 2, formula: "Cu", metal: "Copper", state: "(II)" },
-            { symbol: "Co2+", name: "Cobalt(II) ion", charge: 2, formula: "Co", metal: "Cobalt", state: "(II)" },
-            { symbol: "Ni2+", name: "Nickel(II) ion", charge: 2, formula: "Ni", metal: "Nickel", state: "(II)" },
-            { symbol: "Mn2+", name: "Manganese(II) ion", charge: 2, formula: "Mn", metal: "Manganese", state: "(II)" },
-            { symbol: "Hg2+", name: "Mercury(II) ion", charge: 2, formula: "Hg", metal: "Mercury", state: "(II)" },
-            { symbol: "Pb2+", name: "Lead(II) ion", charge: 2, formula: "Pb", metal: "Lead", state: "(II)" },
-            { symbol: "Al3+", name: "Aluminum ion", charge: 3, formula: "Al", metal: "Aluminum", fixed: true },
-            { symbol: "Fe3+", name: "Iron(III) ion", charge: 3, formula: "Fe", metal: "Iron", state: "(III)" },
-            { symbol: "Cr3+", name: "Chromium(III) ion", charge: 3, formula: "Cr", metal: "Chromium", state: "(III)" }
+            { symbol: "Li+", name: "Lithium ion", zh: "鋰離子", charge: 1, formula: "Li", metal: "Lithium", metalZh: "鋰", fixed: true },
+            { symbol: "Na+", name: "Sodium ion", zh: "鈉離子", charge: 1, formula: "Na", metal: "Sodium", metalZh: "鈉", fixed: true },
+            { symbol: "K+", name: "Potassium ion", zh: "鉀離子", charge: 1, formula: "K", metal: "Potassium", metalZh: "鉀", fixed: true },
+            { symbol: "Cu+", name: "Copper(I) ion", zh: "銅(I)離子", charge: 1, formula: "Cu", metal: "Copper", metalZh: "銅", state: "(I)" },
+            { symbol: "Ag+", name: "Silver ion", zh: "銀離子", charge: 1, formula: "Ag", metal: "Silver", metalZh: "銀", fixed: true },
+            { symbol: "Hg+", name: "Mercury(I) ion", zh: "汞(I)離子", charge: 1, formula: "Hg", metal: "Mercury", metalZh: "汞", state: "(I)" },
+            { symbol: "NH4 +", name: "Ammonium ion", zh: "銨根離子", charge: 1, formula: "NH4", poly: true, metal: "Ammonium", metalZh: "銨", fixed: true },
+            { symbol: "Mg2+", name: "Magnesium ion", zh: "鎂離子", charge: 2, formula: "Mg", metal: "Magnesium", metalZh: "鎂", fixed: true },
+            { symbol: "Ca2+", name: "Calcium ion", zh: "鈣離子", charge: 2, formula: "Ca", metal: "Calcium", metalZh: "鈣", fixed: true },
+            { symbol: "Ba2+", name: "Barium ion", zh: "鋇離子", charge: 2, formula: "Ba", metal: "Barium", metalZh: "鋇", fixed: true },
+            { symbol: "Zn2+", name: "Zinc ion", zh: "鋅離子", charge: 2, formula: "Zn", metal: "Zinc", metalZh: "鋅", fixed: true },
+            { symbol: "Fe2+", name: "Iron(II) ion", zh: "鐵(II)離子", charge: 2, formula: "Fe", metal: "Iron", metalZh: "鐵", state: "(II)" },
+            { symbol: "Cu2+", name: "Copper(II) ion", zh: "銅(II)離子", charge: 2, formula: "Cu", metal: "Copper", metalZh: "銅", state: "(II)" },
+            { symbol: "Co2+", name: "Cobalt(II) ion", zh: "鈷(II)離子", charge: 2, formula: "Co", metal: "Cobalt", metalZh: "鈷", state: "(II)" },
+            { symbol: "Ni2+", name: "Nickel(II) ion", zh: "鎳(II)離子", charge: 2, formula: "Ni", metal: "Nickel", metalZh: "鎳", state: "(II)" },
+            { symbol: "Mn2+", name: "Manganese(II) ion", zh: "錳(II)離子", charge: 2, formula: "Mn", metal: "Manganese", metalZh: "錳", state: "(II)" },
+            { symbol: "Hg2+", name: "Mercury(II) ion", zh: "汞(II)離子", charge: 2, formula: "Hg", metal: "Mercury", metalZh: "汞", state: "(II)" },
+            { symbol: "Pb2+", name: "Lead(II) ion", zh: "鉛(II)離子", charge: 2, formula: "Pb", metal: "Lead", metalZh: "鉛", state: "(II)" },
+            { symbol: "Al3+", name: "Aluminum ion", zh: "鋁離子", charge: 3, formula: "Al", metal: "Aluminum", metalZh: "鋁", fixed: true },
+            { symbol: "Fe3+", name: "Iron(III) ion", zh: "鐵(III)離子", charge: 3, formula: "Fe", metal: "Iron", metalZh: "鐵", state: "(III)" },
+            { symbol: "Cr3+", name: "Chromium(III) ion", zh: "鉻(III)離子", charge: 3, formula: "Cr", metal: "Chromium", metalZh: "鉻", state: "(III)" }
         ];
 
         const ANIONS = [
-            { symbol: "H-", name: "Hydride ion", charge: -1, formula: "H", stem: "Hydr", suffix: "ide" },
-            { symbol: "F-", name: "Fluoride ion", charge: -1, formula: "F", stem: "Fluor", suffix: "ide" },
-            { symbol: "Cl-", name: "Chloride ion", charge: -1, formula: "Cl", stem: "Chlor", suffix: "ide" },
-            { symbol: "Br-", name: "Bromide ion", charge: -1, formula: "Br", stem: "Brom", suffix: "ide" },
-            { symbol: "I-", name: "Iodide ion", charge: -1, formula: "I", stem: "Iod", suffix: "ide" },
-            { symbol: "NO2 -", name: "Nitrite ion", charge: -1, formula: "NO2", poly: true, stem: "Nitr", suffix: "ite" },
-            { symbol: "NO3 -", name: "Nitrate ion", charge: -1, formula: "NO3", poly: true, stem: "Nitr", suffix: "ate" },
-            { symbol: "OH-", name: "Hydroxide ion", charge: -1, formula: "OH", poly: true, stem: "Hydrox", suffix: "ide" },
-            { symbol: "HCO3 -", name: "Hydrogencarbonate ion", charge: -1, formula: "HCO3", poly: true, stem: "Hydrogencarbon", suffix: "ate" },
-            { symbol: "HSO4 -", name: "Hydrogensulphate ion", charge: -1, formula: "HSO4", poly: true, stem: "Hydrogensulph", suffix: "ate", complex: true },
-            { symbol: "CN-", name: "Cyanide ion", charge: -1, formula: "CN", stem: "Cyan", suffix: "ide", complex: true },
-            { symbol: "MnO4 -", name: "Permanganate ion", charge: -1, formula: "MnO4", poly: true, stem: "Permangan", suffix: "ate" },
-            { symbol: "ClO-", name: "Hypochlorite ion", charge: -1, formula: "ClO", poly: true, stem: "Hypochlor", suffix: "ite", complex: true },
-            { symbol: "ClO3 -", name: "Chlorate ion", charge: -1, formula: "ClO3", poly: true, stem: "Chlor", suffix: "ate", complex: true },
-            { symbol: "O2-", name: "Oxide ion", charge: -2, formula: "O", stem: "Ox", suffix: "ide" },
-            { symbol: "S2-", name: "Sulphide ion", charge: -2, formula: "S", stem: "Sulph", suffix: "ide" },
-            { symbol: "SO3 2-", name: "Sulphite ion", charge: -2, formula: "SO3", poly: true, stem: "Sulph", suffix: "ite" },
-            { symbol: "SO4 2-", name: "Sulphate ion", charge: -2, formula: "SO4", poly: true, stem: "SO4", poly: true, stem: "Sulph", suffix: "ate" },
-            { symbol: "S2O3 2-", name: "Thiosulphate ion", charge: -2, formula: "S2O3", poly: true, stem: "Thiosulph", suffix: "ate", complex: true },
-            { symbol: "CO3 2-", name: "Carbonate ion", charge: -2, formula: "CO3", poly: true, stem: "Carbon", suffix: "ate" },
-            { symbol: "SiO3 2-", name: "Silicate ion", charge: -2, formula: "SiO3", poly: true, stem: "Silic", suffix: "ate", complex: true },
-            { symbol: "CrO4 2-", name: "Chromate ion", charge: -2, formula: "CrO4", poly: true, stem: "Chrom", suffix: "ate", complex: true },
-            { symbol: "Cr2O7 2-", name: "Dichromate ion", charge: -2, formula: "Cr2O7", poly: true, stem: "Dichrom", suffix: "ate" },
-            { symbol: "N 3-", name: "Nitride ion", charge: -3, formula: "N", stem: "Nitr", suffix: "ide" },
-            { symbol: "P 3-", name: "Phosphide ion", charge: -3, formula: "P", stem: "Phosph", suffix: "ide" },
-            { symbol: "PO4 3-", name: "Phosphate ion", charge: -3, formula: "PO4", poly: true, stem: "Phosph", suffix: "ate", complex: true }
+            { symbol: "H-", name: "Hydride ion", zh: "氫離子", charge: -1, formula: "H", stem: "Hydr", stemZh: "氫", suffix: "ide" },
+            { symbol: "F-", name: "Fluoride ion", zh: "氟離子", charge: -1, formula: "F", stem: "Fluor", stemZh: "氟", suffix: "ide" },
+            { symbol: "Cl-", name: "Chloride ion", zh: "氯離子", charge: -1, formula: "Cl", stem: "Chlor", stemZh: "氯", suffix: "ide" },
+            { symbol: "Br-", name: "Bromide ion", zh: "溴離子", charge: -1, formula: "Br", stem: "Brom", stemZh: "溴", suffix: "ide" },
+            { symbol: "I-", name: "Iodide ion", zh: "碘離子", charge: -1, formula: "I", stem: "Iod", stemZh: "碘", suffix: "ide" },
+            { symbol: "NO2 -", name: "Nitrite ion", zh: "亞硝酸根離子", charge: -1, formula: "NO2", poly: true, stem: "Nitr", stemZh: "硝", suffix: "ite" },
+            { symbol: "NO3 -", name: "Nitrate ion", zh: "硝酸根離子", charge: -1, formula: "NO3", poly: true, stem: "Nitr", stemZh: "硝", suffix: "ate" },
+            { symbol: "OH-", name: "Hydroxide ion", zh: "氫氧根離子", charge: -1, formula: "OH", poly: true, stem: "Hydrox", stemZh: "氫氧", suffix: "ide" },
+            { symbol: "HCO3 -", name: "Hydrogencarbonate ion", zh: "碳酸氫根離子", charge: -1, formula: "HCO3", poly: true, stem: "Hydrogencarbon", stemZh: "碳酸氫", suffix: "ate" },
+            { symbol: "HSO4 -", name: "Hydrogensulphate ion", zh: "硫酸氫根離子", charge: -1, formula: "HSO4", poly: true, stem: "Hydrogensulph", stemZh: "硫酸氫", suffix: "ate", complex: true },
+            { symbol: "CN-", name: "Cyanide ion", zh: "氰化根離子", charge: -1, formula: "CN", stem: "Cyan", stemZh: "氰", suffix: "ide", complex: true },
+            { symbol: "MnO4 -", name: "Permanganate ion", zh: "過錳酸根離子", charge: -1, formula: "MnO4", poly: true, stem: "Permangan", stemZh: "過錳", suffix: "ate" },
+            { symbol: "ClO-", name: "Hypochlorite ion", zh: "次氯酸根離子", charge: -1, formula: "ClO", poly: true, stem: "Hypochlor", stemZh: "次氯", suffix: "ite", complex: true },
+            { symbol: "ClO3 -", name: "Chlorate ion", zh: "氯酸根離子", charge: -1, formula: "ClO3", poly: true, stem: "Chlor", stemZh: "氯", suffix: "ate", complex: true },
+            { symbol: "O2-", name: "Oxide ion", zh: "氧離子", charge: -2, formula: "O", stem: "Ox", stemZh: "氧", suffix: "ide" },
+            { symbol: "S2-", name: "Sulphide ion", zh: "硫離子", charge: -2, formula: "S", stem: "Sulph", stemZh: "硫", suffix: "ide" },
+            { symbol: "SO3 2-", name: "Sulphite ion", zh: "亞硫酸根離子", charge: -2, formula: "SO3", poly: true, stem: "Sulph", stemZh: "硫", suffix: "ite" },
+            { symbol: "SO4 2-", name: "Sulphate ion", zh: "硫酸根離子", charge: -2, formula: "SO4", poly: true, stem: "Sulph", stemZh: "硫", suffix: "ate" },
+            { symbol: "S2O3 2-", name: "Thiosulphate ion", zh: "硫代硫酸根離子", charge: -2, formula: "S2O3", poly: true, stem: "Thiosulph", stemZh: "硫代硫酸", suffix: "ate", complex: true },
+            { symbol: "CO3 2-", name: "Carbonate ion", zh: "碳酸根離子", charge: -2, formula: "CO3", poly: true, stem: "Carbon", stemZh: "碳", suffix: "ate" },
+            { symbol: "SiO3 2-", name: "Silicate ion", zh: "矽酸根離子", charge: -2, formula: "SiO3", poly: true, stem: "Silic", stemZh: "矽", suffix: "ate", complex: true },
+            { symbol: "CrO4 2-", name: "Chromate ion", zh: "鉻酸根離子", charge: -2, formula: "CrO4", poly: true, stem: "Chrom", stemZh: "鉻", suffix: "ate", complex: true },
+            { symbol: "Cr2O7 2-", name: "Dichromate ion", zh: "二鉻酸根離子", charge: -2, formula: "Cr2O7", poly: true, stem: "Dichrom", stemZh: "二鉻", suffix: "ate" },
+            { symbol: "N 3-", name: "Nitride ion", zh: "氮離子", charge: -3, formula: "N", stem: "Nitr", stemZh: "氮", suffix: "ide" },
+            { symbol: "P 3-", name: "Phosphide ion", zh: "磷離子", charge: -3, formula: "P", stem: "Phosph", stemZh: "磷", suffix: "ide" },
+            { symbol: "PO4 3-", name: "Phosphate ion", zh: "磷酸根離子", charge: -3, formula: "PO4", poly: true, stem: "Phosph", stemZh: "磷", suffix: "ate", complex: true }
         ];
 
         let gridData = [];
@@ -385,6 +468,7 @@
         let difficulty = 'difficult';
         let timeLeft = 90;
         let timerInterval = null;
+        let currentLang = 'en';
 
         const SoundEngine = {
             ctx: null,
@@ -501,6 +585,57 @@
             }
         };
 
+        function toggleLanguage() {
+            currentLang = currentLang === 'en' ? 'zh' : 'en';
+            applyTranslations();
+            renderLibrary();
+        }
+
+        function applyTranslations() {
+            const t = TRANSLATIONS[currentLang];
+            document.getElementById('lang-status').innerText = t.langName;
+            document.getElementById('app-title').innerText = t.appTitle;
+            document.getElementById('header-desc').innerText = t.headerDesc;
+            document.getElementById('lib-cta-title').innerText = t.libCtaTitle;
+            document.getElementById('lib-cta-desc').innerText = t.libCtaDesc;
+            document.getElementById('lib-footnote').innerText = t.libFootnote;
+            document.getElementById('mode-simple').innerText = t.modeSimple;
+            document.getElementById('mode-difficult').innerText = t.modeDifficult;
+            document.getElementById('play-btn').innerText = t.playBtn;
+            document.getElementById('cations-title').innerHTML = `<span class="w-8 h-8 bg-sky-100 rounded-lg flex items-center justify-center text-lg">+</span> ${t.cationsTitle}`;
+            document.getElementById('anions-title').innerHTML = `<span class="w-8 h-8 bg-rose-100 rounded-lg flex items-center justify-center text-lg">-</span> ${t.anionsTitle}`;
+            
+            document.getElementById('label-time').innerText = t.labelTime;
+            document.getElementById('label-score').innerText = t.labelScore;
+            document.getElementById('btn-clear').innerText = t.btnClear;
+            document.getElementById('btn-restart').innerText = t.btnRestart;
+            document.getElementById('target-title').innerText = t.targetTitle;
+            document.getElementById('target-desc').innerHTML = t.targetDesc;
+            document.getElementById('perf-title').innerText = t.perfTitle;
+            
+            document.getElementById('modal-title').innerText = t.modalBalanced;
+            document.getElementById('error-feedback').innerText = t.modalIncorrect;
+            document.getElementById('attempts-left').innerText = `${t.modalAttempts} 2`;
+            
+            document.getElementById('sudden-title').innerText = t.suddenTitle;
+            document.getElementById('sudden-desc').innerText = t.suddenDesc;
+            document.getElementById('sudden-task-feedback').innerText = t.modalIncorrect;
+            
+            document.getElementById('gameover-title').innerText = t.gameoverTitle;
+            document.getElementById('gameover-score-text').innerText = t.gameoverScore;
+            document.getElementById('gameover-unit-text').innerText = t.gameoverUnit;
+            document.getElementById('btn-restart-final').innerText = t.btnRestartFinal;
+            document.getElementById('btn-back-lib').innerText = t.btnBackLib;
+            
+            document.getElementById('confirm-title').innerText = t.confirmTitle;
+            document.getElementById('confirm-desc').innerText = t.confirmDesc;
+            document.getElementById('btn-confirm-yes').innerText = t.btnConfirmYes;
+            document.getElementById('btn-confirm-no').innerText = t.btnConfirmNo;
+
+            document.getElementById('music-status').innerText = isMusicEnabled ? t.musicOn : t.musicOff;
+            document.getElementById('sfx-status').innerText = isSFXEnabled ? t.sfxOn : t.sfxOff;
+        }
+
         function setDifficulty(mode) {
             SoundEngine.init();
             difficulty = mode;
@@ -525,12 +660,14 @@
             cLib.innerHTML = ''; aLib.innerHTML = '';
             
             CATIONS.forEach(ion => {
-                cLib.innerHTML += `<div class="ion-card cation static rounded-xl shadow-sm"><span class="ion-symbol">${formatIonDisplay(ion.symbol)}</span><span class="ion-name text-sky-800">${ion.name}</span></div>`;
+                const name = currentLang === 'zh' ? ion.zh : ion.name;
+                cLib.innerHTML += `<div class="ion-card cation static rounded-xl shadow-sm"><span class="ion-symbol">${formatIonDisplay(ion.symbol)}</span><span class="ion-name text-sky-800">${name}</span></div>`;
             });
 
             const filteredAnions = difficulty === 'simple' ? ANIONS.filter(a => !a.complex) : ANIONS;
             filteredAnions.forEach(ion => {
-                aLib.innerHTML += `<div class="ion-card anion static rounded-xl shadow-sm"><span class="ion-symbol">${formatIonDisplay(ion.symbol)}</span><span class="ion-name text-rose-800">${ion.name}</span></div>`;
+                const name = currentLang === 'zh' ? ion.zh : ion.name;
+                aLib.innerHTML += `<div class="ion-card anion static rounded-xl shadow-sm"><span class="ion-symbol">${formatIonDisplay(ion.symbol)}</span><span class="ion-name text-rose-800">${name}</span></div>`;
             });
         }
 
@@ -639,6 +776,27 @@
 
         function resetSelection() { selectedIndices = []; updateView(); }
 
+        function constructChineseName(cation, anionStem, suffixType) {
+            // suffixType: 'ate' -> 酸, 'ite' -> 亞酸, 'ide' -> 化
+            const cationPart = `${cation.metalZh}${cation.state || ''}`;
+            if (anionStem === "氫氧" && suffixType === 'ide') return `氫氧化${cationPart}`;
+            
+            let suffix = "";
+            let prefix = "";
+            if (suffixType === 'ate') suffix = "酸";
+            else if (suffixType === 'ite') { prefix = "亞"; suffix = "酸"; }
+            else if (suffixType === 'ide') suffix = "化";
+
+            // If it's a simple 'ide' like '氯化', the order is Prefix-Suffix-Cation
+            if (suffixType === 'ide') return `${anionStem}${suffix}${cationPart}`;
+            // If it's an 'ate' like '硫酸', it's Prefix-Suffix-Cation
+            return `${prefix}${anionStem}${suffix}${cationPart}`;
+        }
+
+        function getChineseName(cation, anion) {
+            return constructChineseName(cation, anion.stemZh, anion.suffix);
+        }
+
         function checkCharge() {
             attempts = 0;
             const selection = selectedIndices.map(i => gridData[i]);
@@ -647,7 +805,14 @@
             const cationData = cations[0];
             const anionData = anions[0];
             const formula = generateFormula(cationData, cations.length, anionData, anions.length);
-            const correctName = `${cationData.metal}${cationData.state ? ' ' + cationData.state : ''} ${anionData.stem}${anionData.suffix}`;
+            
+            let correctName;
+            if (currentLang === 'zh') {
+                correctName = getChineseName(cationData, anionData);
+            } else {
+                correctName = `${cationData.metal}${cationData.state ? ' ' + cationData.state : ''} ${anionData.stem}${anionData.suffix}`;
+            }
+            
             showQuiz(formula, correctName, cationData, anionData);
         }
 
@@ -661,6 +826,7 @@
 
         function showQuiz(formula, correctAnswer, cation, anion) {
             const overlay = document.getElementById('modal-overlay');
+            const t = TRANSLATIONS[currentLang];
             document.getElementById('quiz-view').classList.remove('hidden');
             document.getElementById('gameover-view').classList.add('hidden');
             document.getElementById('confirm-restart-view').classList.add('hidden');
@@ -668,36 +834,37 @@
 
             document.getElementById('compound-formula').innerHTML = formatSubscripts(formula);
             document.getElementById('error-feedback').classList.add('hidden');
-            document.getElementById('attempts-left').innerText = `Attempts: 2`;
+            document.getElementById('attempts-left').innerText = `${t.modalAttempts} 2`;
             const container = document.getElementById('quiz-options');
             container.innerHTML = '';
             
             let optionsSet = new Set([correctAnswer]);
 
-            if (cation.fixed) {
-                const fakeRoman = cation.charge === 1 ? "(I)" : "(II)";
-                optionsSet.add(`${cation.metal} ${fakeRoman} ${anion.stem}${anion.suffix}`);
+            if (currentLang === 'en') {
+                // English Distractors
+                if (cation.fixed) {
+                    optionsSet.add(`${cation.metal} ${cation.charge === 1 ? "(I)" : "(II)"} ${anion.stem}${anion.suffix}`);
+                } else {
+                    const otherStates = CATIONS.filter(c => c.metal === cation.metal && c.state !== cation.state);
+                    if (otherStates.length > 0) optionsSet.add(`${cation.metal} ${otherStates[0].state} ${anion.stem}${anion.suffix}`);
+                    optionsSet.add(`${cation.metal} ${anion.stem}${anion.suffix}`); 
+                }
+                const suffixes = ["ate", "ite", "ide"];
+                suffixes.forEach(s => { if (s !== anion.suffix && optionsSet.size < 4) optionsSet.add(`${cation.metal}${cation.state ? ' ' + cation.state : ''} ${anion.stem}${s}`); });
             } else {
-                const otherStates = CATIONS.filter(c => c.metal === cation.metal && c.state !== cation.state);
-                if (otherStates.length > 0) {
-                    optionsSet.add(`${cation.metal} ${otherStates[0].state} ${anion.stem}${anion.suffix}`);
-                }
-                optionsSet.add(`${cation.metal} ${anion.stem}${anion.suffix}`); 
-            }
-
-            const suffixes = ["ate", "ite", "ide"];
-            suffixes.forEach(s => {
-                if (s !== anion.suffix && optionsSet.size < 4) {
-                    const cName = cation.metal + (cation.state ? ' ' + cation.state : '');
-                    optionsSet.add(`${cName} ${anion.stem}${s}`);
-                }
-            });
-
-            const sameChargeMetals = CATIONS.filter(c => c.charge === cation.charge && c.metal !== cation.metal);
-            if (sameChargeMetals.length > 0) {
-                const alt = sameChargeMetals[Math.floor(Math.random() * sameChargeMetals.length)];
-                const altName = alt.metal + (alt.state ? ' ' + alt.state : '');
-                optionsSet.add(`${altName} ${anion.stem}${anion.suffix}`);
+                // Chinese Distractors with Suffix Logic (x酸, 亞x酸, x化)
+                const types = ["ate", "ite", "ide"];
+                types.forEach(ty => {
+                    if (ty !== anion.suffix) optionsSet.add(constructChineseName(cation, anion.stemZh, ty));
+                });
+                
+                // Cation state distractors
+                const states = ["(I)", "(II)", "(III)"];
+                states.forEach(s => { 
+                    if (s !== cation.state && optionsSet.size < 4) {
+                        optionsSet.add(constructChineseName({...cation, state: s}, anion.stemZh, anion.suffix));
+                    }
+                });
             }
 
             let options = Array.from(optionsSet).slice(0, 4).sort(() => Math.random() - 0.5);
@@ -718,6 +885,7 @@
         function handleFailure(btn) {
             SoundEngine.play('error');
             attempts++;
+            const t = TRANSLATIONS[currentLang];
             const feedback = document.getElementById('error-feedback');
             const attemptsEl = document.getElementById('attempts-left');
             const modalContent = document.getElementById('modal-content');
@@ -726,7 +894,7 @@
             setTimeout(() => modalContent.classList.remove('shake'), 500);
             btn.classList.add('bg-red-100', 'border-red-400', 'text-red-700');
             btn.disabled = true;
-            attemptsEl.innerText = `Attempts Left: ${2 - attempts}`;
+            attemptsEl.innerText = `${t.modalAttempts} ${2 - attempts}`;
             if (attempts >= 2) {
                 setTimeout(() => {
                     document.getElementById('modal-overlay').classList.add('hidden');
@@ -767,6 +935,7 @@
 
         function showSuddenTask() {
             suddenAttempts = 0;
+            const t = TRANSLATIONS[currentLang];
             const anionPool = difficulty === 'simple' ? ANIONS.filter(a => !a.complex) : ANIONS;
             const cation = CATIONS[Math.floor(Math.random() * CATIONS.length)];
             const anion = anionPool[Math.floor(Math.random() * anionPool.length)];
@@ -777,13 +946,14 @@
             const cCount = common / cCharge;
             const aCount = common / aCharge;
             const correctFormula = generateFormula(cation, cCount, anion, aCount);
-            const compoundName = `${cation.metal}${cation.state ? ' ' + cation.state : ''} ${anion.stem}${anion.suffix}`;
+            
+            const compoundName = currentLang === 'zh' ? getChineseName(cation, anion) : `${cation.metal}${cation.state ? ' ' + cation.state : ''} ${anion.stem}${anion.suffix}`;
 
             document.getElementById('quiz-view').classList.add('hidden');
             document.getElementById('sudden-task-view').classList.remove('hidden');
             document.getElementById('sudden-task-name').innerText = compoundName;
             document.getElementById('sudden-task-feedback').classList.add('hidden');
-            document.getElementById('sudden-attempts-left').innerText = `Attempts: 2`;
+            document.getElementById('sudden-attempts-left').innerText = `${t.modalAttempts} 2`;
             
             const optionsContainer = document.getElementById('sudden-task-options');
             optionsContainer.innerHTML = '';
@@ -809,7 +979,7 @@
                         SoundEngine.play('error');
                         suddenAttempts++;
                         document.getElementById('sudden-task-feedback').classList.remove('hidden');
-                        document.getElementById('sudden-attempts-left').innerText = `Attempts Left: ${2 - suddenAttempts}`;
+                        document.getElementById('sudden-attempts-left').innerText = `${t.modalAttempts} ${2 - suddenAttempts}`;
                         btn.classList.add('bg-red-50', 'border-red-300');
                         btn.disabled = true;
                         if (suddenAttempts >= 2) setTimeout(() => document.getElementById('modal-overlay').classList.add('hidden'), 1000);
@@ -848,7 +1018,7 @@
             SoundEngine.init();
             isSFXEnabled = !isSFXEnabled;
             const btn = document.getElementById('sfx-toggle');
-            document.getElementById('sfx-status').innerText = isSFXEnabled ? "SFX On" : "SFX Off";
+            applyTranslations();
             btn.classList.toggle('muted', !isSFXEnabled);
         }
 
@@ -856,15 +1026,15 @@
             SoundEngine.init();
             isMusicEnabled = !isMusicEnabled;
             const btn = document.getElementById('music-toggle');
-            document.getElementById('music-status').innerText = isMusicEnabled ? "Music On" : "Music Off";
+            applyTranslations();
             btn.classList.toggle('muted', !isMusicEnabled);
-            
-            if (isMusicEnabled) {
-                SoundEngine.startDrumNBassLoop();
-            }
+            if (isMusicEnabled) SoundEngine.startDrumNBassLoop();
         }
 
-        window.onload = renderLibrary;
+        window.onload = () => {
+            applyTranslations();
+            renderLibrary();
+        };
     </script>
 </body>
 </html>
