@@ -2,553 +2,537 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>3D Giant Covalent Structures</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ionization Energy Lab</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { margin: 0; overflow-x: hidden; font-family: sans-serif; background-color: #1a1a1a; color: white; }
-        
-        /* Main Layout Container */
-        .app-container {
-            display: flex;
-            flex-direction: row;
-            height: 100vh;
-            width: 100vw;
-        }
-
-        #canvas-container {
-            flex-grow: 1;
-            position: relative;
-            z-index: 1;
-            touch-action: none;
-            background-color: #000;
-        }
-
-        .ui-sidebar {
-            width: 360px;
-            height: 100vh;
-            overflow-y: auto;
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(10px);
-            border-left: 1px solid #444;
-            padding: 20px;
-            z-index: 10;
-            flex-shrink: 0;
-        }
-
-        /* Language Button Container - Fixed Top Left for ALL devices */
-        .lang-btn-container {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            z-index: 50; /* Ensure it stays above canvas and legend */
-        }
-
-        /* Mobile Layout */
-        @media (max-width: 768px) {
-            .app-container {
-                flex-direction: column;
-                height: 100vh;
-                overflow: hidden;
-            }
-
-            #canvas-container {
-                height: 50vh;
-                width: 100%;
-                flex-shrink: 0;
-            }
-
-            .ui-sidebar {
-                width: 100%;
-                height: 50vh;
-                overflow-y: auto;
-                border-left: none;
-                border-top: 1px solid #444;
-                background: #000;
-            }
-
-            .legend-panel {
-                top: 10px !important;
-                right: 10px !important;
-                padding: 10px !important;
-                scale: 0.85;
-                transform-origin: top right;
-            }
-            
-            .lang-btn-container {
-                top: 10px;
-                left: 10px;
-            }
-        }
-
-        .legend-panel {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: rgba(0, 0, 0, 0.8);
-            padding: 15px;
-            border-radius: 12px;
-            border: 1px solid #444;
-            z-index: 5;
-            min-width: 180px;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .lang-btn {
-            background: rgba(59, 130, 246, 0.2);
-            border: 1px solid rgba(59, 130, 246, 0.5);
-            color: white;
-            padding: 8px 12px;
-            border-radius: 8px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 14px;
-            backdrop-filter: blur(4px);
-            transition: all 0.2s;
-        }
-
-        .lang-btn:hover { background: rgba(59, 130, 246, 0.4); }
-
-        .legend-item { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 13px; }
-        .swatch { width: 16px; height: 16px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.2); }
-        .swatch-bond { width: 20px; height: 4px; border-radius: 2px; }
-        .swatch-vdw { width: 20px; height: 2px; border: 1px dashed white; background: repeating-linear-gradient(90deg, #fff, #fff 4px, transparent 4px, transparent 8px); }
-        
-        button { transition: all 0.2s; }
-        button:active { transform: scale(0.95); }
-        .active-btn { background-color: #3b82f6 !important; border: 2px solid #fff !important; }
-        
-        @keyframes glow-pulse {
-            0% { box-shadow: 0 0 5px rgba(59, 130, 246, 0.2); border-color: rgba(59, 130, 246, 0.3); }
-            50% { box-shadow: 0 0 15px rgba(59, 130, 246, 0.6); border-color: rgba(59, 130, 246, 0.8); }
-            100% { box-shadow: 0 0 5px rgba(59, 130, 246, 0.2); border-color: rgba(59, 130, 246, 0.3); }
-        }
-        .guide-glow { animation: glow-pulse 3s infinite ease-in-out; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .radius-transition { transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        .analogy-label { filter: drop-shadow(0 1px 1px rgba(0,0,0,0.1)); }
     </style>
 </head>
 <body>
+    <div id="root"></div>
 
-    <div class="app-container">
-        <div id="canvas-container">
-            <!-- Language Button -->
-            <div class="lang-btn-container" id="lang-ctrl">
-                <button class="lang-btn" onclick="toggleLanguage()">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
-                    <span id="lang-label">繁體中文</span>
-                </button>
-            </div>
-
-            <div class="legend-panel" id="legend">
-                <h3 class="text-xs font-bold uppercase text-gray-400 mb-3 tracking-widest" id="key-title">Key</h3>
-                <div id="legend-content"></div>
-            </div>
-        </div>
-
-        <div class="ui-sidebar">
-            <h1 class="text-xl font-bold mb-4" id="ui-main-title">Structure Inspector</h1>
-            
-            <div class="flex flex-col gap-2 mb-6">
-                <button onclick="switchStructure('diamond')" id="btn-diamond" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded text-left font-medium">Diamond (C)</button>
-                <button onclick="switchStructure('graphite')" id="btn-graphite" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded text-left font-medium">Graphite (C)</button>
-                <button onclick="switchStructure('quartz')" id="btn-quartz" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded text-left font-medium">Quartz (SiO₂)</button>
-            </div>
-
-            <div class="flex flex-col gap-2 mb-6">
-                <button onclick="toggleFocus()" id="btn-focus" class="bg-amber-600 hover:bg-amber-500 px-4 py-3 rounded font-bold uppercase tracking-wide shadow-lg">
-                    Focus Mode: OFF
-                </button>
-                <p class="text-[11px] text-gray-400 mt-2 italic leading-tight" id="focus-hint">Focus mode shows the only parts you need to draw in the assessment.</p>
-            </div>
-
-            <button onclick="resetToOriginal()" class="w-full bg-white text-black hover:bg-gray-200 font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 mb-6 shadow-md" id="btn-reset">
-                RESET VIEW
-            </button>
-
-            <div class="mb-6">
-                <h2 class="text-lg font-bold text-blue-400" id="info-title">Diamond</h2>
-                <div class="text-sm mt-2 whitespace-pre-line text-gray-300 leading-relaxed" id="info-desc"></div>
-            </div>
-
-            <div class="p-4 bg-blue-900/40 border border-blue-500/50 rounded-lg guide-glow">
-                <p class="text-[11px] leading-tight text-blue-50" id="interaction-hint"><span class="font-black text-white uppercase">Interaction:</span> Drag to rotate. Pinch/Scroll to zoom.</p>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        let scene, camera, renderer, currentGroup;
-        let isFocusMode = false;
-        let isDragging = false;
-        let currentLang = 'en'; 
-        let previousMouse = { x: 0, y: 0 };
-        let initialPinchDistance = null;
-        let currentType = 'diamond';
-
-        const ORIENTATIONS = {
-            diamond: { x: -1.86, y: -3.81, offsetY: 0 },
-            graphite: { x: -1.00, y: -3.18, offsetY: 0 },
-            quartz: { x: -1.92, y: -3.68, offsetY: 0 }
+    <script type="text/babel">
+        const Icons = {
+            ChevronLeft: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>,
+            ChevronRight: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>,
+            Layers: ({size=24}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.1 6.27a2 2 0 0 0 0 3.46l9.07 4.09a2 2 0 0 0 1.66 0l9.07-4.09a2 2 0 0 0 0-3.46z"/><path d="m2.1 14.27 9.07 4.09a2 2 0 0 0 1.66 0l9.07-4.09"/><path d="m2.1 10.27 9.07 4.09a2 2 0 0 0 1.66 0l9.07-4.09"/></svg>,
+            Target: ({size=24}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>,
+            ArrowRightLeft: ({size=24}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/></svg>,
+            Zap: ({size=14}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 14.71 13 3l-2.09 7.84H20l-9 11.71L13.09 14.71z"/></svg>,
+            BookOpen: ({size=20}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>,
+            Settings2: ({size=20}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 7h-9"/><path d="M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></svg>,
+            Globe: ({size=18}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
         };
-
-        const ATOM_SCALE = 0.35; 
-        const QUARTZ_ATOM_SCALE = 0.22; 
-        const BOND_RADIUS = 0.035; 
 
         const translations = {
             en: {
-                mainTitle: "Structure Inspector",
-                key: "Key",
-                focusOff: "Focus Mode: OFF",
-                focusOn: "Focus Mode: ON",
-                focusHint: "Focus mode shows the only parts you need to draw in the assessment.",
-                reset: "RESET VIEW",
-                interaction: "Interaction: Drag to rotate. Pinch/Scroll to zoom.",
-                langToggle: "繁體中文",
-                diamond: "Diamond (C)",
-                graphite: "Graphite (C)",
-                quartz: "Quartz (SiO₂)",
-                cAtom: "Carbon Atom",
-                cCovalent: "C-C Covalent Bond",
-                vdw: "Van der Waals Force",
-                siAtom: "Silicon (Si) Atom",
-                oAtom: "Oxygen (O) Atom",
-                siOCovalent: "Si-O Covalent Bond"
+                title: "Atomic structure and reactivity",
+                subtitle: "Study how nuclear charge and atomic radius affecting reactivity.",
+                selection: "Selection",
+                groupComp: "Group Comparisons",
+                jumpPeriod: "Jump to Period",
+                displayOptions: "Display Options",
+                analogy: "Analogy Mode (Magnet/Clip)",
+                showForce: "Show Electrostatic Force Arrow",
+                showRadius: "Show Atomic Radius Arrow",
+                forceTitle: "Attraction between nucleus and outermost shell electrons (F)",
+                forceNote: "How strongly the nucleus \"pulls\" the outermost shell electron when compared to Sodium relatively.",
+                compViz: "Comparative Visualization",
+                previous: "Previous",
+                current: "Current",
+                strongerMagnet: "STRONGER MAGNET",
+                names: {
+                    Hydrogen: "Hydrogen", Helium: "Helium", Lithium: "Lithium", Beryllium: "Beryllium", Boron: "Boron",
+                    Carbon: "Carbon", Nitrogen: "Nitrogen", Oxygen: "Oxygen", Fluorine: "Fluorine", Neon: "Neon",
+                    Sodium: "Sodium", Magnesium: "Magnesium", Aluminum: "Aluminum", Silicon: "Silicon",
+                    Phosphorus: "Phosphorus", Sulfur: "Sulfur", Chlorine: "Chlorine", Argon: "Argon"
+                },
+                g1Title: "Group I Comparison Explanation",
+                g1L1: "Na has a lower position than Li in Group I",
+                g1L2: "When going down the group, number of occupied electron shells increases",
+                g1L3: "Distance between the outermost shell electron and the nucleus increases",
+                g1L4: "Attraction between the outermost shell electron and the nucleus weakens",
+                g1L5: "The tendency of Na losing the outermost shell electron to get a stable electronic arrangement increases.",
+                metalNote: "Note: metal reacts by losing electrons.",
+                g7Title: "Group VII Comparison Explanation",
+                g7L1: "Cl has a lower position than F in Group VII",
+                g7L2: "When going down the group, number of occupied electron shells increases",
+                g7L3: "Distance between the outermost shell electron and the nucleus increases",
+                g7L4: "Attraction between the outermost shell electron and the nucleus weakens",
+                g7L5: "The tendency of Cl gaining the outermost shell electron to get a stable electronic arrangement decreases.",
+                nonMetalNote: "Note: non-metal reacts by gaining electrons.",
+                periodTitle: "Acrossing Period Comparison Explanation",
+                periodL1: "When going across the period, number of protons increases.",
+                periodL2: "Attraction between the outermost shell electron and the nucleus increases, the atomic radius also decreases.",
+                periodL3: "The tendency of %s losing the outermost shell electron to get a stable electronic arrangement decreases. So it is less reactive."
             },
             zh: {
-                mainTitle: "結構檢視器",
-                key: "圖例",
-                focusOff: "重點模式: 關閉",
-                focusOn: "重點模式: 開啟",
-                focusHint: "重點模式僅顯示在評估中需要繪製的部分。",
-                reset: "重置視角",
-                interaction: "交互說明: 拖動以旋轉。縮放以放大/縮小。",
-                langToggle: "English",
-                diamond: "鑽石 (C)",
-                graphite: "石墨 (C)",
-                quartz: "石英 (SiO₂)",
-                cAtom: "碳原子",
-                cCovalent: "C-C 共價鍵",
-                vdw: "凡德瓦力",
-                siAtom: "矽 (Si) 原子",
-                oAtom: "氧 (O) 原子",
-                siOCovalent: "Si-O 共價鍵"
+                title: "原子結構與活性",
+                subtitle: "理解核電荷與原子半徑如何影響活性。",
+                selection: "選擇元素",
+                groupComp: "族群比較",
+                jumpPeriod: "跳至週期",
+                displayOptions: "顯示選項",
+                analogy: "類比模式 (磁鐵/萬字夾)",
+                showForce: "顯示靜電吸引力箭頭",
+                showRadius: "顯示原子半徑箭頭",
+                forceTitle: "原子核與最外層電子間的靜電吸引力 (F)",
+                forceNote: "與鈉相比，原子核對最外層電子的相對「拉力」強度。",
+                compViz: "對比原子",
+                previous: "上一個",
+                current: "當前",
+                strongerMagnet: "磁力更強",
+                names: {
+                    Hydrogen: "氫", Helium: "氦", Lithium: "鋰", Beryllium: "鈹", Boron: "硼",
+                    Carbon: "碳", Nitrogen: "氮", Oxygen: "氧", Fluorine: "氟", Neon: "氖",
+                    Sodium: "鈉", Magnesium: "鎂", Aluminum: "鋁", Silicon: "矽",
+                    Phosphorus: "磷", Sulfur: "硫", Chlorine: "氯", Argon: "氬"
+                },
+                g1Title: "第 I 族的比較",
+                g1L1: "在第 I 族中，鈉 (Na) 的位置比鋰 (Li) 低",
+                g1L2: "當向族下移時，被佔用的電子層數目增加",
+                g1L3: "最外層電子與原子核之間的距離增加",
+                g1L4: "原子核與最外層電子之間的吸引力減弱",
+                g1L5: "鈉失去最外層電子以獲得穩定電子排列的傾向增加。",
+                metalNote: "註：金屬通過失去電子進行反應。",
+                g7Title: "第 VII 族的比較",
+                g7L1: "在第 VII 族中，氯 (Cl) 的位置比氟 (F) 低",
+                g7L2: "當向族下移時，被佔用的電子層數目增加",
+                g7L3: "最外層電子與原子核之間的距離增加",
+                g7L4: "原子核與最外層電子之間的吸引力減弱",
+                g7L5: "氯獲得最外層電子以獲得穩定電子排列的傾向降低。",
+                nonMetalNote: "註：非金屬通過獲得電子進行反應。",
+                periodTitle: "橫跨週期的比較",
+                periodL1: "當橫跨週期時，質子數目增加。",
+                periodL2: "原子核與最外層電子之間的吸引力增加，原子半徑也隨之減小。",
+                periodL3: "%s 失去最外層電子以獲得穩定電子排列的傾向降低。因此其反應性較低。"
             }
         };
 
-        const structures = {
-            diamond: {
-                title: { en: "Diamond (C)", zh: "鑽石 (C)" },
-                desc: { 
-                    en: "Strong covalent bond between C atoms within the whole network.\nEach C atom forms 4 covalent bonds.",
-                    zh: "整個網絡中的碳原子之間存在強大的共價鍵。\n每個碳原子形成4個共價鍵。"
-                },
-                color: 0x666666,
-                bondColor: 0x999999,
-                legend: [
-                    { type: 'atom', labelKey: 'cAtom', color: '#666666' },
-                    { type: 'bond', labelKey: 'cCovalent', color: '#999999' }
-                ]
-            },
-            graphite: {
-                title: { en: "Graphite (C)", zh: "石墨 (C)" },
-                desc: {
-                    en: "Strong covalent bond between C atoms within the Graphene layer.\nWeak van der Waals' force between the graphene layer.\nEach C atom forms 3 covalent bond. The remain unpaired electron become delocalized.",
-                    zh: "石墨烯層內的碳原子之間存在強大的共價鍵。\n石墨烯層之間存在微弱的凡德瓦力。\n每個碳原子形成3個共價鍵。剩餘的未成對電子變成離域電子。"
-                },
-                color: 0x333333,
-                bondColor: 0x888888,
-                vdwColor: 0xffffff,
-                legend: [
-                    { type: 'atom', labelKey: 'cAtom', color: '#333333' },
-                    { type: 'bond', labelKey: 'cCovalent', color: '#888888' },
-                    { type: 'vdw', labelKey: 'vdw', color: '#ffffff' }
-                ]
-            },
-            quartz: {
-                title: { en: "Quartz (SiO₂)", zh: "石英 (SiO₂)" },
-                desc: {
-                    en: "Each Si atom forms covalent bond with with 4 O atoms, while each O atom forms covalent bond with 2 Si atoms, which have the ratio Si:O = 1:2.",
-                    zh: "每個矽原子與4個氧原子形成共價鍵，而每個氧原子與2個矽原子形成共價鍵，其矽氧比例為 Si:O = 1:2。"
-                },
-                siColor: 0x94a3b8,
-                oColor: 0xef4444,
-                bondColor: 0xcccccc,
-                legend: [
-                    { type: 'atom', labelKey: 'siAtom', color: '#94a3b8' },
-                    { type: 'atom', labelKey: 'oAtom', color: '#ef4444' },
-                    { type: 'bond', labelKey: 'siOCovalent', color: '#cccccc' }
-                ]
-            }
+        const { useState, useEffect } = React;
+
+        const PaperClip = ({ x, y, rotation, size = 16, color = "#3b82f6" }) => (
+            <g transform={`translate(${x-size/2}, ${y-size/2}) rotate(${rotation}, ${size/2}, ${size/2})`}>
+                <path 
+                    d="M13.85 5.5l-7.07 7.07a2.5 2.5 0 0 0 3.54 3.54l7.07-7.07a4.5 4.5 0 0 0-6.36-6.36l-7.07 7.07a6.5 6.5 0 0 0 9.19 9.19l7.07-7.07" 
+                    fill="none" 
+                    stroke={color} 
+                    strokeWidth="1.5" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round"
+                    transform={`scale(${size/24})`}
+                />
+            </g>
+        );
+
+        const MagnetIcon = ({ x, y, size = 40, label = "" }) => (
+            <g transform={`translate(${x}, ${y})`}>
+                <text 
+                    x="0" 
+                    y="0" 
+                    textAnchor="middle" 
+                    dominantBaseline="middle" 
+                    fontSize={size}
+                >
+                    🧲
+                </text>
+                {label && (
+                    <text x="0" y={size/2 + 10} textAnchor="middle" fontSize="9" fontWeight="900" fill="#ef4444" className="analogy-label">
+                        {label}
+                    </text>
+                )}
+            </g>
+        );
+
+        const IonizationEnergyLab = () => {
+            const elements = [
+                { z: 1, symbol: 'H', name: 'Hydrogen', period: 1, ie: 1312, shells: [1], radius: 37, relForce: 10.33 },
+                { z: 2, symbol: 'He', name: 'Helium', period: 1, ie: 2372, shells: [2], radius: 31, relForce: 25.10 },
+                { z: 3, symbol: 'Li', name: 'Lithium', period: 2, ie: 520, shells: [2, 1], radius: 152, relForce: 1.15 },
+                { z: 4, symbol: 'Be', name: 'Beryllium', period: 2, ie: 900, shells: [2, 2], radius: 112, relForce: 1.83 },
+                { z: 5, symbol: 'B', name: 'Boron', period: 2, ie: 801, shells: [2, 3], radius: 88, relForce: 3.42 },
+                { z: 6, symbol: 'C', name: 'Carbon', period: 2, ie: 1086, shells: [2, 4], radius: 77, relForce: 4.88 },
+                { z: 7, symbol: 'N', name: 'Nitrogen', period: 2, ie: 1402, shells: [2, 5], radius: 70, relForce: 7.12 },
+                { z: 8, symbol: 'O', name: 'Oxygen', period: 2, ie: 1314, shells: [2, 6], radius: 66, relForce: 8.54 },
+                { z: 9, symbol: 'F', name: 'Fluorine', period: 2, ie: 1681, shells: [2, 7], radius: 64, relForce: 11.20 },
+                { z: 10, symbol: 'Ne', name: 'Neon', period: 2, ie: 2081, shells: [2, 8], radius: 58, relForce: 14.22 },
+                { z: 11, symbol: 'Na', name: 'Sodium', period: 3, ie: 496, shells: [2, 8, 1], radius: 186, relForce: 1.00 },
+                { z: 12, symbol: 'Mg', name: 'Magnesium', period: 3, ie: 738, shells: [2, 8, 2], radius: 160, relForce: 1.55 },
+                { z: 13, symbol: 'Al', name: 'Aluminum', period: 3, ie: 578, shells: [2, 8, 3], radius: 143, relForce: 1.98 },
+                { z: 14, symbol: 'Si', name: 'Silicon', period: 3, ie: 786, shells: [2, 8, 4], radius: 118, relForce: 3.12 },
+                { z: 15, symbol: 'P', name: 'Phosphorus', period: 3, ie: 1012, shells: [2, 8, 5], radius: 110, relForce: 4.25 },
+                { z: 16, symbol: 'S', name: 'Sulfur', period: 3, ie: 1000, shells: [2, 8, 6], radius: 104, relForce: 5.34 },
+                { z: 17, symbol: 'Cl', name: 'Chlorine', period: 3, ie: 1251, shells: [2, 8, 7], radius: 99, relForce: 6.95 },
+                { z: 18, symbol: 'Ar', name: 'Argon', period: 3, ie: 1521, shells: [2, 8, 8], radius: 88, relForce: 9.10 }
+            ];
+
+            const [currentIndex, setCurrentIndex] = useState(0); 
+            const [history, setHistory] = useState([elements[0]]);
+            const [showForce, setShowForce] = useState(true);
+            const [showRadius, setShowRadius] = useState(true);
+            const [analogyMode, setAnalogyMode] = useState(false);
+            const [comparisonType, setComparisonType] = useState(null); 
+            const [lang, setLang] = useState('en');
+            
+            const t = translations[lang];
+            const currentAtom = elements[currentIndex];
+            const previousAtom = history.length > 1 ? history[history.length - 2] : null;
+
+            useEffect(() => {
+                if (history[history.length - 1]?.z !== currentAtom.z) {
+                    setHistory(prev => [...prev, currentAtom]);
+                }
+                
+                const prevZ = previousAtom?.z;
+                const currZ = currentAtom.z;
+                
+                if ((prevZ === 3 && currZ === 11) || (prevZ === 11 && currZ === 3)) {
+                    setComparisonType('group1');
+                } else if ((prevZ === 9 && currZ === 17) || (prevZ === 17 && currZ === 9)) {
+                    setComparisonType('group7');
+                } else if ((prevZ === 3 && currZ === 4) || (prevZ === 4 && currZ === 3)) {
+                    setComparisonType('li-be');
+                } else if ((prevZ === 11 && currZ === 12) || (prevZ === 12 && currZ === 11)) {
+                    setComparisonType('na-mg');
+                } else if ((prevZ === 12 && currZ === 13) || (prevZ === 13 && currZ === 12)) {
+                    setComparisonType('mg-al');
+                } else {
+                    setComparisonType(null);
+                }
+            }, [currentIndex, currentAtom, history, previousAtom]);
+
+            const selectElement = (z) => {
+                const idx = elements.findIndex(e => e.z === z);
+                if (idx !== -1) setCurrentIndex(idx);
+            };
+
+            const triggerComparison = (z1, z2, type) => {
+                const atom1 = elements.find(e => e.z === z1);
+                const atom2 = elements.find(e => e.z === z2);
+                if (atom1 && atom2) {
+                    setHistory([atom1, atom2]);
+                    setCurrentIndex(elements.indexOf(atom2));
+                    setComparisonType(type);
+                }
+            };
+
+            const BohrModel = ({ atom, size = 380, isSmall = false, compareAgainstAtom = null }) => {
+                if (!atom) return null;
+                
+                const baseNucleusSize = isSmall ? 18 : 22;
+                const magnetScale = analogyMode ? (0.55 + (atom.z / 30)) : 1;
+                const nucleusRadius = baseNucleusSize * magnetScale;
+                
+                const nucleusFontSize = isSmall ? 14 : 16;
+                const electronRadius = isSmall ? 5 : 6.5;
+                const maxRadiusValue = 186; 
+                const baseScaling = (atom.radius / maxRadiusValue);
+                const radiusFactor = 0.55 + (baseScaling * 0.45); 
+                
+                const shellSpacing = isSmall ? 45 : 55;
+                const outermostShellIdx = atom.shells.length - 1;
+                const outermostShellRadius = (baseNucleusSize + 25 + (outermostShellIdx * shellSpacing)) * radiusFactor;
+                
+                const angle = -Math.PI / 2; 
+                const ex = 200 + outermostShellRadius * Math.cos(angle);
+                const ey = 200 + outermostShellRadius * Math.sin(angle);
+
+                const baseLen = 10;
+                const magnitudeScale = (5 * Math.log2(atom.relForce + 1) + (atom.relForce * 2.5)) / 2;
+                const forceArrowLength = baseLen + magnitudeScale;
+
+                let magnetLabel = "";
+                if (analogyMode && compareAgainstAtom !== null) {
+                    const samePeriod = atom.period === compareAgainstAtom.period;
+                    if (samePeriod && atom.z > compareAgainstAtom.z) {
+                        magnetLabel = t.strongerMagnet;
+                    }
+                }
+
+                return (
+                    <div className="flex flex-col items-center w-full relative">
+                        <svg viewBox="0 0 400 400" className={`w-full h-auto drop-shadow-md max-w-[${size}px]`}>
+                            <defs>
+                                <marker id="small-arrow-red" markerWidth="4" markerHeight="4" refX="3.5" refY="2" orient="auto">
+                                    <path d="M0,0 L4,2 L0,4 Z" fill="#ef4444" />
+                                </marker>
+                                <marker id="force-arrow-green" markerWidth="4" markerHeight="4" refX="3.5" refY="2" orient="auto">
+                                    <path d="M0,0 L4,2 L0,4 Z" fill="#22c55e" />
+                                </marker>
+                            </defs>
+
+                            {analogyMode ? (
+                                <MagnetIcon x={200} y={200} size={nucleusRadius * 2.2} label={magnetLabel} />
+                            ) : (
+                                <g>
+                                    <circle cx="200" cy="200" r={nucleusRadius} fill="#ef4444" />
+                                    <text x="200" y={200 + (nucleusFontSize / 3)} textAnchor="middle" fill="white" fontSize={nucleusFontSize} fontWeight="900">+{atom.z}</text>
+                                </g>
+                            )}
+                            
+                            {atom.shells.map((count, sIdx) => {
+                                const shellRadius = (baseNucleusSize + 25 + (sIdx * shellSpacing)) * radiusFactor;
+                                const isOutermost = sIdx === atom.shells.length - 1;
+                                return (
+                                    <g key={sIdx}>
+                                        <circle cx="200" cy="200" r={shellRadius} fill="none" stroke="#cbd5e1" strokeWidth="1" strokeDasharray="4 4" />
+                                        {Array.from({ length: count }).map((_, eIdx) => {
+                                            const eAngle = (eIdx / count) * 2 * Math.PI - Math.PI / 2;
+                                            const e_x = 200 + shellRadius * Math.cos(eAngle);
+                                            const e_y = 200 + shellRadius * Math.sin(eAngle);
+                                            
+                                            if (analogyMode) {
+                                                const rot = (eAngle * 180) / Math.PI + 90;
+                                                return <PaperClip key={eIdx} x={e_x} y={e_y} rotation={rot} size={isOutermost ? 22 : 16} color={isOutermost ? "#3b82f6" : "#94a3b8"} />;
+                                            }
+                                            return <circle key={eIdx} cx={e_x} cy={e_y} r={isOutermost ? electronRadius : electronRadius * 0.75} fill={isOutermost ? "#3b82f6" : "#94a3b8"} />;
+                                        })}
+                                    </g>
+                                );
+                            })}
+
+                            {showForce && (
+                                <g>
+                                    <line 
+                                        x1={ex} 
+                                        y1={ey + (electronRadius - 1)} 
+                                        x2={ex} 
+                                        y2={ey + (electronRadius - 1) + forceArrowLength} 
+                                        stroke="#22c55e" 
+                                        strokeWidth="2.5"
+                                        markerEnd="url(#force-arrow-green)"
+                                    />
+                                    <text x={ex + 6} y={ey + electronRadius + (forceArrowLength/2)} textAnchor="start" fontSize="11" fontWeight="900" fill="#166534">
+                                        F = {atom.relForce.toFixed(2)}
+                                    </text>
+                                </g>
+                            )}
+
+                            {showRadius && (
+                                <g className="radius-transition opacity-100">
+                                    <line 
+                                        x1="200" y1="360" 
+                                        x2={200 + outermostShellRadius} y2="360" 
+                                        stroke="#ef4444" 
+                                        strokeWidth="2" 
+                                        markerEnd="url(#small-arrow-red)"
+                                    />
+                                    <circle cx="200" cy="360" r="2.5" fill="#ef4444" />
+                                    <text x="200" y={385} textAnchor="middle" fontSize="12" fontWeight="800" fill="#ef4444">
+                                        r: {atom.radius} pm
+                                    </text>
+                                </g>
+                            )}
+                        </svg>
+                        <div className="mt-1 text-center">
+                            <div className="text-lg font-black text-slate-800 leading-none">{atom.symbol}</div>
+                            <div className="flex gap-2 mt-2 justify-center">
+                                <div className="px-2 py-0.5 bg-blue-50 rounded-md text-[10px] font-bold text-blue-600 border border-blue-100 tracking-tighter">r: {atom.radius} pm</div>
+                                <div className="px-2 py-0.5 bg-green-50 rounded-md text-[10px] font-bold text-green-600 border border-green-100 tracking-tighter">Force: {atom.relForce.toFixed(2)}</div>
+                            </div>
+                        </div>
+                    </div>
+                );
+            };
+
+            const ComparisonExplanation = () => {
+                if (!comparisonType) return null;
+
+                const getAcrossPeriodExplanation = (element1, element2) => (
+                    <div className="mt-6 bg-orange-50 border border-orange-100 rounded-xl p-6 text-left animate-in fade-in slide-in-from-bottom-4">
+                        <h3 className="text-orange-800 font-bold flex items-center gap-2 mb-3">
+                            <Icons.BookOpen size={18} /> {t.names[element1] || element1} vs {t.names[element2] || element2} {t.periodTitle}
+                        </h3>
+                        <ul className="space-y-2 text-sm text-orange-900 font-medium list-disc ml-5">
+                            <li>{t.periodL1}</li>
+                            <li>{t.periodL2}</li>
+                            <li>{t.periodL3.replace('%s', t.names[element2] || element2)}</li>
+                        </ul>
+                    </div>
+                );
+
+                if (comparisonType === 'group1') {
+                    return (
+                        <div className="mt-6 bg-blue-50 border border-blue-100 rounded-xl p-6 text-left animate-in fade-in slide-in-from-bottom-4">
+                            <h3 className="text-blue-800 font-bold flex items-center gap-2 mb-3">
+                                <Icons.BookOpen size={18} /> {t.g1Title}
+                            </h3>
+                            <ul className="space-y-2 text-sm text-blue-900 font-medium list-disc ml-5">
+                                <li>{t.g1L1}</li>
+                                <li>{t.g1L2}</li>
+                                <li>{t.g1L3}</li>
+                                <li>{t.g1L4}</li>
+                                <li>{t.g1L5}</li>
+                            </ul>
+                            <div className="mt-4 p-3 bg-blue-100 rounded-lg text-xs font-bold text-blue-800 italic">
+                                {t.metalNote}
+                            </div>
+                        </div>
+                    );
+                }
+
+                if (comparisonType === 'group7') {
+                    return (
+                        <div className="mt-6 bg-purple-50 border border-purple-100 rounded-xl p-6 text-left animate-in fade-in slide-in-from-bottom-4">
+                            <h3 className="text-purple-800 font-bold flex items-center gap-2 mb-3">
+                                <Icons.BookOpen size={18} /> {t.g7Title}
+                            </h3>
+                            <ul className="space-y-2 text-sm text-purple-900 font-medium list-disc ml-5">
+                                <li>{t.g7L1}</li>
+                                <li>{t.g7L2}</li>
+                                <li>{t.g7L3}</li>
+                                <li>{t.g7L4}</li>
+                                <li>{t.g7L5}</li>
+                            </ul>
+                            <div className="mt-4 p-3 bg-purple-100 rounded-lg text-xs font-bold text-purple-800 italic">
+                                {t.nonMetalNote}
+                            </div>
+                        </div>
+                    );
+                }
+
+                if (comparisonType === 'li-be') return getAcrossPeriodExplanation('Lithium', 'Beryllium');
+                if (comparisonType === 'na-mg') return getAcrossPeriodExplanation('Sodium', 'Magnesium');
+                if (comparisonType === 'mg-al') return getAcrossPeriodExplanation('Magnesium', 'Aluminum');
+
+                return null;
+            };
+
+            return (
+                <div className="min-h-screen bg-slate-50 p-4 md:p-6 font-sans text-slate-800 text-center">
+                    <div className="max-w-6xl mx-auto relative">
+                        {/* Translation Button - Top Right */}
+                        <div className="flex justify-end mb-4">
+                            <button 
+                                onClick={() => setLang(lang === 'en' ? 'zh' : 'en')}
+                                className="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-full shadow-sm hover:bg-slate-50 transition-colors text-xs font-bold text-slate-600"
+                            >
+                                <Icons.Globe size={14} />
+                                {lang === 'en' ? '繁體中文' : 'English'}
+                            </button>
+                        </div>
+                        
+                        <header className="mb-6 text-left">
+                            <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-2 tracking-tight">{t.title}</h1>
+                            <p className="text-slate-600 mt-1 text-sm font-medium">{t.subtitle}</p>
+                        </header>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                            <div className="lg:col-span-1 space-y-4">
+                                <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 text-left">
+                                    <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-slate-700"><Icons.Target size={20} /> {t.selection}</h2>
+                                    
+                                    <div className="flex items-center justify-between gap-2 mb-6">
+                                        <button onClick={() => selectElement(elements[Math.max(0, currentIndex - 1)].z)} disabled={currentIndex === 0} className="p-2 rounded-full bg-slate-100 hover:bg-slate-200 disabled:opacity-30 transition-colors"><Icons.ChevronLeft /></button>
+                                        <div className="text-center">
+                                            <div className="text-4xl font-black text-blue-600 tracking-tighter leading-none">{currentAtom.symbol}</div>
+                                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{t.names[currentAtom.name] || currentAtom.name}</div>
+                                        </div>
+                                        <button onClick={() => selectElement(elements[Math.min(elements.length-1, currentIndex + 1)].z)} disabled={currentIndex === elements.length - 1} className="p-2 rounded-full bg-slate-100 hover:bg-slate-200 disabled:opacity-30 transition-colors"><Icons.ChevronRight /></button>
+                                    </div>
+
+                                    <div className="mb-6">
+                                        <label className="text-xs font-bold uppercase text-slate-400 block mb-2">{t.groupComp}</label>
+                                        <div className="grid grid-cols-1 gap-2">
+                                            <button 
+                                                onClick={() => triggerComparison(3, 11, 'group1')}
+                                                className={`flex items-center justify-between px-3 py-2 border rounded-lg transition-all group ${comparisonType === 'group1' ? 'bg-blue-600 border-blue-600 text-white' : 'bg-slate-50 border-slate-200 hover:bg-blue-50 hover:border-blue-300'}`}
+                                            >
+                                                <span className={`text-sm font-semibold ${comparisonType === 'group1' ? 'text-white' : 'text-slate-600 group-hover:text-blue-700'}`}>Li vs Na</span>
+                                                <Icons.Zap className={comparisonType === 'group1' ? 'text-blue-200' : 'text-slate-300 group-hover:text-blue-400'} />
+                                            </button>
+                                            <button 
+                                                onClick={() => triggerComparison(9, 17, 'group7')}
+                                                className={`flex items-center justify-between px-3 py-2 border rounded-lg transition-all group ${comparisonType === 'group7' ? 'bg-purple-600 border-purple-600 text-white' : 'bg-slate-50 border-slate-200 hover:bg-purple-50 hover:border-purple-300'}`}
+                                            >
+                                                <span className={`text-sm font-semibold ${comparisonType === 'group7' ? 'text-white' : 'text-slate-600 group-hover:text-purple-700'}`}>F vs Cl</span>
+                                                <Icons.Zap className={comparisonType === 'group7' ? 'text-purple-200' : 'text-slate-300 group-hover:text-purple-400'} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="mb-6">
+                                        <label className="text-xs font-bold uppercase text-slate-400 block mb-1">{t.jumpPeriod}</label>
+                                        <div className="flex gap-2">
+                                            {[1, 2, 3].map(p => (
+                                                <button key={p} onClick={() => selectElement(elements.find(e => e.period === p).z)} className={`flex-1 py-1 rounded text-sm font-medium border transition-all ${currentAtom.period === p ? 'bg-blue-600 border-blue-600 text-white shadow-sm' : 'bg-white border-slate-200 hover:border-blue-400'}`}>{p}</button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="pt-4 border-t border-slate-100 space-y-3">
+                                        <label className="text-xs font-bold uppercase text-slate-400 block mb-1 flex items-center gap-1"><Icons.Settings2 size={12}/> {t.displayOptions}</label>
+                                        <div className="flex flex-col gap-2">
+                                            <label className="flex items-center gap-2 cursor-pointer hover:bg-blue-50 p-1.5 rounded transition-colors group">
+                                                <input type="checkbox" checked={analogyMode} onChange={() => setAnalogyMode(!analogyMode)} className="w-4 h-4 accent-blue-600 rounded" />
+                                                <span className={`text-sm font-bold ${analogyMode ? 'text-blue-700' : 'text-slate-600'}`}>{t.analogy}</span>
+                                            </label>
+                                            <label className="flex items-center gap-2 cursor-pointer hover:bg-slate-50 p-1 rounded transition-colors">
+                                                <input type="checkbox" checked={showForce} onChange={() => setShowForce(!showForce)} className="w-4 h-4 accent-green-600 rounded" />
+                                                <span className="text-sm font-semibold text-slate-600">{t.showForce}</span>
+                                            </label>
+                                            <label className="flex items-center gap-2 cursor-pointer hover:bg-slate-50 p-1 rounded transition-colors">
+                                                <input type="checkbox" checked={showRadius} onChange={() => setShowRadius(!showRadius)} className="w-4 h-4 accent-red-600 rounded" />
+                                                <span className="text-sm font-semibold text-slate-600">{t.showRadius}</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div className="bg-green-600 text-white p-5 rounded-2xl shadow-lg border border-green-700 text-left">
+                                    <h3 className="text-base font-bold tracking-tight mb-2 opacity-90 text-green-50 leading-snug">{t.forceTitle}</h3>
+                                    <div className="text-3xl font-black tracking-tighter">{currentAtom.relForce.toFixed(2)}</div>
+                                    <p className="text-[10px] font-bold mt-1 opacity-90 leading-tight italic">{t.forceNote}</p>
+                                </div>
+                            </div>
+
+                            <div className="lg:col-span-3 space-y-6">
+                                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col text-left">
+                                    <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-slate-700"><Icons.Layers size={20} /> {t.compViz}</h2>
+                                    <div className="flex-grow flex flex-col gap-4 relative bg-slate-50 rounded-2xl border border-dashed border-slate-300 py-8 px-2 overflow-hidden min-h-[460px]">
+                                        <div className="flex items-center justify-around w-full gap-4 relative z-10">
+                                            {previousAtom && previousAtom.symbol !== currentAtom.symbol ? (
+                                                <React.Fragment>
+                                                    <div className="flex-1 flex flex-col items-center max-w-[45%]">
+                                                        <div className="text-[10px] font-black text-slate-400 uppercase mb-2">{t.previous}</div>
+                                                        <BohrModel atom={previousAtom} size={280} isSmall={true} compareAgainstAtom={currentAtom} />
+                                                    </div>
+                                                    
+                                                    <div className="flex flex-col items-center text-slate-300">
+                                                        <Icons.ArrowRightLeft size={28} />
+                                                    </div>
+
+                                                    <div className="flex-1 flex flex-col items-center max-w-[45%]">
+                                                        <div className="text-[10px] font-black text-blue-500 uppercase mb-2">{t.current}</div>
+                                                        <BohrModel atom={currentAtom} size={280} isSmall={true} compareAgainstAtom={previousAtom} />
+                                                    </div>
+                                                </React.Fragment>
+                                            ) : (
+                                                <div className="flex flex-col items-center w-full max-w-lg mx-auto">
+                                                    <BohrModel atom={currentAtom} size={360} />
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                    
+                                    <ComparisonExplanation />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
         };
 
-        function init() {
-            const container = document.getElementById('canvas-container');
-            scene = new THREE.Scene();
-            camera = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 1000);
-            camera.position.set(0, 0, 25);
-
-            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-            renderer.setSize(container.clientWidth, container.clientHeight);
-            renderer.setPixelRatio(window.devicePixelRatio);
-            container.appendChild(renderer.domElement);
-
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
-            scene.add(ambientLight);
-
-            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6);
-            directionalLight.position.set(10, 20, 15);
-            scene.add(directionalLight);
-
-            currentGroup = new THREE.Group();
-            scene.add(currentGroup);
-
-            switchStructure('diamond');
-            resetToOriginal(); 
-
-            window.addEventListener('resize', onWindowResize);
-            
-            container.addEventListener('mousedown', onMouseDown);
-            window.addEventListener('mouseup', onMouseUp);
-            window.addEventListener('mousemove', onMouseMove);
-            container.addEventListener('wheel', onWheel, { passive: false });
-
-            container.addEventListener('touchstart', onTouchStart, { passive: false });
-            window.addEventListener('touchend', onTouchEnd);
-            container.addEventListener('touchmove', onTouchMove, { passive: false });
-            
-            animate();
-        }
-
-        function toggleLanguage() {
-            currentLang = currentLang === 'en' ? 'zh' : 'en';
-            updateUI();
-        }
-
-        function updateUI() {
-            const t = translations[currentLang];
-            document.getElementById('ui-main-title').innerText = t.mainTitle;
-            document.getElementById('key-title').innerText = t.key;
-            document.getElementById('focus-hint').innerText = t.focusHint;
-            document.getElementById('btn-reset').innerText = t.reset;
-            document.getElementById('interaction-hint').innerHTML = `<span class="font-black text-white uppercase">${currentLang === 'en' ? 'Interaction:' : '交互說明:'}</span> ${t.interaction}`;
-            document.getElementById('lang-label').innerText = t.langToggle;
-            
-            document.getElementById('btn-diamond').innerText = t.diamond;
-            document.getElementById('btn-graphite').innerText = t.graphite;
-            document.getElementById('btn-quartz').innerText = t.quartz;
-
-            document.getElementById('btn-focus').innerText = isFocusMode ? t.focusOn : t.focusOff;
-
-            const config = structures[currentType];
-            document.getElementById('info-title').innerText = config.title[currentLang];
-            document.getElementById('info-desc').innerText = config.desc[currentLang];
-
-            updateLegend(currentType);
-        }
-
-        function updateLegend(type) {
-            const t = translations[currentLang];
-            const content = structures[type].legend.map(item => {
-                let swatchHtml = '';
-                if (item.type === 'atom') swatchHtml = `<div class="swatch" style="background-color: ${item.color}"></div>`;
-                else if (item.type === 'bond') swatchHtml = `<div class="swatch-bond" style="background-color: ${item.color}"></div>`;
-                else if (item.type === 'vdw') swatchHtml = `<div class="swatch-vdw"></div>`;
-                return `<div class="legend-item">${swatchHtml}<span>${t[item.labelKey]}</span></div>`;
-            }).join('');
-            document.getElementById('legend-content').innerHTML = content;
-        }
-
-        function createAtom(pos, color, size = ATOM_SCALE) {
-            const geo = new THREE.SphereGeometry(size, 20, 20);
-            const mat = new THREE.MeshPhongMaterial({ color: color, shininess: 80 });
-            const mesh = new THREE.Mesh(geo, mat);
-            mesh.position.copy(pos);
-            return mesh;
-        }
-
-        function createBond(p1, p2, color, isVDW = false) {
-            if (isVDW) {
-                const geometry = new THREE.BufferGeometry().setFromPoints([p1, p2]);
-                const material = new THREE.LineDashedMaterial({ color: color, dashSize: 0.3, gapSize: 0.2, scale: 1, transparent: true, opacity: 0.8 });
-                const line = new THREE.Line(geometry, material);
-                line.computeLineDistances();
-                return line;
-            } else {
-                const direction = new THREE.Vector3().subVectors(p2, p1);
-                const length = direction.length();
-                const geo = new THREE.CylinderGeometry(BOND_RADIUS, BOND_RADIUS, length, 6);
-                const mat = new THREE.MeshPhongMaterial({ color: color, transparent: true, opacity: 0.6 });
-                const mesh = new THREE.Mesh(geo, mat);
-                const center = new THREE.Vector3().addVectors(p1, p2).multiplyScalar(0.5);
-                mesh.position.copy(center);
-                mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.clone().normalize());
-                return mesh;
-            }
-        }
-
-        function switchStructure(type) {
-            currentType = type;
-            const config = structures[type];
-            ['diamond', 'graphite', 'quartz'].forEach(t => document.getElementById('btn-' + t).classList.remove('active-btn'));
-            document.getElementById('btn-' + type).classList.add('active-btn');
-            
-            updateUI();
-            clearScene();
-
-            if (type === 'diamond') buildDiamond();
-            else if (type === 'graphite') buildGraphite();
-            else if (type === 'quartz') buildQuartz();
-            resetToOriginal();
-        }
-
-        function clearScene() {
-            while(currentGroup.children.length > 0){ currentGroup.remove(currentGroup.children[0]); }
-        }
-
-        function resetToOriginal() {
-            const def = ORIENTATIONS[currentType];
-            currentGroup.rotation.x = def.x;
-            currentGroup.rotation.y = def.y;
-            currentGroup.position.y = 0; 
-        }
-
-        function buildDiamond() {
-            const config = structures.diamond;
-            const atoms = getDiamondAtoms(isFocusMode);
-            atoms.forEach(pos => currentGroup.add(createAtom(pos, config.color)));
-            for (let i = 0; i < atoms.length; i++) {
-                for (let j = i + 1; j < atoms.length; j++) {
-                    if (atoms[i].distanceTo(atoms[j]) < 1.8) currentGroup.add(createBond(atoms[i], atoms[j], config.bondColor));
-                }
-            }
-            camera.position.z = isFocusMode ? 12 : 18;
-        }
-
-        function buildGraphite() {
-            const config = structures.graphite;
-            let atoms = [];
-            if (isFocusMode) {
-                const coords = [[-0.8,-3.1,-3.4],[-0.1,-1.8,-3.4],[-0.8,-0.6,-3.4],[-3.0,-1.8,-3.4],[-2.2,-3.1,-3.4],[-2.2,-0.6,-3.4],[-3.0,0.6,-3.4],[-4.4,0.6,-3.4],[-5.1,-0.6,-3.4],[-4.4,-1.8,-3.4],[-0.1,-1.8,3.4],[-0.8,-0.6,3.4],[-2.2,-0.6,3.4],[-3.0,0.6,3.4],[-4.4,0.6,3.4],[-5.1,-0.6,3.4],[-4.4,-1.8,3.4],[-3.0,-1.8,3.4],[-2.2,-3.1,3.4],[-0.8,-3.1,3.4],[-0.1,0.6,-3.4],[-0.8,1.8,-3.4],[-2.2,1.8,-3.4],[-0.1,0.6,3.4],[-0.8,1.8,3.4],[-2.2,1.8,3.4]];
-                atoms = coords.map(c => new THREE.Vector3(c[0], c[1], c[2]));
-            } else {
-                const a = 1.42;
-                for (let layer = 0; layer < 3; layer++) {
-                    const z = (layer - 1) * 3.35;
-                    const shiftX = (layer % 2 !== 0) ? a : 0;
-                    for (let i = -1; i <= 1; i++) {
-                        for (let j = -1; j <= 1; j++) {
-                            const xBase = i * 3 * a;
-                            const yBase = j * Math.sqrt(3) * a;
-                            [[xBase + shiftX, yBase], [xBase + a + shiftX, yBase], [xBase + 1.5 * a + shiftX, yBase + 0.5 * Math.sqrt(3) * a], [xBase + 2.5 * a + shiftX, yBase + 0.5 * Math.sqrt(3) * a]].forEach(p => atoms.push(new THREE.Vector3(p[0], p[1], z)));
-                        }
-                    }
-                }
-            }
-            const centroid = new THREE.Vector3();
-            atoms.forEach(at => centroid.add(at));
-            centroid.divideScalar(atoms.length || 1);
-            const centered = atoms.map(at => at.sub(centroid));
-            centered.forEach(pos => currentGroup.add(createAtom(pos, config.color, ATOM_SCALE * 0.9)));
-            for (let i = 0; i < centered.length; i++) {
-                for (let j = i + 1; j < centered.length; j++) {
-                    const dz = Math.abs(centered[i].z - centered[j].z);
-                    const planarDist = Math.sqrt(Math.pow(centered[i].x - centered[j].x, 2) + Math.pow(centered[i].y - centered[j].y, 2));
-                    if (dz < 0.2 && centered[i].distanceTo(centered[j]) < 1.6) currentGroup.add(createBond(centered[i], centered[j], config.bondColor));
-                    else if (dz > 3.0 && planarDist < 1.0) currentGroup.add(createBond(centered[i], centered[j], config.vdwColor, true));
-                }
-            }
-            camera.position.z = isFocusMode ? 14 : 20;
-        }
-
-        function buildQuartz() {
-            const config = structures.quartz;
-            const siAtoms = getDiamondAtoms(isFocusMode);
-            siAtoms.forEach(pos => currentGroup.add(createAtom(pos, config.siColor, QUARTZ_ATOM_SCALE * 1.3)));
-            for (let i = 0; i < siAtoms.length; i++) {
-                for (let j = i + 1; j < siAtoms.length; j++) {
-                    if (siAtoms[i].distanceTo(siAtoms[j]) < 1.8) {
-                        const pO = new THREE.Vector3().addVectors(siAtoms[i], siAtoms[j]).multiplyScalar(0.5);
-                        currentGroup.add(createAtom(pO, config.oColor, QUARTZ_ATOM_SCALE * 0.8));
-                        currentGroup.add(createBond(siAtoms[i], pO, config.bondColor));
-                        currentGroup.add(createBond(siAtoms[j], pO, config.bondColor));
-                    }
-                }
-            }
-            camera.position.z = isFocusMode ? 12 : 18;
-        }
-
-        function getDiamondAtoms(focus) {
-            let atoms = [];
-            if (focus) {
-                atoms = [[-4,-4,-4],[-3,-3,-3],[-4,-2,-2],[-2,-2,-4],[-1,-3,-1],[0,-2,-2],[0,-4,0],[-2,-2,0],[0,0,-4],[-1,-1,-3],[-2,0,-2],[-3,-1,-1],[-4,0,0],[-2,-4,-2]].map(c => new THREE.Vector3(c[0], c[1], c[2]));
-            } else {
-                const unit = [[0,0,0],[2,2,0],[2,0,2],[0,2,2],[1,1,1],[3,3,1],[3,1,3],[1,3,3]];
-                for (let i = -1; i <= 0; i++) for (let j = -1; j <= 0; j++) for (let k = -1; k <= 0; k++) unit.forEach(p => atoms.push(new THREE.Vector3(i*4+p[0], j*4+p[1], k*4+p[2])));
-            }
-            const centroid = new THREE.Vector3();
-            atoms.forEach(a => centroid.add(a));
-            centroid.divideScalar(atoms.length || 1);
-            return atoms.map(a => a.sub(centroid));
-        }
-
-        function onMouseDown(e) { isDragging = true; previousMouse = { x: e.clientX, y: e.clientY }; }
-        function onMouseUp() { isDragging = false; }
-        function onMouseMove(e) {
-            if (isDragging) {
-                currentGroup.rotation.y += (e.clientX - previousMouse.x) * 0.01;
-                currentGroup.rotation.x += (e.clientY - previousMouse.y) * 0.01;
-                previousMouse = { x: e.clientX, y: e.clientY };
-            }
-        }
-        function onWheel(e) {
-            camera.position.z = Math.max(5, Math.min(80, camera.position.z + e.deltaY * 0.02));
-            e.preventDefault();
-        }
-
-        function onTouchStart(e) {
-            if (e.touches.length === 1) {
-                isDragging = true;
-                previousMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-            } else if (e.touches.length === 2) {
-                isDragging = false;
-                initialPinchDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-            }
-            e.preventDefault();
-        }
-        function onTouchEnd() { isDragging = false; initialPinchDistance = null; }
-        function onTouchMove(e) {
-            if (e.touches.length === 1 && isDragging) {
-                currentGroup.rotation.y += (e.touches[0].clientX - previousMouse.x) * 0.01;
-                currentGroup.rotation.x += (e.touches[0].clientY - previousMouse.y) * 0.01;
-                previousMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-                e.preventDefault();
-            } else if (e.touches.length === 2 && initialPinchDistance !== null) {
-                const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-                camera.position.z = Math.max(5, Math.min(80, camera.position.z - (dist - initialPinchDistance) * 0.05));
-                initialPinchDistance = dist;
-                e.preventDefault();
-            }
-        }
-
-        function onWindowResize() {
-            const container = document.getElementById('canvas-container');
-            camera.aspect = container.clientWidth / container.clientHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(container.clientWidth, container.clientHeight);
-        }
-
-        function toggleFocus() {
-            isFocusMode = !isFocusMode;
-            updateUI();
-            switchStructure(currentType);
-        }
-
-        function animate() { requestAnimationFrame(animate); renderer.render(scene, camera); }
-        window.onload = init;
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<IonizationEnergyLab />);
     </script>
 </body>
 </html>

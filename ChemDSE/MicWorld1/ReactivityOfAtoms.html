@@ -27,7 +27,93 @@
             ArrowRightLeft: ({size=24}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/></svg>,
             Zap: ({size=14}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 14.71 13 3l-2.09 7.84H20l-9 11.71L13.09 14.71z"/></svg>,
             BookOpen: ({size=20}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>,
-            Settings2: ({size=20}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 7h-9"/><path d="M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></svg>
+            Settings2: ({size=20}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 7h-9"/><path d="M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></svg>,
+            Globe: ({size=18}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        };
+
+        const translations = {
+            en: {
+                title: "Atomic structure and reactivity",
+                subtitle: "Study how nuclear charge and atomic radius affecting reactivity.",
+                selection: "Selection",
+                groupComp: "Group Comparisons",
+                jumpPeriod: "Jump to Period",
+                displayOptions: "Display Options",
+                analogy: "Analogy Mode (Magnet/Clip)",
+                showForce: "Show Electrostatic Force Arrow",
+                showRadius: "Show Atomic Radius Arrow",
+                forceTitle: "Attraction between nucleus and outermost shell electrons (F)",
+                forceNote: "How strongly the nucleus \"pulls\" the outermost shell electron when compared to Sodium relatively.",
+                compViz: "Comparative Visualization",
+                previous: "Previous",
+                current: "Current",
+                strongerMagnet: "STRONGER MAGNET",
+                names: {
+                    Hydrogen: "Hydrogen", Helium: "Helium", Lithium: "Lithium", Beryllium: "Beryllium", Boron: "Boron",
+                    Carbon: "Carbon", Nitrogen: "Nitrogen", Oxygen: "Oxygen", Fluorine: "Fluorine", Neon: "Neon",
+                    Sodium: "Sodium", Magnesium: "Magnesium", Aluminum: "Aluminum", Silicon: "Silicon",
+                    Phosphorus: "Phosphorus", Sulfur: "Sulfur", Chlorine: "Chlorine", Argon: "Argon"
+                },
+                g1Title: "Group I Comparison Explanation",
+                g1L1: "Na has a lower position than Li in Group I",
+                g1L2: "When going down the group, number of occupied electron shells increases",
+                g1L3: "Distance between the outermost shell electron and the nucleus increases",
+                g1L4: "Attraction between the outermost shell electron and the nucleus weakens",
+                g1L5: "The tendency of Na losing the outermost shell electron to get a stable electronic arrangement increases.",
+                metalNote: "Note: metal reacts by losing electrons.",
+                g7Title: "Group VII Comparison Explanation",
+                g7L1: "Cl has a lower position than F in Group VII",
+                g7L2: "When going down the group, number of occupied electron shells increases",
+                g7L3: "Distance between the outermost shell electron and the nucleus increases",
+                g7L4: "Attraction between the outermost shell electron and the nucleus weakens",
+                g7L5: "The tendency of Cl gaining the outermost shell electron to get a stable electronic arrangement decreases.",
+                nonMetalNote: "Note: non-metal reacts by gaining electrons.",
+                periodTitle: "Acrossing Period Comparison Explanation",
+                periodL1: "When going across the period, number of protons increases.",
+                periodL2: "Attraction between the outermost shell electron and the nucleus increases, the atomic radius also decreases.",
+                periodL3: "The tendency of %s losing the outermost shell electron to get a stable electronic arrangement decreases. So it is less reactive."
+            },
+            zh: {
+                title: "原子結構與活性",
+                subtitle: "理解核電荷與原子半徑如何影響活性。",
+                selection: "選擇元素",
+                groupComp: "族群比較",
+                jumpPeriod: "跳至週期",
+                displayOptions: "顯示選項",
+                analogy: "類比模式 (磁鐵/萬字夾)",
+                showForce: "顯示靜電吸引力箭頭",
+                showRadius: "顯示原子半徑箭頭",
+                forceTitle: "原子核與最外層電子間的靜電吸引力 (F)",
+                forceNote: "與鈉相比，原子核對最外層電子的相對「拉力」強度。",
+                compViz: "對比原子",
+                previous: "上一個",
+                current: "當前",
+                strongerMagnet: "磁力更強",
+                names: {
+                    Hydrogen: "氫", Helium: "氦", Lithium: "鋰", Beryllium: "鈹", Boron: "硼",
+                    Carbon: "碳", Nitrogen: "氮", Oxygen: "氧", Fluorine: "氟", Neon: "氖",
+                    Sodium: "鈉", Magnesium: "鎂", Aluminum: "鋁", Silicon: "矽",
+                    Phosphorus: "磷", Sulfur: "硫", Chlorine: "氯", Argon: "氬"
+                },
+                g1Title: "第 I 族的比較",
+                g1L1: "在第 I 族中，鈉 (Na) 的位置比鋰 (Li) 低",
+                g1L2: "當向族下移時，被佔用的電子層數目增加",
+                g1L3: "最外層電子與原子核之間的距離增加",
+                g1L4: "原子核與最外層電子之間的吸引力減弱",
+                g1L5: "鈉失去最外層電子以獲得穩定電子排列的傾向增加。",
+                metalNote: "註：金屬通過失去電子進行反應。",
+                g7Title: "第 VII 族的比較",
+                g7L1: "在第 VII 族中，氯 (Cl) 的位置比氟 (F) 低",
+                g7L2: "當向族下移時，被佔用的電子層數目增加",
+                g7L3: "最外層電子與原子核之間的距離增加",
+                g7L4: "原子核與最外層電子之間的吸引力減弱",
+                g7L5: "氯獲得最外層電子以獲得穩定電子排列的傾向降低。",
+                nonMetalNote: "註：非金屬通過獲得電子進行反應。",
+                periodTitle: "橫跨週期的比較",
+                periodL1: "當橫跨週期時，質子數目增加。",
+                periodL2: "原子核與最外層電子之間的吸引力增加，原子半徑也隨之減小。",
+                periodL3: "%s 失去最外層電子以獲得穩定電子排列的傾向降低。因此其反應性較低。"
+            }
         };
 
         const { useState, useEffect } = React;
@@ -93,7 +179,9 @@
             const [showRadius, setShowRadius] = useState(true);
             const [analogyMode, setAnalogyMode] = useState(false);
             const [comparisonType, setComparisonType] = useState(null); 
+            const [lang, setLang] = useState('en');
             
+            const t = translations[lang];
             const currentAtom = elements[currentIndex];
             const previousAtom = history.length > 1 ? history[history.length - 2] : null;
 
@@ -104,10 +192,17 @@
                 
                 const prevZ = previousAtom?.z;
                 const currZ = currentAtom.z;
+                
                 if ((prevZ === 3 && currZ === 11) || (prevZ === 11 && currZ === 3)) {
                     setComparisonType('group1');
                 } else if ((prevZ === 9 && currZ === 17) || (prevZ === 17 && currZ === 9)) {
                     setComparisonType('group7');
+                } else if ((prevZ === 3 && currZ === 4) || (prevZ === 4 && currZ === 3)) {
+                    setComparisonType('li-be');
+                } else if ((prevZ === 11 && currZ === 12) || (prevZ === 12 && currZ === 11)) {
+                    setComparisonType('na-mg');
+                } else if ((prevZ === 12 && currZ === 13) || (prevZ === 13 && currZ === 12)) {
+                    setComparisonType('mg-al');
                 } else {
                     setComparisonType(null);
                 }
@@ -132,9 +227,6 @@
                 if (!atom) return null;
                 
                 const baseNucleusSize = isSmall ? 18 : 22;
-                
-                // Adjusted magnet scale: Reduced overall size by 30% as requested
-                // Original scale was (0.8 + (atom.z / 20)), now using approx 0.7x factor
                 const magnetScale = analogyMode ? (0.55 + (atom.z / 30)) : 1;
                 const nucleusRadius = baseNucleusSize * magnetScale;
                 
@@ -160,7 +252,7 @@
                 if (analogyMode && compareAgainstAtom !== null) {
                     const samePeriod = atom.period === compareAgainstAtom.period;
                     if (samePeriod && atom.z > compareAgainstAtom.z) {
-                        magnetLabel = "STRONGER MAGNET";
+                        magnetLabel = t.strongerMagnet;
                     }
                 }
 
@@ -253,21 +345,34 @@
             const ComparisonExplanation = () => {
                 if (!comparisonType) return null;
 
+                const getAcrossPeriodExplanation = (element1, element2) => (
+                    <div className="mt-6 bg-orange-50 border border-orange-100 rounded-xl p-6 text-left animate-in fade-in slide-in-from-bottom-4">
+                        <h3 className="text-orange-800 font-bold flex items-center gap-2 mb-3">
+                            <Icons.BookOpen size={18} /> {t.names[element1] || element1} vs {t.names[element2] || element2} {t.periodTitle}
+                        </h3>
+                        <ul className="space-y-2 text-sm text-orange-900 font-medium list-disc ml-5">
+                            <li>{t.periodL1}</li>
+                            <li>{t.periodL2}</li>
+                            <li>{t.periodL3.replace('%s', t.names[element2] || element2)}</li>
+                        </ul>
+                    </div>
+                );
+
                 if (comparisonType === 'group1') {
                     return (
                         <div className="mt-6 bg-blue-50 border border-blue-100 rounded-xl p-6 text-left animate-in fade-in slide-in-from-bottom-4">
                             <h3 className="text-blue-800 font-bold flex items-center gap-2 mb-3">
-                                <Icons.BookOpen size={18} /> Group I Comparison Explanation
+                                <Icons.BookOpen size={18} /> {t.g1Title}
                             </h3>
                             <ul className="space-y-2 text-sm text-blue-900 font-medium list-disc ml-5">
-                                <li>Na has a lower position than Li in Group I</li>
-                                <li>When going down the group, number of occupied electron shells increases</li>
-                                <li>Distance between the outermost shell electron and the nucleus increases</li>
-                                <li>Attraction between the outermost shell electron and the nucleus weakens</li>
-                                <li>The tendency of Na losing the outermost shell electron to get a stable electronic arrangement increases.</li>
+                                <li>{t.g1L1}</li>
+                                <li>{t.g1L2}</li>
+                                <li>{t.g1L3}</li>
+                                <li>{t.g1L4}</li>
+                                <li>{t.g1L5}</li>
                             </ul>
                             <div className="mt-4 p-3 bg-blue-100 rounded-lg text-xs font-bold text-blue-800 italic">
-                                Note: metal reacts by losing electrons.
+                                {t.metalNote}
                             </div>
                         </div>
                     );
@@ -277,49 +382,64 @@
                     return (
                         <div className="mt-6 bg-purple-50 border border-purple-100 rounded-xl p-6 text-left animate-in fade-in slide-in-from-bottom-4">
                             <h3 className="text-purple-800 font-bold flex items-center gap-2 mb-3">
-                                <Icons.BookOpen size={18} /> Group VII Comparison Explanation
+                                <Icons.BookOpen size={18} /> {t.g7Title}
                             </h3>
                             <ul className="space-y-2 text-sm text-purple-900 font-medium list-disc ml-5">
-                                <li>Cl has a lower position than F in Group VII</li>
-                                <li>When going down the group, number of occupied electron shells increases</li>
-                                <li>Distance between the outermost shell electron and the nucleus increases</li>
-                                <li>Attraction between the outermost shell electron and the nucleus weakens</li>
-                                <li>The tendency of Cl gaining the outermost shell electron to get a stable electronic arrangement decreases.</li>
+                                <li>{t.g7L1}</li>
+                                <li>{t.g7L2}</li>
+                                <li>{t.g7L3}</li>
+                                <li>{t.g7L4}</li>
+                                <li>{t.g7L5}</li>
                             </ul>
                             <div className="mt-4 p-3 bg-purple-100 rounded-lg text-xs font-bold text-purple-800 italic">
-                                Note: non-metal reacts by gaining electrons.
+                                {t.nonMetalNote}
                             </div>
                         </div>
                     );
                 }
+
+                if (comparisonType === 'li-be') return getAcrossPeriodExplanation('Lithium', 'Beryllium');
+                if (comparisonType === 'na-mg') return getAcrossPeriodExplanation('Sodium', 'Magnesium');
+                if (comparisonType === 'mg-al') return getAcrossPeriodExplanation('Magnesium', 'Aluminum');
 
                 return null;
             };
 
             return (
                 <div className="min-h-screen bg-slate-50 p-4 md:p-6 font-sans text-slate-800 text-center">
-                    <div className="max-w-6xl mx-auto">
+                    <div className="max-w-6xl mx-auto relative">
+                        {/* Translation Button - Top Right */}
+                        <div className="flex justify-end mb-4">
+                            <button 
+                                onClick={() => setLang(lang === 'en' ? 'zh' : 'en')}
+                                className="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-full shadow-sm hover:bg-slate-50 transition-colors text-xs font-bold text-slate-600"
+                            >
+                                <Icons.Globe size={14} />
+                                {lang === 'en' ? '繁體中文' : 'English'}
+                            </button>
+                        </div>
+                        
                         <header className="mb-6 text-left">
-                            <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-2 tracking-tight">Ionization Energy Lab</h1>
-                            <p className="text-slate-600 mt-1 text-sm font-medium">Relative Outermost Shell Electron Attraction (Sodium = 1.00)</p>
+                            <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-2 tracking-tight">{t.title}</h1>
+                            <p className="text-slate-600 mt-1 text-sm font-medium">{t.subtitle}</p>
                         </header>
 
                         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
                             <div className="lg:col-span-1 space-y-4">
                                 <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 text-left">
-                                    <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-slate-700"><Icons.Target size={20} /> Selection</h2>
+                                    <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-slate-700"><Icons.Target size={20} /> {t.selection}</h2>
                                     
                                     <div className="flex items-center justify-between gap-2 mb-6">
                                         <button onClick={() => selectElement(elements[Math.max(0, currentIndex - 1)].z)} disabled={currentIndex === 0} className="p-2 rounded-full bg-slate-100 hover:bg-slate-200 disabled:opacity-30 transition-colors"><Icons.ChevronLeft /></button>
                                         <div className="text-center">
                                             <div className="text-4xl font-black text-blue-600 tracking-tighter leading-none">{currentAtom.symbol}</div>
-                                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{currentAtom.name}</div>
+                                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{t.names[currentAtom.name] || currentAtom.name}</div>
                                         </div>
                                         <button onClick={() => selectElement(elements[Math.min(elements.length-1, currentIndex + 1)].z)} disabled={currentIndex === elements.length - 1} className="p-2 rounded-full bg-slate-100 hover:bg-slate-200 disabled:opacity-30 transition-colors"><Icons.ChevronRight /></button>
                                     </div>
 
                                     <div className="mb-6">
-                                        <label className="text-xs font-bold uppercase text-slate-400 block mb-2">Group Comparisons</label>
+                                        <label className="text-xs font-bold uppercase text-slate-400 block mb-2">{t.groupComp}</label>
                                         <div className="grid grid-cols-1 gap-2">
                                             <button 
                                                 onClick={() => triggerComparison(3, 11, 'group1')}
@@ -339,7 +459,7 @@
                                     </div>
                                     
                                     <div className="mb-6">
-                                        <label className="text-xs font-bold uppercase text-slate-400 block mb-1">Jump to Period</label>
+                                        <label className="text-xs font-bold uppercase text-slate-400 block mb-1">{t.jumpPeriod}</label>
                                         <div className="flex gap-2">
                                             {[1, 2, 3].map(p => (
                                                 <button key={p} onClick={() => selectElement(elements.find(e => e.period === p).z)} className={`flex-1 py-1 rounded text-sm font-medium border transition-all ${currentAtom.period === p ? 'bg-blue-600 border-blue-600 text-white shadow-sm' : 'bg-white border-slate-200 hover:border-blue-400'}`}>{p}</button>
@@ -348,40 +468,40 @@
                                     </div>
 
                                     <div className="pt-4 border-t border-slate-100 space-y-3">
-                                        <label className="text-xs font-bold uppercase text-slate-400 block mb-1 flex items-center gap-1"><Icons.Settings2 size={12}/> Display Options</label>
+                                        <label className="text-xs font-bold uppercase text-slate-400 block mb-1 flex items-center gap-1"><Icons.Settings2 size={12}/> {t.displayOptions}</label>
                                         <div className="flex flex-col gap-2">
                                             <label className="flex items-center gap-2 cursor-pointer hover:bg-blue-50 p-1.5 rounded transition-colors group">
                                                 <input type="checkbox" checked={analogyMode} onChange={() => setAnalogyMode(!analogyMode)} className="w-4 h-4 accent-blue-600 rounded" />
-                                                <span className={`text-sm font-bold ${analogyMode ? 'text-blue-700' : 'text-slate-600'}`}>Analogy Mode (Magnet/Clip)</span>
+                                                <span className={`text-sm font-bold ${analogyMode ? 'text-blue-700' : 'text-slate-600'}`}>{t.analogy}</span>
                                             </label>
                                             <label className="flex items-center gap-2 cursor-pointer hover:bg-slate-50 p-1 rounded transition-colors">
                                                 <input type="checkbox" checked={showForce} onChange={() => setShowForce(!showForce)} className="w-4 h-4 accent-green-600 rounded" />
-                                                <span className="text-sm font-semibold text-slate-600">Show Force Arrow</span>
+                                                <span className="text-sm font-semibold text-slate-600">{t.showForce}</span>
                                             </label>
                                             <label className="flex items-center gap-2 cursor-pointer hover:bg-slate-50 p-1 rounded transition-colors">
                                                 <input type="checkbox" checked={showRadius} onChange={() => setShowRadius(!showRadius)} className="w-4 h-4 accent-red-600 rounded" />
-                                                <span className="text-sm font-semibold text-slate-600">Show Radius Arrow</span>
+                                                <span className="text-sm font-semibold text-slate-600">{t.showRadius}</span>
                                             </label>
                                         </div>
                                     </div>
                                 </div>
                                 
                                 <div className="bg-green-600 text-white p-5 rounded-2xl shadow-lg border border-green-700 text-left">
-                                    <h3 className="text-base font-bold tracking-tight mb-2 opacity-90 text-green-50 leading-snug">Attraction between nucleus and outermost shell electrons (F)</h3>
+                                    <h3 className="text-base font-bold tracking-tight mb-2 opacity-90 text-green-50 leading-snug">{t.forceTitle}</h3>
                                     <div className="text-3xl font-black tracking-tighter">{currentAtom.relForce.toFixed(2)}</div>
-                                    <p className="text-[10px] font-bold mt-1 opacity-90 leading-tight italic">How strongly the nucleus "pulls" the outermost shell electron compared to Sodium.</p>
+                                    <p className="text-[10px] font-bold mt-1 opacity-90 leading-tight italic">{t.forceNote}</p>
                                 </div>
                             </div>
 
                             <div className="lg:col-span-3 space-y-6">
                                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col text-left">
-                                    <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-slate-700"><Icons.Layers size={20} /> Comparative Visualization</h2>
+                                    <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-slate-700"><Icons.Layers size={20} /> {t.compViz}</h2>
                                     <div className="flex-grow flex flex-col gap-4 relative bg-slate-50 rounded-2xl border border-dashed border-slate-300 py-8 px-2 overflow-hidden min-h-[460px]">
                                         <div className="flex items-center justify-around w-full gap-4 relative z-10">
                                             {previousAtom && previousAtom.symbol !== currentAtom.symbol ? (
                                                 <React.Fragment>
                                                     <div className="flex-1 flex flex-col items-center max-w-[45%]">
-                                                        <div className="text-[10px] font-black text-slate-400 uppercase mb-2">Previous</div>
+                                                        <div className="text-[10px] font-black text-slate-400 uppercase mb-2">{t.previous}</div>
                                                         <BohrModel atom={previousAtom} size={280} isSmall={true} compareAgainstAtom={currentAtom} />
                                                     </div>
                                                     
@@ -390,7 +510,7 @@
                                                     </div>
 
                                                     <div className="flex-1 flex flex-col items-center max-w-[45%]">
-                                                        <div className="text-[10px] font-black text-blue-500 uppercase mb-2">Current</div>
+                                                        <div className="text-[10px] font-black text-blue-500 uppercase mb-2">{t.current}</div>
                                                         <BohrModel atom={currentAtom} size={280} isSmall={true} compareAgainstAtom={previousAtom} />
                                                     </div>
                                                 </React.Fragment>
