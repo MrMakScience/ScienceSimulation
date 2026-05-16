@@ -3,389 +3,507 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Structure of Substances Challenge</title>
+    <title>Ionic Compound Brittleness Simulation</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
         body {
-            font-family: 'Inter', sans-serif;
             background-color: #f8fafc;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        .option-card:hover {
-            transform: translateY(-2px);
-            transition: all 0.2s ease;
+        canvas {
+            border: 2px solid #334155;
+            border-radius: 8px;
+            background-color: #ffffff;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            touch-action: none;
+            cursor: default;
         }
-        .progress-bar {
-            transition: width 0.4s ease-in-out;
+        canvas.clickable {
+            cursor: pointer;
+        }
+        .controls {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .btn {
+            padding: 0.6rem 1.25rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: all 0.2s;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        .btn-hammer {
+            background-color: #ef4444;
+            color: white;
+        }
+        .btn-hammer:hover:not(:disabled) {
+            background-color: #dc2626;
+        }
+        .btn-hammer:disabled {
+            background-color: #94a3b8;
+            cursor: not-allowed;
+        }
+        .btn-reset {
+            background-color: #3b82f6;
+            color: white;
+        }
+        .btn-reset:hover {
+            background-color: #2563eb;
+        }
+        .mode-toggle, .lang-toggle {
+            display: flex;
+            background: #e2e8f0;
+            padding: 0.25rem;
+            border-radius: 0.5rem;
+            align-items: center;
+        }
+        .mode-btn, .lang-btn {
+            padding: 0.4rem 0.8rem;
+            border-radius: 0.375rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .active {
+            background: white;
+            color: #1e293b;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        #hammerIcon {
+            position: absolute;
+            top: 20px; 
+            font-size: 70px;
+            pointer-events: none;
+            transform: scaleX(-1) rotate(45deg); 
+            opacity: 0;
+            z-index: 20;
+            filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.2));
+            left: -100px;
+        }
+
+        @media (max-width: 640px) {
+            #hammerIcon {
+                left: 0px; 
+                font-size: 55px; 
+                top: 0px;
+            }
+            @keyframes strike {
+                0% { transform: scaleX(-1) translate(0, 0) rotate(45deg); }
+                70% { transform: scaleX(-1) translate(60px, 40px) rotate(-15deg); }
+                100% { transform: scaleX(-1) translate(55px, 45px) rotate(-10deg); }
+            }
+        }
+
+        @media (min-width: 641px) {
+            @keyframes strike {
+                0% { transform: scaleX(-1) translate(0, 0) rotate(45deg); }
+                70% { transform: scaleX(-1) translate(75px, 40px) rotate(-15deg); }
+                100% { transform: scaleX(-1) translate(65px, 45px) rotate(-10deg); }
+            }
+        }
+
+        .hammer-swing {
+            animation: strike 0.4s cubic-bezier(0.3, 0, 0.7, 1) forwards;
+            opacity: 1 !important;
+        }
+
+        #shatterMessage {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            background-color: rgba(255, 255, 255, 0.95);
+            padding: 12px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border-left: 6px solid #ef4444;
+            z-index: 30;
+            pointer-events: none; 
         }
     </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-4">
-
-    <div id="app" class="max-w-2xl w-full bg-white rounded-2xl shadow-xl overflow-hidden">
-        <!-- Header -->
-        <div class="bg-indigo-600 p-6 text-white text-center relative">
-            <button onclick="toggleLanguage()" class="absolute right-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30 p-2 rounded-full transition-colors flex items-center gap-1 text-sm font-medium">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-                </svg>
-                <span id="lang-label">ZH</span>
-            </button>
-            <h1 id="ui-title" class="text-2xl font-bold">Structure of Substances</h1>
-            <p id="ui-subtitle" class="text-indigo-100 mt-1">Test your understanding of chemical structures</p>
+<body class="flex flex-col items-center p-4 md:p-10">
+    <!-- Top Lang Toggle -->
+    <div class="w-full max-w-3xl flex justify-end mb-4">
+        <div class="lang-toggle">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mx-2 text-slate-500"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+            <button id="langToggleBtn" class="lang-btn bg-white shadow-sm border border-slate-200">繁體中文</button>
         </div>
+    </div>
 
-        <!-- Progress Area -->
-        <div class="px-8 pt-6">
-            <div class="flex justify-between items-center mb-2">
-                <span id="progress-text" class="text-sm font-medium text-gray-500">Question 1 of 15</span>
-                <span id="score-text" class="text-sm font-medium text-indigo-600">Score: 0</span>
-            </div>
-            <div class="w-full bg-gray-200 rounded-full h-2">
-                <div id="progress-bar" class="bg-indigo-600 h-2 rounded-full progress-bar" style="width: 6.6%"></div>
-            </div>
-        </div>
+    <div class="max-w-3xl w-full text-center">
+        <h1 id="title" class="text-3xl font-bold text-slate-800 mb-2">Why are Ionic Crystals Brittle?</h1>
+        <p id="description" class="text-slate-600 mb-6">
+            In an ionic lattice, ions are held together by strong electrostatic forces. 
+            Watch what happens to the force directions when a physical force is applied.
+        </p>
 
-        <!-- Question Section -->
-        <div id="quiz-container" class="p-8">
-            <div class="mb-8 text-center">
-                <h2 id="ui-identify" class="text-lg text-gray-600 mb-2">Identify the structure of:</h2>
-                <div id="substance-display" class="text-4xl font-bold text-gray-900 bg-gray-50 py-8 rounded-xl border-2 border-dashed border-gray-200 min-h-[120px] flex items-center justify-center px-4 text-center">
-                    Loading...
+        <div class="relative inline-block">
+            <div id="hammerIcon">🔨</div>
+            <canvas id="simCanvas"></canvas>
+            
+            <div id="shatterMessage" class="hidden">
+                <div class="flex flex-col items-center">
+                    <p id="msgTitle" class="text-red-600 font-bold text-lg uppercase leading-tight">Repulsion Occurring!</p>
+                    <p id="msgSub" class="text-xs text-slate-700">Like charges have aligned and are pushing apart.</p>
+                    <p id="manualPrompt" class="hidden mt-1 text-sm font-bold text-blue-600 animate-bounce">↓ CLICK CANVAS TO RELEASE ↓</p>
                 </div>
             </div>
-
-            <!-- Options Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <button onclick="checkAnswer('A')" class="option-card p-4 border-2 border-gray-200 rounded-xl text-left hover:border-indigo-500 hover:bg-indigo-50 group">
-                    <span class="inline-block w-8 h-8 bg-gray-100 group-hover:bg-indigo-200 rounded-lg text-center leading-8 font-bold mr-3">A</span>
-                    <span id="opt-A" class="text-gray-700 font-semibold">Giant metallic structure</span>
-                </button>
-                <button onclick="buttonBClicked()" class="option-card p-4 border-2 border-gray-200 rounded-xl text-left hover:border-indigo-500 hover:bg-indigo-50 group">
-                    <span class="inline-block w-8 h-8 bg-gray-100 group-hover:bg-indigo-200 rounded-lg text-center leading-8 font-bold mr-3">B</span>
-                    <span id="opt-B" class="text-gray-700 font-semibold">Giant covalent structure</span>
-                </button>
-                <button onclick="checkAnswer('C')" class="option-card p-4 border-2 border-gray-200 rounded-xl text-left hover:border-indigo-500 hover:bg-indigo-50 group">
-                    <span class="inline-block w-8 h-8 bg-gray-100 group-hover:bg-indigo-200 rounded-lg text-center leading-8 font-bold mr-3">C</span>
-                    <span id="opt-C" class="text-gray-700 font-semibold">Giant ionic structure</span>
-                </button>
-                <button onclick="checkAnswer('D')" class="option-card p-4 border-2 border-gray-200 rounded-xl text-left hover:border-indigo-500 hover:bg-indigo-50 group">
-                    <span class="inline-block w-8 h-8 bg-gray-100 group-hover:bg-indigo-200 rounded-lg text-center leading-8 font-bold mr-3">D</span>
-                    <span id="opt-D" class="text-gray-700 font-semibold">Simple molecular structure</span>
-                </button>
-            </div>
         </div>
 
-        <!-- Result Section -->
-        <div id="result-container" class="hidden p-8 text-center">
-            <div class="mb-6">
-                <div id="result-icon" class="text-6xl mb-4">🏆</div>
-                <h2 id="ui-completed" class="text-3xl font-bold text-gray-900">Quiz Completed!</h2>
-                <p id="final-score" class="text-xl text-gray-600 mt-2 font-semibold">Your score: 0/15</p>
-                
-                <div id="failure-feedback" class="hidden">
-                    <p id="ui-retake" class="mt-4 text-red-600 font-bold">You should retake the quiz to improve your understanding!</p>
-                    
-                    <!-- Hints Section (Only shown on fail) -->
-                    <div class="mt-6 p-4 bg-amber-50 rounded-xl border border-amber-200 text-left">
-                        <h3 class="text-amber-800 font-bold text-sm mb-2 flex items-center">
-                            <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20"><path d="M11 3a1 1 0 10-2 0v1a1 1 0 102 0V3zM5.884 6.68a1 1 0 101.44-1.388L6.754 4.722a1 1 0 00-1.44 1.388l.57 1.57zM14.116 6.68l-.57-1.57a1 1 0 00-1.44-1.388l.57 1.57a1 1 0 101.44 1.388zM5 10a1 1 0 011-1h1a1 1 0 100-2H6a3 3 0 00-3 3v2a1 1 0 102 0v-2zM14 9a1 1 0 100 2v2a1 1 0 102 0v-2a3 3 0 00-3-3h-1a1 1 0 100 2h1zM12 13a1 1 0 11-2 0c0-.552.448-1 1-1h.01c.552 0 1 .448 1 1zM8 13a1 1 0 11-2 0c0-.552.448-1 1-1h.01c.552 0 1 .448 1 1z"></path></svg>
-                            <span id="ui-hints-title">Study Hints:</span>
-                        </h3>
-                        <ul id="ui-hints-list" class="text-xs text-amber-900 space-y-1 list-disc pl-4">
-                            <li>All metals are <strong>GMS</strong>.</li>
-                            <li>All compounds formed by metals and non-metals are <strong>GIS</strong> (Ammonium compounds are an exception).</li>
-                            <li>Only <strong>Si, SiO₂, graphite, and diamond</strong> are <strong>GCS</strong>.</li>
-                            <li>All compounds formed by non-metals are <strong>SMS</strong> (Ammonium compounds are an exception).</li>
-                        </ul>
-                    </div>
-                </div>
+        <div class="controls">
+            <div class="mode-toggle">
+                <button id="modeAuto" class="mode-btn active">Auto Split</button>
+                <button id="modeManual" class="mode-btn">Manual Split</button>
             </div>
-            <button id="ui-retry-btn" onclick="restartQuiz()" class="bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-indigo-700 transition-colors">
-                Try Again
-            </button>
+            <button id="hammerBtn" class="btn btn-hammer">Apply Force (Hammer)</button>
+            <button id="resetBtn" class="btn btn-reset">Reset</button>
         </div>
 
-        <!-- Feedback Modal (Per Question) -->
-        <div id="feedback-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-            <div class="bg-white rounded-2xl p-6 max-w-sm w-full text-center shadow-2xl">
-                <div id="feedback-icon" class="text-4xl mb-2"></div>
-                <h3 id="feedback-title" class="text-xl font-bold mb-2"></h3>
-                <p id="feedback-msg" class="text-gray-600 mb-6"></p>
-                <button id="ui-continue-btn" onclick="nextQuestion()" class="w-full bg-gray-900 text-white py-3 rounded-lg font-semibold hover:bg-black">
-                    Continue
-                </button>
-            </div>
+        <div class="mt-8 text-left bg-blue-50 p-6 rounded-xl border border-blue-100">
+            <h2 id="conceptTitle" class="text-lg font-bold text-blue-900 mb-2">Key Concept:</h2>
+            <ul id="conceptList" class="list-disc ml-5 text-blue-800 space-y-2">
+                <li><strong>Attraction (Green):</strong> Opposite charges pull toward each other.</li>
+                <li><strong>Repulsion (Red):</strong> Like charges push away from each other.</li>
+                <li><strong>Brittleness:</strong> Shifting layers causes like-charge alignment.</li>
+            </ul>
         </div>
     </div>
 
     <script>
-        let currentLang = 'EN';
-        
+        /**
+         * EDITABLE TRANSLATIONS SECTION
+         * You can change any of the text within the quotes below.
+         */
         const translations = {
-            EN: {
-                title: "Structure of Substances",
-                subtitle: "Test your understanding of chemical structures",
-                identify: "Identify the structure of:",
-                optA: "Giant metallic structure",
-                optB: "Giant covalent structure",
-                optC: "Giant ionic structure",
-                optD: "Simple molecular structure",
-                progress: "Question {n} of {t}",
-                score: "Score: {s}",
-                completed: "Quiz Completed!",
-                finalScore: "Your score: {s} / {t}",
-                retake: "You should retake the quiz to improve your understanding!",
-                hintsTitle: "Study Hints:",
-                hints: [
-                    "All metals are <strong>GMS</strong>.",
-                    "All compounds formed by metals and non-metals are <strong>GIS</strong> (Ammonium compounds are an exception).",
-                    "Only <strong>Si, SiO₂, graphite, and diamond</strong> are <strong>GCS</strong>.",
-                    "All compounds formed by non-metals are <strong>SMS</strong> (Ammonium compounds are an exception)."
-                ],
-                retry: "Try Again",
-                continue: "Continue",
-                correct: "Correct!",
-                incorrect: "Incorrect",
-                detailPrefix: "is a"
+            en: {
+                title: "Why are Ionic Crystals Brittle?",
+                description: "In an ionic lattice, ions are held together by strong electrostatic forces. Watch what happens when a force is applied.",
+                msgTitle: "Repulsion Occurring!",
+                msgSub: "Like charges have aligned and are pushing apart each other.",
+                manualPrompt: "↓ CLICK CANVAS TO RELEASE ↓",
+                modeAuto: "Auto Split",
+                modeManual: "Manual Split",
+                hammerBtn: "Apply Force (Hammer)",
+                resetBtn: "Reset",
+                conceptTitle: "Key Concept:",
+                conceptList: `
+                    <li><strong>Attraction (Green):</strong> Opposite charges pull toward each other.</li>
+                    <li><strong>Repulsion (Red):</strong> Like charges push away from each other.</li>
+                    <li><strong>Brittleness:</strong> Relative movement of ions causes like-charge come close to each other, which result in repulsion. In <strong>Manual mode</strong>, you can see this alignment frozen.</li>
+                `
             },
-            ZH: {
-                title: "物質的結構",
-                subtitle: "測試你對化學結構的理解",
-                identify: "請辨認以下物質的結構：",
-                optA: "巨型金屬結構",
-                optB: "巨型共價結構",
-                optC: "巨型離子結構",
-                optD: "簡單分子結構",
-                progress: "第 {n} 題，共 {t} 題",
-                score: "得分：{s}",
-                completed: "測驗完成！",
-                finalScore: "你的得分：{s} / {t}",
-                retake: "你應該重新嘗試測驗以加深理解！",
-                hintsTitle: "學習提示：",
-                hints: [
-                    "所有金屬都是<strong>巨型金屬結構 (GMS)</strong>。",
-                    "所有由金屬和非金屬形成的化合物都是<strong>巨型離子結構 (GIS)</strong> (銨類化合物除外)。",
-                    "只有<strong>矽 (Si)、二氧化矽 (SiO₂)、石墨和鑽石</strong>是<strong>巨型共價結構 (GCS)</strong>。",
-                    "所有由非金屬形成的化合物都是<strong>簡單分子結構 (SMS)</strong> (銨類化合物除外)。"
-                ],
-                retry: "再試一次",
-                continue: "繼續",
-                correct: "正確！",
-                incorrect: "錯誤",
-                detailPrefix: "是"
+            zh: {
+                title: "為什麼離子晶體是易碎的？",
+                description: "在離子晶格中，離子透過強大的靜電力結合在一起。仔細觀察當施加外力時，離子晶格內的力的方向會發生什麼變化。",
+                msgTitle: "產生排斥力！",
+                msgSub: "相同電荷的離子對齊，正在互相排斥。",
+                manualPrompt: "↓ 點擊畫布釋放 ↓",
+                modeAuto: "自動碎裂",
+                modeManual: "手動碎裂",
+                hammerBtn: "施加外力 (錘擊)",
+                resetBtn: "重置結構",
+                conceptTitle: "核心概念：",
+                conceptList: `
+                    <li><strong>吸引力 (綠色)：</strong> 相反電荷的離子互相吸引。</li>
+                    <li><strong>排斥力 (紅色)：</strong> 相同電荷的離子互相排斥。</li>
+                    <li><strong>脆性：</strong> 離子的相對運動導致同性電荷的離子對齊及互相排斥。在<strong>手動模式</strong>下，你可以看到晶體碎裂前的電荷對齊。</li>
+                `
             }
         };
 
-        const substances = [
-            { name: "Lead", zh: "鉛", symbol: "Pb", type: "A", detail: "A heavy metal consisting of a giant metallic lattice.", detailZh: "一種由巨型金屬晶格組成的重金屬。" },
-            { name: "Copper", zh: "銅", symbol: "Cu", type: "A", detail: "Metals consist of giant metallic lattices.", detailZh: "金屬由巨型金屬晶格組成。" },
-            { name: "Iron", zh: "鐵", symbol: "Fe", type: "A", detail: "Transition metal with strong metallic bonding.", detailZh: "具有強金屬鍵的過渡金屬。" },
-            { name: "Sodium", zh: "鈉", symbol: "Na", type: "A", detail: "Alkali metal with a giant metallic structure.", detailZh: "具有巨型金屬結構的鹼金屬。" },
-            { name: "Magnesium", zh: "鎂", symbol: "Mg", type: "A", detail: "Alkaline earth metal in a giant metallic lattice.", detailZh: "巨型金屬晶格中的鹼土金屬。" },
-            { name: "Aluminium", zh: "鋁", symbol: "Al", type: "A", detail: "A metal with a giant metallic structure.", detailZh: "具有巨型金屬結構的金屬。" },
-            { name: "Lithium", zh: "鋰", symbol: "Li", type: "A", detail: "Smallest alkali metal with metallic bonding.", detailZh: "具有金屬鍵的最輕鹼金屬。" },
-            { name: "Silver", zh: "銀", symbol: "Ag", type: "A", detail: "Highly conductive metal with a giant lattice.", detailZh: "具有巨型晶格的高導電金屬。" },
-            { name: "Zinc", zh: "鋅", symbol: "Zn", type: "A", detail: "Transition metal with a giant metallic structure.", detailZh: "具有巨型金屬結構的過渡金屬。" },
-            { name: "Nickel", zh: "鎳", symbol: "Ni", type: "A", detail: "Metal used in alloys, giant metallic structure.", detailZh: "用於合金的金屬，巨型金屬結構。" },
-            { name: "Cobalt", zh: "鈷", symbol: "Co", type: "A", detail: "Magnetic transition metal with metallic bonding.", detailZh: "具有金屬鍵的磁性過渡金屬。" },
-            { name: "Manganese", zh: "錳", symbol: "Mn", type: "A", detail: "Hard metal with a giant metallic lattice.", detailZh: "具有巨型金屬晶格的硬金屬。" },
+        let currentLang = 'en';
+
+        function updateLanguage(lang) {
+            currentLang = lang;
+            const t = translations[lang];
+            document.getElementById('title').innerText = t.title;
+            document.getElementById('description').innerText = t.description;
+            document.getElementById('msgTitle').innerText = t.msgTitle;
+            document.getElementById('msgSub').innerText = t.msgSub;
+            document.getElementById('manualPrompt').innerText = t.manualPrompt;
+            document.getElementById('modeAuto').innerText = t.modeAuto;
+            document.getElementById('modeManual').innerText = t.modeManual;
+            document.getElementById('hammerBtn').innerText = t.hammerBtn;
+            document.getElementById('resetBtn').innerText = t.resetBtn;
+            document.getElementById('conceptTitle').innerText = t.conceptTitle;
+            document.getElementById('conceptList').innerHTML = t.conceptList;
             
-            { name: "Diamond", zh: "鑽石", symbol: "Diamond", type: "B", forceName: true, detail: "Carbon allotrope with a giant covalent tetrahedral structure.", detailZh: "具有巨型共價四面體結構的碳同素異形體。" },
-            { name: "Silicon", zh: "矽", symbol: "Si", type: "B", detail: "Formed of atoms linked by strong covalent bonds in a giant lattice.", detailZh: "原子通過強共價鍵連接成巨型晶格。" },
-            { name: "Silicon dioxide", zh: "二氧化矽", symbol: "SiO₂", type: "B", detail: "Every silicon atom is bonded to four oxygen atoms in a giant lattice.", detailZh: "巨型晶格中每個矽原子與四個氧原子成鍵。" },
-            { name: "Graphite", zh: "石墨", symbol: "Graphite", type: "B", forceName: true, detail: "Hexagonal layers of carbon atoms in a giant covalent structure.", detailZh: "巨型共價結構中碳原子的六角形層。" },
-            
-            { name: "Lithium Fluoride", zh: "氟化鋰", symbol: "LiF", type: "C", detail: "Ionic lattice of Li+ and F- ions.", detailZh: "Li+ 和 F- 離子的離子晶格。" },
-            { name: "Sodium Nitrate", zh: "硝酸鈉", symbol: "NaNO₃", type: "C", detail: "Contains Na+ and polyatomic NO₃- ions.", detailZh: "含有 Na+ 和多原子 NO₃- 離子。" },
-            { name: "Potassium Permanganate", zh: "高錳酸鉀", symbol: "KMnO₄", type: "C", detail: "Ionic compound with K+ and MnO₄- ions.", detailZh: "含有 K+ 和 MnO₄- 離子的離子化合物。" },
-            { name: "Silver Chloride", zh: "氯化銀", symbol: "AgCl", type: "C", detail: "Giant ionic lattice of Ag+ and Cl- ions.", detailZh: "Ag+ 和 Cl- 離子的巨型離子晶格。" },
-            { name: "Ammonium Sulphate", zh: "硫酸銨", symbol: "(NH₄)₂SO₄", type: "C", detail: "Lattice of ammonium (NH₄+) and sulphate (SO₄²-) ions.", detailZh: "銨 (NH₄+) 和硫酸根 (SO₄²-) 離子的晶格。" },
-            { name: "Magnesium Hydroxide", zh: "氫氧化鎂", symbol: "Mg(OH)₂", type: "C", detail: "Mg²⁺ and OH⁻ ions in a giant ionic structure.", detailZh: "巨型離子結構中的 Mg²⁺ 和 OH⁻ 離子。" },
-            { name: "Calcium Carbonate", zh: "碳酸鈣", symbol: "CaCO₃", type: "C", detail: "Contains Ca²⁺ and CO₃²⁻ ions.", detailZh: "含有 Ca²⁺ 和 CO₃²⁻ 離子。" },
-            { name: "Barium Chloride", zh: "氯化鋇", symbol: "BaCl₂", type: "C", detail: "Ionic lattice of Ba²⁺ and Cl⁻ ions.", detailZh: "Ba²⁺ 和 Cl⁻ 離子的離子晶格。" },
-            { name: "Zinc Oxide", zh: "氧化鋅", symbol: "ZnO", type: "C", detail: "Giant ionic structure with Zn²⁺ and O²⁻ ions.", detailZh: "具有 Zn²⁺ 和 O²⁻ 離子的巨型離子結構。" },
-            { name: "Iron(II) Sulphate", zh: "硫酸亞鐵", symbol: "FeSO₄", type: "C", detail: "Contains Fe²⁺ and SO₄²⁻ ions.", detailZh: "含有 Fe²⁺ 和 SO₄²⁻ 離子。" },
-            { name: "Copper(II) Nitrate", zh: "硝酸銅", symbol: "Cu(NO₃)₂", type: "C", detail: "Ionic lattice of Cu²⁺ and NO₃⁻ ions.", detailZh: "Cu²⁺ 和 NO₃⁻ 離子的離子晶格。" },
-            { name: "Cobalt(II) Chloride", zh: "氯化鈷", symbol: "CoCl₂", type: "C", detail: "Ionic compound with Co²⁺ and Cl⁻ ions.", detailZh: "含有 Co²⁺ 和 Cl⁻ 離子的離子化合物。" },
-            { name: "Nickel(II) Carbonate", zh: "碳酸鎳", symbol: "NiCO₃", type: "C", detail: "Contains Ni²⁺ and CO₃²⁻ ions.", detailZh: "含有 Ni²⁺ 和 CO₃²⁻ 離子。" },
-            { name: "Manganese(II) Sulphide", zh: "硫化錳", symbol: "MnS", type: "C", detail: "Giant ionic lattice of Mn²⁺ and S²⁻ ions.", detailZh: "Mn²⁺ 和 S²⁻ 離子的巨型離子晶格。" },
-            { name: "Lead(II) Bromide", zh: "溴化鉛", symbol: "PbBr₂", type: "C", detail: "Contains Pb²⁺ and Br⁻ ions.", detailZh: "含有 Pb²⁺ 和 Br⁻ 離子。" },
-            { name: "Aluminium Oxide", zh: "氧化鋁", symbol: "Al₂O₃", type: "C", detail: "Strong ionic bonds between Al³⁺ and O²⁻ ions.", detailZh: "Al³⁺ 和 O²⁻ 離子之間的強離子鍵。" },
-            { name: "Iron(III) Chloride", zh: "氯化鐵", symbol: "FeCl₃", type: "C", detail: "Giant ionic lattice of Fe³⁺ and Cl⁻ ions.", detailZh: "Fe³⁺ 和 Cl⁻ 離子的巨型離子晶格。" },
-            { name: "Chromium(III) Sulphate", zh: "硫酸鉻", symbol: "Cr₂(SO₄)₃", type: "C", detail: "Contains Cr³⁺ and SO₄²⁻ ions.", detailZh: "含有 Cr³⁺ 和 SO₄²⁻ 離子。" },
-            { name: "Sodium Dichromate", zh: "重鉻酸鈉", symbol: "Na₂Cr₂O₇", type: "C", detail: "Contains Na+ and the large dichromate ion.", detailZh: "含有 Na+ 和大型重鉻酸根離子。" },
-            { name: "Potassium Phosphate", zh: "磷酸鉀", symbol: "K₃PO₄", type: "C", detail: "Ionic lattice of K+ and PO₄³⁻ ions.", detailZh: "K+ 和 PO₄³⁻ 離子的離子晶格。" },
-
-            { name: "Water", zh: "水", symbol: "H₂O", type: "D", detail: "Discrete molecules where atoms share electrons.", detailZh: "原子共享電子的獨立分子。" },
-            { name: "Carbon Dioxide", zh: "二氧化碳", symbol: "CO₂", type: "D", detail: "Simple molecules with double covalent bonds.", detailZh: "具有雙共價鍵的簡單分子。" },
-            { name: "Iodine", zh: "碘", symbol: "I₂", type: "D", detail: "Simple diatomic molecules in a molecular lattice.", detailZh: "分子晶格中的簡單雙原子分子。" },
-            { name: "Methane", zh: "甲烷", symbol: "CH₄", type: "D", detail: "A simple molecule with four C-H covalent bonds.", detailZh: "具有四個 C-H 共價鍵的簡單分子。" },
-            { name: "Ammonia", zh: "氨", symbol: "NH₃", type: "D", detail: "Pyramidal molecules following the octet rule.", detailZh: "符合八隅體規則的錐形分子。" },
-            { name: "Sulfur Dioxide", zh: "二氧化硫", symbol: "SO₂", type: "D", detail: "Discrete molecules with covalent bonding.", detailZh: "具有共價鍵的獨立分子。" },
-            { name: "Nitrogen", zh: "氮", symbol: "N₂", type: "D", detail: "Diatomic molecules with a strong triple covalent bond.", detailZh: "具有強三共價鍵的雙原子分子。" },
-            { name: "Carbon Tetrabromide", zh: "四溴化碳", symbol: "CBr₄", type: "D", detail: "Tetrahedral molecules with an octet structure.", detailZh: "具有八隅體結構的四面體分子。" },
-            { name: "Sulfur Hexafluoride", zh: "六氟化硫", symbol: "SF₆", type: "D", detail: "Discrete molecules; simple molecular gas.", detailZh: "獨立分子；簡單分子氣體。" },
-            { name: "Nitrogen Trichloride", zh: "三氯化氮", symbol: "NCl₃", type: "D", detail: "Simple molecular compound following the octet rule.", detailZh: "符合八隅體規則的簡單分子化合物。" },
-            { name: "Hydrogen Sulphide", zh: "硫化氫", symbol: "H₂S", type: "D", detail: "Simple molecules similar in shape to water.", detailZh: "形狀與水相似的簡單分子。" },
-            { name: "Bromine", zh: "溴", symbol: "Br₂", type: "D", detail: "Diatomic liquid with weak intermolecular forces.", detailZh: "具有弱分子間作用力的雙原子液體。" },
-            { name: "Fluorine", zh: "氟", symbol: "F₂", type: "D", detail: "Reactive diatomic gas with simple molecular structure.", detailZh: "具有簡單分子結構的活性雙原子氣體。" },
-            { name: "Carbon Disulphide", zh: "二硫化碳", symbol: "CS₂", type: "D", detail: "Linear molecules with double covalent bonds.", detailZh: "具有雙共價鍵的線性分子。" },
-            { name: "Silicon Tetrafluoride", zh: "四氟化矽", symbol: "SiF₄", type: "D", detail: "Discrete molecules with covalent Si-F bonds.", detailZh: "具有共價 Si-F 鍵的獨立分子。" },
-            { name: "Phosphorus Tribromide", zh: "三溴化磷", symbol: "PBr₃", type: "D", detail: "Simple molecular structure with covalent bonds.", detailZh: "具有共價鍵的簡單分子結構。" },
-            { name: "Dichlorine Oxide", zh: "一氧化二氯", symbol: "Cl₂O", type: "D", detail: "Small bent molecules with covalent bonding.", detailZh: "具有共價鍵的小型彎曲分子。" },
-            { name: "Oxygen", zh: "氧氣", symbol: "O₂", type: "D", detail: "Simple diatomic molecules with a double bond.", detailZh: "具有雙鍵的簡單雙原子分子。" },
-            { name: "Hydrofluoric Acid", zh: "氫氟酸", symbol: "HF", type: "D", detail: "Small polar molecules with covalent bonding.", detailZh: "具有共價鍵的小型極性分子。" },
-            { name: "Phosphorus Oxychloride", zh: "三氯氧磷", symbol: "POCl₃", type: "D", detail: "Discrete molecular structure with covalent bonds.", detailZh: "具有共價鍵的獨立分子結構。" }
-        ];
-
-        let currentQuestion = 0;
-        let score = 0;
-        let quizData = [];
-        const TOTAL_QUESTIONS = 15;
-
-        function toggleLanguage() {
-            currentLang = currentLang === 'EN' ? 'ZH' : 'EN';
-            document.getElementById('lang-label').innerText = currentLang === 'EN' ? 'ZH' : 'EN';
-            applyTranslations();
-            updateUI();
+            // Show the language you can switch TO
+            const toggleBtn = document.getElementById('langToggleBtn');
+            toggleBtn.innerText = lang === 'en' ? '繁體中文' : 'English';
         }
 
-        function applyTranslations() {
-            const t = translations[currentLang];
-            document.getElementById('ui-title').innerText = t.title;
-            document.getElementById('ui-subtitle').innerText = t.subtitle;
-            document.getElementById('ui-identify').innerText = t.identify;
-            document.getElementById('opt-A').innerText = t.optA;
-            document.getElementById('opt-B').innerText = t.optB;
-            document.getElementById('opt-C').innerText = t.optC;
-            document.getElementById('opt-D').innerText = t.optD;
-            document.getElementById('ui-completed').innerText = t.completed;
-            document.getElementById('ui-retake').innerText = t.retake;
-            document.getElementById('ui-hints-title').innerText = t.hintsTitle;
-            document.getElementById('ui-retry-btn').innerText = t.retry;
-            document.getElementById('ui-continue-btn').innerText = t.continue;
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+        const hammerBtn = document.getElementById('hammerBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const message = document.getElementById('shatterMessage');
+        const manualPrompt = document.getElementById('manualPrompt');
+        const hammerIcon = document.getElementById('hammerIcon');
+        const modeAuto = document.getElementById('modeAuto');
+        const modeManual = document.getElementById('modeManual');
+
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playImpactSound() {
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const oscGain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(150, now); 
+            osc.frequency.exponentialRampToValueAtTime(40, now + 0.15);
+            oscGain.gain.setValueAtTime(0.6, now);
+            oscGain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+            osc.connect(oscGain);
+            oscGain.connect(audioCtx.destination);
             
-            const hintList = document.getElementById('ui-hints-list');
-            hintList.innerHTML = t.hints.map(h => `<li>${h}</li>`).join('');
+            const bufferSize = audioCtx.sampleRate * 0.1;
+            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) { data[i] = Math.random() * 2 - 1; }
+            const noise = audioCtx.createBufferSource();
+            noise.buffer = buffer;
+            const noiseFilter = audioCtx.createBiquadFilter();
+            noiseFilter.type = 'lowpass';
+            noiseFilter.frequency.setValueAtTime(1000, now);
+            const noiseGain = audioCtx.createGain();
+            noiseGain.gain.setValueAtTime(0.3, now);
+            noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+            noise.connect(noiseFilter);
+            noiseFilter.connect(noiseGain);
+            noiseGain.connect(audioCtx.destination);
+            osc.start(); osc.stop(now + 0.2);
+            noise.start(); noise.stop(now + 0.1);
         }
 
-        function shuffle(array) {
-            return array.sort(() => Math.random() - 0.5);
+        const ROWS = 4;
+        const COLS = 6;
+        const ION_RADIUS = 25;
+        const SPACING = 85; 
+        
+        let ions = [];
+        let isShattered = false;
+        let isPausedForManual = false;
+        let splitMode = 'auto'; 
+        let animationFrame;
+
+        function init() {
+            ions = [];
+            isShattered = false;
+            isPausedForManual = false;
+            hammerBtn.disabled = false;
+            message.classList.add('hidden');
+            manualPrompt.classList.add('hidden');
+            canvas.classList.remove('clickable');
+            hammerIcon.classList.remove('hammer-swing');
+            hammerIcon.style.opacity = '0';
+            
+            const startX = (canvas.width - (COLS - 1) * SPACING) / 2;
+            const startY = (canvas.height - (ROWS - 1) * SPACING) / 2;
+
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    const type = (r + c) % 2 === 0 ? 'cation' : 'anion';
+                    ions.push({
+                        r, c,
+                        x: startX + c * SPACING,
+                        y: startY + r * SPACING,
+                        baseX: startX + c * SPACING,
+                        baseY: startY + r * SPACING,
+                        type: type,
+                        vx: 0,
+                        vy: 0
+                    });
+                }
+            }
+            draw();
         }
 
-        function initQuiz() {
-            const typeA = shuffle(substances.filter(s => s.type === 'A'));
-            const typeB = shuffle(substances.filter(s => s.type === 'B'));
-            const typeC = shuffle(substances.filter(s => s.type === 'C'));
-            const typeD = shuffle(substances.filter(s => s.type === 'D'));
+        function drawSingleArrow(ionA, ionB) {
+            const isAttracting = ionA.type !== ionB.type;
+            const color = isAttracting ? '#16a34a' : '#dc2626'; 
+            const dx = ionB.x - ionA.x;
+            const dy = ionB.y - ionA.y;
+            const angle = Math.atan2(dy, dx);
+            const headlen = 10;
+            const margin = 28; 
 
-            const selectedA = typeA.slice(0, 2);
-            const selectedB = typeB.slice(0, 2);
-            const remainingPool = shuffle([...typeC, ...typeD]);
-            const selectedOthers = remainingPool.slice(0, 11);
-            const finalPool = shuffle([...selectedA, ...selectedB, ...selectedOthers]);
-            
-            quizData = finalPool.map(q => {
-                // If it's Diamond or Graphite, never show symbol
-                const showSymbol = q.forceName ? false : Math.random() > 0.5;
-                return { ...q, useSymbol: showSymbol };
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 5;
+            ctx.beginPath();
+
+            const startX = ionA.x + Math.cos(angle) * margin;
+            const startY = ionA.y + Math.sin(angle) * margin;
+            const endX = ionB.x - Math.cos(angle) * margin;
+            const endY = ionB.y - Math.sin(angle) * margin;
+
+            ctx.moveTo(startX, startY);
+            ctx.lineTo(endX, endY);
+            ctx.moveTo(startX, startY);
+            ctx.lineTo(startX + headlen * Math.cos(angle + 0.6), startY + headlen * Math.sin(angle + 0.6));
+            ctx.moveTo(startX, startY);
+            ctx.lineTo(startX + headlen * Math.cos(angle - 0.6), startY + headlen * Math.sin(angle - 0.6));
+            ctx.moveTo(endX, endY);
+            ctx.lineTo(endX + headlen * Math.cos(angle + 2.5), endY + headlen * Math.sin(angle + 2.5));
+            ctx.moveTo(endX, endY);
+            ctx.lineTo(endX + headlen * Math.cos(angle - 2.5), endY + headlen * Math.sin(angle - 2.5));
+            ctx.stroke();
+        }
+
+        function drawAllForceArrows() {
+            for (let i = 0; i < ions.length; i++) {
+                const ionA = ions[i];
+                const rightNeighbor = ions.find(target => target.r === ionA.r && target.c === ionA.c + 1);
+                if (rightNeighbor) drawSingleArrow(ionA, rightNeighbor);
+
+                const bottomNeighbor = ions.find(target => target.c === ionA.c && target.r === ionA.r + 1);
+                if (bottomNeighbor) {
+                    if (ionA.r === 1) {
+                        const shiftedBottom = ions.filter(t => t.r === 2)
+                            .find(t => Math.abs(t.x - ionA.x) < SPACING / 2);
+                        if (shiftedBottom) drawSingleArrow(ionA, shiftedBottom);
+                    } else {
+                        drawSingleArrow(ionA, bottomNeighbor);
+                    }
+                }
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (!isShattered || isPausedForManual) {
+                drawAllForceArrows();
+            }
+
+            ions.forEach(ion => {
+                ctx.beginPath();
+                ctx.arc(ion.x, ion.y, ion.type === 'cation' ? ION_RADIUS * 0.85 : ION_RADIUS, 0, Math.PI * 2);
+                if (ion.type === 'cation') {
+                    ctx.fillStyle = '#3b82f6'; 
+                    ctx.fill();
+                    ctx.fillStyle = 'white';
+                    ctx.font = 'bold 20px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('+', ion.x, ion.y + 7);
+                } else {
+                    ctx.fillStyle = '#f97316'; 
+                    ctx.fill();
+                    ctx.fillStyle = 'white';
+                    ctx.font = 'bold 20px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('–', ion.x, ion.y + 7);
+                }
+                ctx.closePath();
             });
-            
-            currentQuestion = 0;
-            score = 0;
-            applyTranslations();
-            updateUI();
-            
-            document.getElementById('quiz-container').classList.remove('hidden');
-            document.getElementById('result-container').classList.add('hidden');
-            document.getElementById('failure-feedback').classList.add('hidden');
         }
 
-        function updateUI() {
-            if (!quizData[currentQuestion]) return;
-            const q = quizData[currentQuestion];
-            const t = translations[currentLang];
-            
-            const displayName = currentLang === 'ZH' ? q.zh : q.name;
-            document.getElementById('substance-display').innerText = q.useSymbol ? q.symbol : displayName;
-            
-            document.getElementById('progress-text').innerText = t.progress.replace('{n}', currentQuestion + 1).replace('{t}', TOTAL_QUESTIONS);
-            document.getElementById('score-text').innerText = t.score.replace('{s}', score);
-            document.getElementById('progress-bar').style.width = `${((currentQuestion + 1) / TOTAL_QUESTIONS) * 100}%`;
-        }
-
-        function checkAnswer(choice) {
-            const q = quizData[currentQuestion];
-            const t = translations[currentLang];
-            const modal = document.getElementById('feedback-modal');
-            const icon = document.getElementById('feedback-icon');
-            const title = document.getElementById('feedback-title');
-            const msg = document.getElementById('feedback-msg');
-
-            if (choice === q.type) {
-                score++;
-                icon.innerText = "✅";
-                title.innerText = t.correct;
-                title.className = "text-xl font-bold mb-2 text-green-600";
-            } else {
-                icon.innerText = "❌";
-                title.innerText = t.incorrect;
-                title.className = "text-xl font-bold mb-2 text-red-600";
+        function update() {
+            if (isShattered && !isPausedForManual) {
+                ions.forEach(ion => {
+                    if (ion.r < 2) ion.vy -= 1.5;
+                    else ion.vy += 1.5;
+                    ion.y += ion.vy;
+                });
             }
-            
-            const typeNames = {
-                'A': t.optA,
-                'B': t.optB,
-                'C': t.optC,
-                'D': t.optD
-            };
-            
-            const substanceName = currentLang === 'ZH' ? q.zh : q.name;
-            const detailText = currentLang === 'ZH' ? q.detailZh : q.detail;
-            
-            msg.innerHTML = `<strong>${substanceName}</strong> ${t.detailPrefix} <strong>${typeNames[q.type]}</strong>.<br><small class="text-gray-500 mt-2 block">${detailText}</small>`;
-            modal.classList.remove('hidden');
-        }
-
-        window.buttonBClicked = function() { checkAnswer('B'); };
-
-        function nextQuestion() {
-            document.getElementById('feedback-modal').classList.add('hidden');
-            currentQuestion++;
-            if (currentQuestion < TOTAL_QUESTIONS) {
-                updateUI();
-            } else {
-                showResults();
+            draw();
+            if (isShattered && !isPausedForManual && ions[0].y > -100 && ions[ions.length-1].y < canvas.height + 100) {
+                animationFrame = requestAnimationFrame(update);
             }
         }
 
-        function showResults() {
-            const t = translations[currentLang];
-            document.getElementById('quiz-container').classList.add('hidden');
-            document.getElementById('result-container').classList.remove('hidden');
-            document.getElementById('final-score').innerText = t.finalScore.replace('{s}', score).replace('{t}', TOTAL_QUESTIONS);
-            
-            const failureSection = document.getElementById('failure-feedback');
-            const icon = document.getElementById('result-icon');
-            
-            if (score < 12) {
-                failureSection.classList.remove('hidden');
-            } else {
-                failureSection.classList.add('hidden');
-            }
-
-            if (score === TOTAL_QUESTIONS) icon.innerText = "👑";
-            else if (score >= 12) icon.innerText = "🌟";
-            else if (score >= 8) icon.innerText = "👍";
-            else icon.innerText = "📚";
+        function triggerShatter() {
+            isPausedForManual = false;
+            isShattered = true;
+            message.classList.add('hidden');
+            manualPrompt.classList.add('hidden');
+            canvas.classList.remove('clickable');
+            update();
         }
 
-        function restartQuiz() {
-            initQuiz();
-        }
+        hammerBtn.addEventListener('click', () => {
+            if (isShattered || isPausedForManual) return;
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            
+            hammerBtn.disabled = true;
+            hammerIcon.classList.add('hammer-swing');
+            
+            setTimeout(() => {
+                playImpactSound();
+                let shift = 0;
+                const shiftTarget = SPACING;
+                
+                const interval = setInterval(() => {
+                    shift += 4;
+                    ions.forEach(ion => { if (ion.r < 2) ion.x = ion.baseX + shift; });
+                    draw();
 
-        window.onload = initQuiz;
+                    if (shift >= shiftTarget) {
+                        clearInterval(interval);
+                        setTimeout(() => {
+                            message.classList.remove('hidden');
+                            if (splitMode === 'manual') {
+                                isPausedForManual = true;
+                                isShattered = true; 
+                                message.classList.remove('hidden');
+                                manualPrompt.classList.remove('hidden');
+                                canvas.classList.add('clickable');
+                                draw(); 
+                            } else {
+                                isShattered = true;
+                                update();
+                            }
+                        }, splitMode === 'manual' ? 100 : 800); 
+                    }
+                }, 16);
+            }, 280); 
+        });
+
+        canvas.addEventListener('click', () => {
+            if (isPausedForManual) triggerShatter();
+        });
+
+        resetBtn.addEventListener('click', () => {
+            cancelAnimationFrame(animationFrame);
+            init();
+        });
+
+        modeAuto.addEventListener('click', () => {
+            splitMode = 'auto';
+            modeAuto.classList.add('active');
+            modeManual.classList.remove('active');
+            init();
+        });
+
+        modeManual.addEventListener('click', () => {
+            splitMode = 'manual';
+            modeManual.classList.add('active');
+            modeAuto.classList.remove('active');
+            init();
+        });
+
+        document.getElementById('langToggleBtn').addEventListener('click', () => {
+            const nextLang = currentLang === 'en' ? 'zh' : 'en';
+            updateLanguage(nextLang);
+        });
+
+        window.onload = () => {
+            resize();
+            updateLanguage('en');
+        };
+        window.onresize = resize;
+        function resize() {
+            canvas.width = Math.min(window.innerWidth - 40, 600);
+            canvas.height = 450;
+            init();
+        }
     </script>
 </body>
 </html>

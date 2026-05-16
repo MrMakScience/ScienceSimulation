@@ -23,17 +23,18 @@
         }
         .controls {
             display: flex;
-            gap: 1rem;
+            gap: 0.75rem;
             margin-top: 1.5rem;
             flex-wrap: wrap;
             justify-content: center;
         }
         .btn {
-            padding: 0.75rem 1.5rem;
+            padding: 0.6rem 1.25rem;
             border-radius: 0.5rem;
             font-weight: 600;
             transition: all 0.2s;
             cursor: pointer;
+            font-size: 0.9rem;
         }
         .btn-hammer {
             background-color: #ef4444;
@@ -53,22 +54,22 @@
         .btn-reset:hover {
             background-color: #2563eb;
         }
-        .mode-toggle {
+        .mode-toggle, .lang-toggle {
             display: flex;
             background: #e2e8f0;
             padding: 0.25rem;
             border-radius: 0.5rem;
             align-items: center;
         }
-        .mode-btn {
-            padding: 0.5rem 1rem;
+        .mode-btn, .lang-btn {
+            padding: 0.4rem 0.8rem;
             border-radius: 0.375rem;
-            font-size: 0.875rem;
+            font-size: 0.8rem;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
         }
-        .mode-btn.active {
+        .active {
             background: white;
             color: #1e293b;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
@@ -76,7 +77,6 @@
         
         #hammerIcon {
             position: absolute;
-            left: -100px;
             top: 20px; 
             font-size: 70px;
             pointer-events: none;
@@ -84,18 +84,35 @@
             opacity: 0;
             z-index: 20;
             filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.2));
+            left: -100px;
         }
+
+        @media (max-width: 640px) {
+            #hammerIcon {
+                left: 0px; 
+                font-size: 55px; 
+                top: 0px;
+            }
+            @keyframes strike {
+                0% { transform: scaleX(-1) translate(0, 0) rotate(45deg); }
+                70% { transform: scaleX(-1) translate(60px, 40px) rotate(-15deg); }
+                100% { transform: scaleX(-1) translate(55px, 45px) rotate(-10deg); }
+            }
+        }
+
+        @media (min-width: 641px) {
+            @keyframes strike {
+                0% { transform: scaleX(-1) translate(0, 0) rotate(45deg); }
+                70% { transform: scaleX(-1) translate(75px, 40px) rotate(-15deg); }
+                100% { transform: scaleX(-1) translate(65px, 45px) rotate(-10deg); }
+            }
+        }
+
         .hammer-swing {
             animation: strike 0.4s cubic-bezier(0.3, 0, 0.7, 1) forwards;
             opacity: 1 !important;
         }
-        @keyframes strike {
-            0% { transform: scaleX(-1) translate(0, 0) rotate(45deg); }
-            70% { transform: scaleX(-1) translate(75px, 40px) rotate(-15deg); }
-            100% { transform: scaleX(-1) translate(65px, 45px) rotate(-10deg); }
-        }
 
-        /* Updated Notification Style to not block diagram */
         #shatterMessage {
             position: absolute;
             top: 10px;
@@ -108,53 +125,122 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
             border-left: 6px solid #ef4444;
             z-index: 30;
-            pointer-events: none; /* Allows clicking canvas through the message area if needed, though we only click canvas below */
+            pointer-events: none; 
         }
     </style>
 </head>
 <body class="flex flex-col items-center p-4 md:p-10">
+    <!-- Top Lang Toggle -->
+    <div class="w-full max-w-3xl flex justify-end mb-4">
+        <div class="lang-toggle">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mx-2 text-slate-500"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+            <button id="langToggleBtn" class="lang-btn bg-white shadow-sm border border-slate-200">繁體中文</button>
+        </div>
+    </div>
+
     <div class="max-w-3xl w-full text-center">
-        <h1 class="text-3xl font-bold text-slate-800 mb-2">Why are Ionic Crystals Brittle?</h1>
-        <p class="text-slate-600 mb-6">
+        <h1 id="title" class="text-3xl font-bold text-slate-800 mb-2">Why are Ionic Crystals Brittle?</h1>
+        <p id="description" class="text-slate-600 mb-6">
             In an ionic lattice, ions are held together by strong electrostatic forces. 
             Watch what happens to the force directions when a physical force is applied.
         </p>
 
         <div class="relative inline-block">
             <div id="hammerIcon">🔨</div>
-            
             <canvas id="simCanvas"></canvas>
             
-            <!-- Relocated message to the top to avoid blocking the lattice -->
             <div id="shatterMessage" class="hidden">
                 <div class="flex flex-col items-center">
-                    <p id="messageTitle" class="text-red-600 font-bold text-lg uppercase leading-tight">Repulsion Occurring!</p>
-                    <p id="messageSub" class="text-xs text-slate-700">Like charges have aligned and are pushing apart.</p>
+                    <p id="msgTitle" class="text-red-600 font-bold text-lg uppercase leading-tight">Repulsion Occurring!</p>
+                    <p id="msgSub" class="text-xs text-slate-700">Like charges have aligned and are pushing apart.</p>
                     <p id="manualPrompt" class="hidden mt-1 text-sm font-bold text-blue-600 animate-bounce">↓ CLICK CANVAS TO RELEASE ↓</p>
                 </div>
             </div>
         </div>
 
         <div class="controls">
-            <div class="mode-toggle mr-4">
+            <div class="mode-toggle">
                 <button id="modeAuto" class="mode-btn active">Auto Split</button>
                 <button id="modeManual" class="mode-btn">Manual Split</button>
             </div>
             <button id="hammerBtn" class="btn btn-hammer">Apply Force (Hammer)</button>
-            <button id="resetBtn" class="btn btn-reset">Reset Structure</button>
+            <button id="resetBtn" class="btn btn-reset">Reset</button>
         </div>
 
         <div class="mt-8 text-left bg-blue-50 p-6 rounded-xl border border-blue-100">
-            <h2 class="text-lg font-bold text-blue-900 mb-2">Key Concept:</h2>
-            <ul class="list-disc ml-5 text-blue-800 space-y-2">
+            <h2 id="conceptTitle" class="text-lg font-bold text-blue-900 mb-2">Key Concept:</h2>
+            <ul id="conceptList" class="list-disc ml-5 text-blue-800 space-y-2">
                 <li><strong>Attraction (Green):</strong> Opposite charges pull toward each other.</li>
                 <li><strong>Repulsion (Red):</strong> Like charges push away from each other.</li>
-                <li><strong>Brittleness:</strong> Shifting layers causes like-charge alignment. In <strong>Manual mode</strong>, you can see this alignment frozen before the crystal shatters.</li>
+                <li><strong>Brittleness:</strong> Shifting layers causes like-charge alignment.</li>
             </ul>
         </div>
     </div>
 
     <script>
+        /**
+         * EDITABLE TRANSLATIONS SECTION
+         * You can change any of the text within the quotes below.
+         */
+        const translations = {
+            en: {
+                title: "Why are Ionic Crystals Brittle?",
+                description: "In an ionic lattice, ions are held together by strong electrostatic forces. Watch what happens when a force is applied.",
+                msgTitle: "Repulsion Occurring!",
+                msgSub: "Like charges have aligned and are pushing apart each other.",
+                manualPrompt: "↓ CLICK CANVAS TO RELEASE ↓",
+                modeAuto: "Auto Split",
+                modeManual: "Manual Split",
+                hammerBtn: "Apply Force (Hammer)",
+                resetBtn: "Reset",
+                conceptTitle: "Key Concept:",
+                conceptList: `
+                    <li><strong>Attraction (Green):</strong> Opposite charges pull toward each other.</li>
+                    <li><strong>Repulsion (Red):</strong> Like charges push away from each other.</li>
+                    <li><strong>Brittleness:</strong> Relative movement of ions causes like-charge come close to each other, which result in repulsion. In <strong>Manual mode</strong>, you can see this alignment frozen.</li>
+                `
+            },
+            zh: {
+                title: "為什麼離子晶體是易碎的？",
+                description: "在離子晶格中，離子透過強大的靜電力結合在一起。仔細觀察當施加外力時，離子晶格內的力的方向會發生什麼變化。",
+                msgTitle: "產生排斥力！",
+                msgSub: "相同電荷的離子對齊，正在互相排斥。",
+                manualPrompt: "↓ 點擊畫布釋放 ↓",
+                modeAuto: "自動碎裂",
+                modeManual: "手動碎裂",
+                hammerBtn: "施加外力 (錘擊)",
+                resetBtn: "重置結構",
+                conceptTitle: "核心概念：",
+                conceptList: `
+                    <li><strong>吸引力 (綠色)：</strong> 相反電荷的離子互相吸引。</li>
+                    <li><strong>排斥力 (紅色)：</strong> 相同電荷的離子互相排斥。</li>
+                    <li><strong>脆性：</strong> 離子的相對運動導致同性電荷的離子對齊及互相排斥。在<strong>手動模式</strong>下，你可以看到晶體碎裂前的電荷對齊。</li>
+                `
+            }
+        };
+
+        let currentLang = 'en';
+
+        function updateLanguage(lang) {
+            currentLang = lang;
+            const t = translations[lang];
+            document.getElementById('title').innerText = t.title;
+            document.getElementById('description').innerText = t.description;
+            document.getElementById('msgTitle').innerText = t.msgTitle;
+            document.getElementById('msgSub').innerText = t.msgSub;
+            document.getElementById('manualPrompt').innerText = t.manualPrompt;
+            document.getElementById('modeAuto').innerText = t.modeAuto;
+            document.getElementById('modeManual').innerText = t.modeManual;
+            document.getElementById('hammerBtn').innerText = t.hammerBtn;
+            document.getElementById('resetBtn').innerText = t.resetBtn;
+            document.getElementById('conceptTitle').innerText = t.conceptTitle;
+            document.getElementById('conceptList').innerHTML = t.conceptList;
+            
+            // Show the language you can switch TO
+            const toggleBtn = document.getElementById('langToggleBtn');
+            toggleBtn.innerText = lang === 'en' ? '繁體中文' : 'English';
+        }
+
         const canvas = document.getElementById('simCanvas');
         const ctx = canvas.getContext('2d');
         const hammerBtn = document.getElementById('hammerBtn');
@@ -261,19 +347,14 @@
 
             ctx.moveTo(startX, startY);
             ctx.lineTo(endX, endY);
-
-            // One head at A pointing toward B
             ctx.moveTo(startX, startY);
             ctx.lineTo(startX + headlen * Math.cos(angle + 0.6), startY + headlen * Math.sin(angle + 0.6));
             ctx.moveTo(startX, startY);
             ctx.lineTo(startX + headlen * Math.cos(angle - 0.6), startY + headlen * Math.sin(angle - 0.6));
-            
-            // One head at B pointing toward A
             ctx.moveTo(endX, endY);
             ctx.lineTo(endX + headlen * Math.cos(angle + 2.5), endY + headlen * Math.sin(angle + 2.5));
             ctx.moveTo(endX, endY);
             ctx.lineTo(endX + headlen * Math.cos(angle - 2.5), endY + headlen * Math.sin(angle - 2.5));
-            
             ctx.stroke();
         }
 
@@ -332,7 +413,6 @@
                     ion.y += ion.vy;
                 });
             }
-            
             draw();
             if (isShattered && !isPausedForManual && ions[0].y > -100 && ions[ions.length-1].y < canvas.height + 100) {
                 animationFrame = requestAnimationFrame(update);
@@ -387,9 +467,7 @@
         });
 
         canvas.addEventListener('click', () => {
-            if (isPausedForManual) {
-                triggerShatter();
-            }
+            if (isPausedForManual) triggerShatter();
         });
 
         resetBtn.addEventListener('click', () => {
@@ -411,7 +489,15 @@
             init();
         });
 
-        window.onload = resize;
+        document.getElementById('langToggleBtn').addEventListener('click', () => {
+            const nextLang = currentLang === 'en' ? 'zh' : 'en';
+            updateLanguage(nextLang);
+        });
+
+        window.onload = () => {
+            resize();
+            updateLanguage('en');
+        };
         window.onresize = resize;
         function resize() {
             canvas.width = Math.min(window.innerWidth - 40, 600);
