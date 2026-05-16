@@ -94,13 +94,15 @@
 </head>
 <body class="p-4 md:p-8">
     <div id="app" class="max-w-4xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200">
-        <header class="bg-indigo-600 p-6 text-white text-center relative">
-            <button onclick="toggleLanguage()" class="absolute top-4 right-4 bg-indigo-500 hover:bg-indigo-400 p-2 rounded-lg transition-colors flex items-center gap-2 text-xs font-bold border border-indigo-400">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 002 2h2.935M12 21a9 9 0 100-18 9 9 0 000 18z" />
-                </svg>
-                <span id="lang-label">繁體中文</span>
-            </button>
+        <header class="bg-indigo-600 p-6 text-white text-center flex flex-col items-center relative">
+            <div class="w-full flex justify-end mb-2">
+                <button onclick="toggleLanguage()" class="bg-indigo-500 hover:bg-indigo-400 p-2 rounded-lg transition-colors flex items-center gap-2 text-xs font-bold border border-indigo-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 002 2h2.935M12 21a9 9 0 100-18 9 9 0 000 18z" />
+                    </svg>
+                    <span id="lang-label">繁體中文</span>
+                </button>
+            </div>
 
             <h1 class="text-2xl font-bold" data-t="title">Ionic Diagram Lab</h1>
             <p class="text-indigo-100 text-sm mt-1" data-t="subtitle">Mastering Dot-and-Cross Electron Diagrams</p>
@@ -342,7 +344,6 @@
                 if (t[key]) el.innerText = t[key];
             });
 
-            // Update Compound List (Home Screen)
             const list = document.getElementById('compound-list');
             if (list) {
                 list.innerHTML = '';
@@ -359,15 +360,6 @@
             if (currentCompound) {
                 const step1Title = document.getElementById('step-1-title');
                 if (step1Title) step1Title.innerText = `${t.combining} ${currentCompound.m} ${currentLang === 'en' ? 'and' : '與'} ${currentCompound.nm}`;
-                
-                const mSelectEl = document.getElementById('m-select');
-                if (mSelectEl) {
-                    const mVal = mSelectEl.value;
-                    const nmVal = document.getElementById('nm-select').value;
-                    selectCompound(currentCompound);
-                    document.getElementById('m-select').value = mVal;
-                    document.getElementById('nm-select').value = nmVal;
-                }
             }
         }
 
