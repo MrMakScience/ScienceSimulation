@@ -3,679 +3,660 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chemical Solubility Particle Simulator</title>
+    <title>Chemistry Simulation: Metallic Bonding</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background-color: #f8fafc; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        canvas { border-radius: 12px; background: #fff; box-shadow: inset 0 2px 10px rgba(0,0,0,0.1); width: 100%; height: 400px; display: block; }
-        .tab-active { border-bottom: 3px solid #3b82f6; color: #3b82f6; font-weight: bold; }
-        .control-btn { transition: all 0.2s; }
-        .control-btn:active { transform: scale(0.95); }
-        .legend-item { display: flex; align-items: center; gap: 10px; font-size: 0.8rem; color: #475569; padding: 4px 0; }
-        
-        .dot { width: 16px; height: 16px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.1); flex-shrink: 0; display: flex; align-items: center; justify-content: center; color: white; font-size: 10px; font-weight: bold; }
-        .dot-electron { width: 6px; height: 6px; background: #fbbf24; border-radius: 50%; margin: 5px; }
-        
-        .water-icon { position: relative; width: 14px; height: 14px; }
-        .water-o { width: 10px; height: 10px; background: #ef4444; border-radius: 50%; position: absolute; top: 2px; left: 2px; z-index: 2; }
-        .water-h { width: 6px; height: 6px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 50%; position: absolute; }
+        body {
+            background-color: #f0f4f8;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow-y: auto;
+            min-height: 100vh;
+        }
+        canvas {
+            background: radial-gradient(circle, #1a252f 0%, #000000 100%);
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            width: 100%;
+            height: 400px;
+            touch-action: none;
+        }
+        .hammer-cursor {
+            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 12-8.5 8.5c-.83.83-2.17.83-3 0 0 0 0 0 0 0-.83-.83-.83-2.17 0-3L12 9"/><path d="M17.64 15 22 10.64"/><path d="m20.91 11.7-1.25-1.25c-.6-.6-.9-1.4-.8-2.22l.1-1.49c.04-.62-.34-1.18-.93-1.34l-1.47-.4c-.8-.22-1.48-.73-1.9-1.41L13.89 2.3c-.32-.54-.96-.83-1.57-.7l-1.5.31c-.81.17-1.65-.03-2.31-.56L7.33.3c-.47-.38-1.14-.42-1.65-.11L4.35 1.12c-.52.31-.76.92-.58 1.5l.46 1.45c.25.79.2 1.65-.14 2.4l-.62 1.38c-.26.58-.15 1.25.29 1.71l1.06 1.1c.58.6.93 1.39.99 2.22l.1 1.49c.04.62.34-1.18.93-1.34l1.47.4c.8.22-1.48.73-1.9 1.41l.78 1.29c.32.54.96.83-1.57.7l1.5-.31c.81-.17-1.65.03-2.31.56l1.18 1.05c.47.38-1.14.42-1.65.11l1.33-.82c.52-.31.76-.92.58-1.5l-.46-1.45c-.25-.79-.2 1.65.14-2.4l.62-1.38c.26-.58.15-1.25-.29-1.71l-1.06-1.1Z"/></svg>') 16 16, auto;
+        }
+        .hand-container {
+            pointer-events: none;
+            transition: transform 0.2s ease-out;
+        }
+        .pulling .hand-left { transform: translateX(-45px); }
+        .pulling .hand-right { transform: translateX(45px); }
 
-        .diatomic-icon { position: relative; width: 18px; height: 10px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
-        .diatomic-circle { width: 10px; height: 10px; border-radius: 50%; background-color: #a855f7; border: 1px solid rgba(0,0,0,0.1); }
-        .diatomic-bridge { width: 12px; height: 4px; background-color: #a855f7; position: absolute; left: 3px; z-index: -1; }
+        .terminal {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 40px;
+            color: transparent;
+            transition: all 0.4s ease;
+            background: transparent;
+            pointer-events: none;
+            z-index: 10;
+        }
+        .terminal-neg { left: 0; }
+        .terminal-pos { right: 0; }
 
-        .btn-selected { background-color: #eff6ff !important; border-color: #3b82f6 !important; color: #1d4ed8 !important; }
+        .voltage-on .terminal-neg {
+            background: linear-gradient(to right, rgba(231, 76, 60, 0.6), transparent);
+            color: rgba(255, 255, 255, 0.9);
+            text-shadow: 0 0 15px #e74c3c;
+        }
+        .voltage-on .terminal-pos {
+            background: linear-gradient(to left, rgba(52, 152, 219, 0.6), transparent);
+            color: rgba(255, 255, 255, 0.9);
+            text-shadow: 0 0 15px #3498db;
+        }
         
-        /* Custom scrollbar for tabs */
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .burner {
+            position: absolute;
+            bottom: -20px;
+            width: 100px;
+            height: 60px;
+            background: radial-gradient(circle at top, #ff5500, transparent 70%);
+            filter: blur(8px);
+            opacity: 0;
+            transition: opacity 0.5s;
+            pointer-events: none;
+        }
+        .heating-on .burner {
+            opacity: 0.8;
+            animation: flicker 0.1s infinite alternate;
+        }
+        @keyframes flicker {
+            from { transform: scale(1); }
+            to { transform: scale(1.1); }
+        }
     </style>
 </head>
-<body class="p-4 md:p-8">
-    <div class="max-w-5xl mx-auto relative">
-        <!-- Language Toggle -->
-        <div class="absolute -top-2 right-0 md:top-0">
-            <button onclick="toggleLanguage()" class="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-full shadow-sm hover:bg-slate-50 transition-colors text-slate-600 text-sm font-medium">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-                <span id="langLabel">繁體中文</span>
-            </button>
-        </div>
+<body class="flex flex-col items-center py-8 px-4">
 
-        <header class="mb-8 text-center pt-8 md:pt-4">
-            <h1 id="ui-title" class="text-3xl font-extrabold text-slate-800">Solubility Particle Simulator</h1>
-            <p id="ui-subtitle" class="text-slate-600 mt-2">Analyze attractions between solute and solvent at the microscopic level.</p>
+    <div class="max-w-4xl w-full bg-white rounded-2xl shadow-xl p-6 space-y-6 mb-8 relative">
+        <header class="text-center pt-8 md:pt-4">
+            <!-- Language Toggle at Top Right -->
+            <div class="absolute top-4 right-4 z-20">
+                <button id="langToggle" class="p-2 px-3 rounded-full bg-slate-50 hover:bg-slate-100 transition-colors border border-slate-200 flex items-center gap-2 text-sm font-bold text-slate-700 shadow-sm" title="Switch Language">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                    <span id="langText">繁體中文</span>
+                </button>
+            </div>
+            
+            <h1 id="mainTitle" class="text-2xl md:text-3xl font-bold text-slate-800">Metallic Bonding Properties</h1>
+            
+            <div class="flex justify-center mt-6 border-b flex-wrap">
+                <button id="tabMalleability" class="px-4 md:px-6 py-2 font-bold border-b-4 border-blue-600 text-blue-600 transition-all">Malleability</button>
+                <button id="tabDuctility" class="px-4 md:px-6 py-2 font-bold border-b-4 border-transparent text-slate-400 hover:text-slate-600 transition-all">Ductility</button>
+                <button id="tabConductivity" class="px-4 md:px-6 py-2 font-bold border-b-4 border-transparent text-slate-400 hover:text-slate-600 transition-all text-sm md:text-base">Electrical Conductivity</button>
+                <button id="tabThermal" class="px-4 md:px-6 py-2 font-bold border-b-4 border-transparent text-slate-400 hover:text-slate-600 transition-all text-sm md:text-base">Thermal Conductivity</button>
+            </div>
         </header>
 
-        <!-- Solute Type Tabs -->
-        <div class="flex overflow-x-auto border-b border-slate-200 mb-6 bg-white rounded-t-xl no-scrollbar">
-            <button onclick="setTab('metallic')" id="tab-metallic" class="whitespace-nowrap px-6 py-3 text-slate-500 hover:text-blue-500 transition-colors">Giant Metallic</button>
-            <button onclick="setTab('covalent')" id="tab-covalent" class="whitespace-nowrap px-6 py-3 text-slate-500 hover:text-blue-500 transition-colors">Giant Covalent</button>
-            <button onclick="setTab('ionic')" id="tab-ionic" class="whitespace-nowrap px-6 py-3 text-slate-500 hover:text-blue-500 transition-colors">Giant Ionic</button>
-            <button onclick="setTab('molecular')" id="tab-molecular" class="whitespace-nowrap px-6 py-3 text-slate-500 hover:text-blue-500 transition-colors">Simple Molecular</button>
-        </div>
+        <div id="canvasWrapper" class="relative overflow-hidden rounded-xl bg-black">
+            <canvas id="simCanvas"></canvas>
+            
+            <div id="feedback" class="absolute top-4 right-4 bg-yellow-400 text-black px-3 py-1 rounded-full text-sm font-bold opacity-0 transition-opacity">
+                CLANG!
+            </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <!-- Simulator and Analysis -->
-            <div class="lg:col-span-2 space-y-4">
-                <div class="relative bg-white p-2 rounded-xl shadow-lg border border-slate-200">
-                    <canvas id="simCanvas"></canvas>
-                    <div id="statusOverlay" class="absolute top-4 left-4 bg-black/70 text-white px-3 py-1 rounded-full text-sm font-medium">
-                        Initial State
-                    </div>
+            <div id="leftDuctilityAssets" class="absolute top-1/2 -translate-y-1/2 opacity-0 transition-opacity duration-300 pointer-events-none">
+                <div class="hand-container hand-left">
+                    <svg width="70" height="70" viewBox="0 0 100 100" style="transform: scaleX(-1);">
+                        <path d="M30,70 Q25,70 25,65 L25,45 Q25,40 30,40 L35,40 Q35,30 40,30 L45,30 Q45,25 50,25 L55,25 Q55,20 60,20 L65,20 Q70,20 70,25 L70,55 Q70,60 65,65 L45,75 Z" fill="white" stroke="#2c3e50" stroke-width="2"/>
+                    </svg>
                 </div>
-                
-                <div class="bg-white p-6 rounded-xl shadow-md border border-slate-200 min-h-[140px]">
-                    <h3 id="ui-analysis-title" class="font-bold text-lg text-slate-800 mb-2">Microscopic Analysis</h3>
-                    <div id="analysisText" class="text-slate-600 leading-relaxed">
-                        <span class="italic">Select a solvent to begin the dissolution process and observe particle interactions.</span>
-                    </div>
+            </div>
+            <div id="rightDuctilityAssets" class="absolute top-1/2 -translate-y-1/2 opacity-0 transition-opacity duration-300 pointer-events-none">
+                <div class="hand-container hand-right">
+                    <svg width="70" height="70" viewBox="0 0 100 100">
+                        <path d="M30,70 Q25,70 25,65 L25,45 Q25,40 30,40 L35,40 Q35,30 40,30 L45,30 Q45,25 50,25 L55,25 Q55,20 60,20 L65,20 Q70,20 70,25 L70,55 Q70,60 65,65 L45,75 Z" fill="white" stroke="#2c3e50" stroke-width="2"/>
+                    </svg>
                 </div>
             </div>
 
-            <!-- Controls and Legend -->
-            <div class="space-y-6">
-                <div class="bg-white p-6 rounded-xl shadow-md border-t-4 border-blue-500 border border-slate-200">
-                    <h3 id="ui-controls-title" class="font-bold text-slate-800 mb-4 uppercase text-xs tracking-wider">Experiment Controls</h3>
-                    
-                    <div class="space-y-4">
-                        <div>
-                            <label id="ui-solvent-label" class="block text-sm font-medium text-slate-700 mb-2">Solvent Type</label>
-                            <div class="grid grid-cols-2 gap-2">
-                                <button onclick="setSolvent('water')" id="btn-water" class="control-btn py-2 px-4 rounded-lg border-2 border-slate-200 hover:border-blue-300">Water</button>
-                                <button onclick="setSolvent('organic')" id="btn-organic" class="control-btn py-2 px-4 rounded-lg border-2 border-slate-200 hover:border-blue-300">Organic</button>
-                            </div>
-                        </div>
+            <div id="terminals" class="hidden opacity-0 transition-opacity duration-300">
+                <div class="terminal terminal-neg">&minus;</div>
+                <div class="terminal terminal-pos">+</div>
+            </div>
 
-                        <div id="specialOptions" class="hidden transition-all">
-                            <label id="ui-substance-label" class="block text-sm font-medium text-slate-700 mb-2">Specific Substance</label>
-                            <div id="ionicOptions" class="hidden grid grid-cols-2 gap-2">
-                                <button onclick="setSpecific('NaCl')" id="btn-NaCl" class="control-btn py-2 px-4 rounded-lg border-2 border-slate-200 hover:border-blue-300">NaCl</button>
-                                <button onclick="setSpecific('AgCl')" id="btn-AgCl" class="control-btn py-2 px-4 rounded-lg border-2 border-slate-200 hover:border-blue-300">AgCl</button>
-                            </div>
-                            <div id="molecularOptions" class="hidden grid grid-cols-2 gap-2">
-                                <button onclick="setSpecific('Iodine')" id="btn-Iodine" class="control-btn py-2 px-4 rounded-lg border-2 border-slate-200 hover:border-blue-300">Iodine (I₂)</button>
-                                <button onclick="setSpecific('CitricAcid')" id="btn-CitricAcid" class="control-btn py-2 px-4 rounded-lg border-2 border-slate-200 hover:border-blue-300">Citric Acid</button>
-                            </div>
-                        </div>
+            <div id="burner" class="burner"></div>
+        </div>
 
-                        <button id="ui-add-btn" onclick="startSimulation()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition-all">
-                            Add Solvent
-                        </button>
-                        <button id="ui-reset-btn" onclick="resetSim()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium py-2 px-4 rounded-xl transition-all">
-                            Reset Block
-                        </button>
-                    </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+            <div id="instructionsPanel" class="space-y-4">
+                <div class="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                    <h3 id="panelTitle" class="font-bold text-blue-800 flex items-center gap-2">Malleability Simulation</h3>
+                    <ul id="panelList" class="text-sm text-blue-700 mt-2 list-disc ml-5">
+                        <li><strong>Click</strong> to hammer the metal gently.</li>
+                        <li>The ions slide over each other without breaking the non-directional metallic bond.</li>
+                        <li>The sea of delocalized electrons moves and forms metallic bond again in the new shape.</li>
+                    </ul>
                 </div>
+            </div>
 
-                <div class="bg-blue-50 p-4 rounded-xl border border-blue-100">
-                    <h4 id="ui-rule-title" class="text-blue-800 font-bold text-sm mb-1">Theoretical Rule:</h4>
-                    <p id="ui-rule-desc" class="text-xs text-blue-700">
-                        Dissolution occurs if: <br>
-                        <strong>Attraction<sub>(Solute-Solvent)</sub> &gt; Attraction<sub>(Solute-Solute)</sub> + Attraction<sub>(Solvent-Solvent)</sub></strong>
-                    </p>
-                </div>
-
-                <div class="bg-white p-5 rounded-xl shadow-md border border-slate-100">
-                    <h3 id="ui-legend-title" class="font-bold text-slate-800 mb-3 uppercase text-[10px] tracking-widest">Active Particles Key</h3>
-                    <div id="dynamicLegend" class="space-y-1">
-                        <!-- Populated via JS -->
-                    </div>
-                </div>
+            <div class="flex flex-wrap gap-4 justify-center md:justify-end items-center">
+                <button id="actionBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-lg hidden">Pull Metal</button>
+                <button id="condBtn" class="bg-amber-500 hover:bg-amber-600 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-lg hidden">Apply Voltage: OFF</button>
+                <button id="heatBtn" class="bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-lg hidden">Apply Heat: OFF</button>
+                <button id="resetBtn" class="bg-slate-700 hover:bg-slate-800 text-white px-6 py-3 rounded-xl font-bold shadow-lg">Reset Simulation</button>
             </div>
         </div>
     </div>
 
     <script>
-        // --- Language State ---
-        let currentLang = 'en';
-        const translations = {
-            en: {
-                title: "Solubility Particle Simulator",
-                subtitle: "Analyze attractions between solute and solvent at the microscopic level.",
-                metallic: "Giant Metallic",
-                covalent: "Giant Covalent",
-                ionic: "Giant Ionic",
-                molecular: "Simple Molecular",
-                analysis_title: "Microscopic Analysis",
-                controls_title: "Experiment Controls",
-                solvent_label: "Solvent Type",
-                substance_label: "Specific Substance",
-                water: "Water",
-                organic: "Organic",
-                add_btn: "Add Solvent",
-                reset_btn: "Reset Block",
-                rule_title: "Theoretical Rule:",
-                rule_desc: "Dissolution occurs if: <br><strong>Attraction<sub>(Solute-Solvent)</sub> &gt; Attraction<sub>(Solute-Solute)</sub> + Attraction<sub>(Solvent-Solvent)</sub></strong>",
-                legend_title: "Active Particles Key",
-                status_initial: "Initial State",
-                status_soluble: "SOLUBLE",
-                status_insoluble: "INSOLUBLE",
-                start_prompt: "Select a solvent to begin the dissolution process and observe particle interactions.",
-                reset_prompt: "Setup ready. Click \"Add Solvent\" to observe.",
-                error_solvent: "Please select a solvent first!",
-                lang_toggle: "繁體中文",
-                // Legend
-                l_metal_ion: "Metal Ion (+)",
-                l_electron: "Delocalized Electron (-)",
-                l_atom: "Atom (e.g. Carbon)",
-                l_na_ion: "Sodium Ion (Na+)",
-                l_ag_ion: "Silver Ion (Ag+)",
-                l_cl_ion: "Chloride Ion (Cl-)",
-                l_citric: "Citric Acid Molecule",
-                l_iodine: "Iodine Molecule (I₂)",
-                l_water: "Water (H₂O)",
-                l_org_solv: "Organic Solvent"
-            },
-            zh: {
-                title: "物質溶解粒子模擬器",
-                subtitle: "在微觀層面分析溶質與溶劑之間的吸引力。",
-                metallic: "巨型金屬結構",
-                covalent: "巨型共價結構",
-                ionic: "巨型離子結構",
-                molecular: "簡單分子結構",
-                analysis_title: "微觀分析",
-                controls_title: "實驗控制",
-                solvent_label: "溶劑類型",
-                substance_label: "特定物質",
-                water: "水",
-                organic: "有機溶劑",
-                add_btn: "加入溶劑",
-                reset_btn: "重置方塊",
-                rule_title: "理論法則：",
-                rule_desc: "溶解發生的條件：<br><strong>吸引力<sub>(溶質-溶劑)</sub> &gt; 吸引力<sub>(溶質-溶質)</sub> + 吸引力<sub>(溶劑-溶劑)</sub></strong>",
-                legend_title: "活性粒子圖例",
-                status_initial: "初始狀態",
-                status_soluble: "可溶",
-                status_insoluble: "不溶",
-                start_prompt: "選擇一種溶劑以開始溶解過程並觀察粒子相互作用。",
-                reset_prompt: "設置就緒。點擊「加入溶劑」進行觀察。",
-                error_solvent: "請先選擇一種溶劑！",
-                lang_toggle: "English",
-                // Legend
-                l_metal_ion: "金屬離子 (+)",
-                l_electron: "離域電子 (-)",
-                l_atom: "原子 (例如 碳)",
-                l_na_ion: "鈉離子 (Na+)",
-                l_ag_ion: "銀離子 (Ag+)",
-                l_cl_ion: "氯離子 (Cl-)",
-                l_citric: "檸檬酸分子",
-                l_iodine: "碘分子 (I₂)",
-                l_water: "水 (H₂O)",
-                l_org_solv: "有機溶劑"
-            }
-        };
-
-        function toggleLanguage() {
-            currentLang = currentLang === 'en' ? 'zh' : 'en';
-            updateUI();
-        }
-
-        function updateUI() {
-            const t = translations[currentLang];
-            document.getElementById('langLabel').innerText = t.lang_toggle;
-            document.getElementById('ui-title').innerText = t.title;
-            document.getElementById('ui-subtitle').innerText = t.subtitle;
-            document.getElementById('tab-metallic').innerText = t.metallic;
-            document.getElementById('tab-covalent').innerText = t.covalent;
-            document.getElementById('tab-ionic').innerText = t.ionic;
-            document.getElementById('tab-molecular').innerText = t.molecular;
-            document.getElementById('ui-analysis-title').innerText = t.analysis_title;
-            document.getElementById('ui-controls-title').innerText = t.controls_title;
-            document.getElementById('ui-solvent-label').innerText = t.solvent_label;
-            document.getElementById('ui-substance-label').innerText = t.substance_label;
-            document.getElementById('btn-water').innerText = t.water;
-            document.getElementById('btn-organic').innerText = t.organic;
-            document.getElementById('ui-add-btn').innerText = t.add_btn;
-            document.getElementById('ui-reset-btn').innerText = t.reset_btn;
-            document.getElementById('ui-rule-title').innerText = t.rule_title;
-            document.getElementById('ui-rule-desc').innerHTML = t.rule_desc;
-            document.getElementById('ui-legend-title').innerText = t.legend_title;
-            
-            if (!isSimulating) {
-                statusOverlay.innerText = t.status_initial;
-                analysisText.innerHTML = `<span class="italic">${t.reset_prompt}</span>`;
-            } else {
-                updateSimulationLogic(); // This triggers analysis re-translation
-            }
-            updateLegend();
-        }
-
-        class Particle {
-            constructor(x, y, type, color, charge = 0) {
-                this.x = x; 
-                this.y = y; 
-                this.homeX = x; 
-                this.homeY = y;
-                this.type = type; 
-                this.color = color; 
-                this.charge = charge;
-                
-                this.vx = (Math.random() - 0.5) * 1.5; 
-                this.vy = (Math.random() - 0.5) * 1.5;
-                this.radius = type === 'electron' ? 3 : 8;
-                this.isFree = (type === 'solvent'); 
-                this.angle = Math.random() * Math.PI * 2;
-                this.rotationSpeed = (Math.random() - 0.5) * 0.05;
-                
-                this.assignedIon = null;
-                this.offsetAngle = 0;
-                this.offsetDist = 24;
-                this.shellIndex = -1; 
-
-                if (this.type === 'electron') {
-                    this.vx *= 2;
-                    this.vy *= 2;
-                }
-            }
-
-            draw(ctx) {
-                if (this.type === 'solvent' && currentSolvent === 'water') {
-                    this.drawH2O(ctx);
-                } else if (this.type === 'molecule' && currentSpecific === 'Iodine') {
-                    this.drawDiatomicIodine(ctx);
-                } else {
-                    ctx.beginPath();
-                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                    ctx.fillStyle = this.color;
-                    ctx.fill();
-                    if (this.type === 'ion' && (currentTab === 'ionic' || currentTab === 'metallic')) {
-                        ctx.fillStyle = 'white'; 
-                        ctx.font = 'bold 10px Arial'; 
-                        ctx.textAlign = 'center';
-                        ctx.fillText(this.charge > 0 ? '+' : '-', this.x, this.y + 4);
-                    }
-                    ctx.closePath();
-                }
-            }
-
-            drawDiatomicIodine(ctx) {
-                ctx.save();
-                ctx.translate(this.x, this.y);
-                ctx.rotate(this.angle);
-                const d = 5; 
-                ctx.beginPath();
-                ctx.arc(-d, 0, this.radius, 0, Math.PI * 2);
-                ctx.arc(d, 0, this.radius, 0, Math.PI * 2);
-                ctx.fillStyle = this.color;
-                ctx.fill();
-                ctx.fillRect(-d, -2, d*2, 4);
-                ctx.restore();
-            }
-
-            drawH2O(ctx) {
-                ctx.save();
-                ctx.translate(this.x, this.y);
-                ctx.rotate(this.angle);
-                ctx.beginPath();
-                ctx.arc(0, 0, 7, 0, Math.PI * 2);
-                ctx.fillStyle = '#ef4444'; 
-                ctx.fill();
-                const hDist = 8, hRadius = 4, hAngle = 0.8;
-                [hAngle, -hAngle].forEach(a => {
-                    const hx = Math.cos(a + Math.PI) * hDist;
-                    const hy = Math.sin(a + Math.PI) * hDist;
-                    ctx.beginPath();
-                    ctx.arc(hx, hy, hRadius, 0, Math.PI * 2);
-                    ctx.fillStyle = '#f8fafc'; 
-                    ctx.strokeStyle = '#cbd5e1'; 
-                    ctx.lineWidth = 1;
-                    ctx.fill(); 
-                    ctx.stroke();
-                });
-                ctx.restore();
-            }
-
-            update(canvas, particles, blockBounds) {
-                if (this.type === 'electron') {
-                    this.x += this.vx;
-                    this.y += this.vy;
-                    if (this.x < blockBounds.x || this.x > blockBounds.x + blockBounds.w) this.vx *= -1;
-                    if (this.y < blockBounds.y || this.y > blockBounds.y + blockBounds.h) this.vy *= -1;
-                    return;
-                }
-
-                if (this.isFree) {
-                    if (this.type === 'solvent' && this.assignedIon) {
-                        if (!particles.includes(this.assignedIon)) {
-                            this.assignedIon = null;
-                            this.shellIndex = -1;
-                            return;
-                        }
-                        
-                        this.offsetAngle = (this.shellIndex / 8) * Math.PI * 2;
-                        const targetX = this.assignedIon.x + Math.cos(this.offsetAngle) * this.offsetDist;
-                        const targetY = this.assignedIon.y + Math.sin(this.offsetAngle) * this.offsetDist;
-                        
-                        this.x += (targetX - this.x) * 0.1;
-                        this.y += (targetY - this.y) * 0.1;
-
-                        const angleToIon = Math.atan2(this.assignedIon.y - this.y, this.assignedIon.x - this.x);
-                        const targetAngle = (this.assignedIon.charge > 0) ? angleToIon : angleToIon + Math.PI;
-                        let diff = targetAngle - this.angle;
-                        while (diff < -Math.PI) diff += Math.PI * 2;
-                        while (diff > Math.PI) diff -= Math.PI * 2;
-                        this.angle += diff * 0.05;
-                        return;
-                    }
-
-                    this.x += this.vx; 
-                    this.y += this.vy; 
-                    this.angle += this.rotationSpeed;
-                    
-                    if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
-                    if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
-
-                    if (this.type === 'solvent' && currentSolvent === 'water' && !this.assignedIon) {
-                        for (let p of particles) {
-                            if (p.isFree && p.type === 'ion' && (p.shellCount || 0) < 8) {
-                                const d = Math.hypot(this.x - p.x, this.y - p.y);
-                                if (d < 35) {
-                                    this.assignedIon = p;
-                                    this.shellIndex = p.shellCount || 0;
-                                    p.shellCount = (p.shellCount || 0) + 1;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    
-                    if (this.type === 'solvent' && !isSoluteDissolved(particles)) {
-                        const buffer = 15;
-                        if (this.x > blockBounds.x - buffer && this.x < blockBounds.x + blockBounds.w + buffer && this.y > blockBounds.y - buffer) {
-                            if (this.y < blockBounds.y) { this.vy *= -1; this.y = blockBounds.y - buffer; }
-                            else if (this.x < blockBounds.x) { this.vx *= -1; this.x = blockBounds.x - buffer; }
-                            else if (this.x > blockBounds.x + blockBounds.w) { this.vx *= -1; this.x = blockBounds.x + blockBounds.w + buffer; }
-                        }
-                    }
-                } else {
-                    this.x = this.homeX + (Math.random() - 0.5) * 0.5;
-                    this.y = this.homeY + (Math.random() - 0.5) * 0.5;
-                }
-            }
-        }
-
         const canvas = document.getElementById('simCanvas');
         const ctx = canvas.getContext('2d');
-        const statusOverlay = document.getElementById('statusOverlay');
-        const analysisText = document.getElementById('analysisText');
-        const dynamicLegend = document.getElementById('dynamicLegend');
+        const canvasWrapper = document.getElementById('canvasWrapper');
+        const resetBtn = document.getElementById('resetBtn');
+        const actionBtn = document.getElementById('actionBtn');
+        const condBtn = document.getElementById('condBtn');
+        const heatBtn = document.getElementById('heatBtn');
+        const feedback = document.getElementById('feedback');
+        const tabMall = document.getElementById('tabMalleability');
+        const tabDuct = document.getElementById('tabDuctility');
+        const tabCond = document.getElementById('tabConductivity');
+        const tabThermal = document.getElementById('tabThermal');
+        const panelTitle = document.getElementById('panelTitle');
+        const panelList = document.getElementById('panelList');
+        const leftAssets = document.getElementById('leftDuctilityAssets');
+        const rightAssets = document.getElementById('rightDuctilityAssets');
+        const terminals = document.getElementById('terminals');
+        const burner = document.getElementById('burner');
+        const langToggle = document.getElementById('langToggle');
+        const langText = document.getElementById('langText');
+        const mainTitle = document.getElementById('mainTitle');
 
-        let currentTab = 'metallic'; 
-        let currentSolvent = null; 
-        let currentSpecific = 'default';
-        let particles = []; 
-        let solventParticles = []; 
-        let isSimulating = false;
-        let animationFrame; 
-        let blockBounds = { x: 0, y: 0, w: 0, h: 0 };
-        let dissolutionTimer = 0;
+        let currentMode = 'malleability'; 
+        let currentLang = 'en'; // 'en' or 'zh'
+        let width, height;
+        let ions = [];
+        let electrons = [];
+        let isConducting = false;
+        let isHeating = false;
+        let pullCount = 0;
 
-        function isSoluteDissolved(parts) { 
-            return parts.some(p => p.isFree && p.type !== 'electron'); 
+        const translations = {
+            en: {
+                title: "Metallic Bonding Properties",
+                nextLang: "繁體中文",
+                tabs: ["Malleability", "Ductility", "Electrical Conductivity", "Thermal Conductivity"],
+                reset: "Reset Simulation",
+                pull: "Pull Metal",
+                voltageOff: "Apply Voltage: OFF",
+                voltageOn: "Apply Voltage: ON",
+                heatOff: "Apply Heat: OFF",
+                heatOn: "Apply Heat: ON",
+                clang: "CLANG!",
+                modes: {
+                    malleability: {
+                        title: "Malleability Simulation",
+                        list: [
+                            "<strong>Click</strong> to hammer the metal gently.",
+                            "The ions slide over each other without breaking the non-directional metallic bond.",
+                            "The sea of delocalized electrons moves and forms metallic bond again in the new shape."
+                        ]
+                    },
+                    grid: {}, // placeholder if needed
+                    ductility: {
+                        title: "Ductility Simulation",
+                        list: [
+                            "<strong>Click 'Pull Metal'</strong> to stretch.",
+                            "Observe the lattice thinning into a wire shape.",
+                            "Electrons follow the shifting lattice."
+                        ]
+                    },
+                    conductivity: {
+                        title: "Electrical Conductivity Simulation",
+                        list: [
+                            "<strong>Apply Voltage</strong> to see drift.",
+                            "Delocalized electrons move toward positive (+).",
+                            "The sea flows between the gaps in the fixed lattice."
+                        ]
+                    },
+                    thermal: {
+                        title: "Thermal Conductivity Simulation",
+                        list: [
+                            "<strong>Apply Heat</strong> to the metal block.",
+                            "Delocalized electrons can propagate kinetic energy quickly to other particles due to its small size and mobility.",
+                            "Observe the <strong>ions vibrate</strong> as they absorb thermal energy."
+                        ]
+                    }
+                }
+            },
+            zh: {
+                title: "金屬鍵特性模擬",
+                nextLang: "English",
+                tabs: ["展性", "延性", "導電性", "導熱性"],
+                reset: "重設模擬",
+                pull: "拉伸金屬",
+                voltageOff: "施加電壓：關閉",
+                voltageOn: "施加電壓：開啟",
+                heatOff: "施加熱能：關閉",
+                heatOn: "施加熱能：開啟",
+                clang: "噹！",
+                modes: {
+                    malleability: {
+                        title: "金屬展性模擬",
+                        list: [
+                            "<strong>點擊</strong> 畫布來輕敲金屬。",
+                            "金屬陽離子在不破壞非方向性金屬鍵的情況下互相滑動。",
+                            "離域電子海會移動並在新的形狀中重新形成金屬鍵。"
+                        ]
+                    },
+                    ductility: {
+                        title: "金屬延性模擬",
+                        list: [
+                            "<strong>點擊「拉伸金屬」</strong> 按鈕。",
+                            "觀察金屬晶格如何變細並形成絲狀。",
+                            "自由電子隨着移動的晶格分佈。"
+                        ]
+                    },
+                    conductivity: {
+                        title: "導電性模擬",
+                        list: [
+                            "<strong>施加電壓</strong> 觀察電子漂移。",
+                            "離域電子向正極 (+) 移動。",
+                            "電子海在固定的晶格間隙中流動。"
+                        ]
+                    },
+                    thermal: {
+                        title: "導熱性模擬",
+                        list: [
+                            "對金屬塊 <strong>施加熱能</strong>。",
+                            "離域電子體積小且具流動性，能迅速將動能傳遞給其他微粒。",
+                            "觀察 <strong>金屬離子</strong> 在吸收熱能時劇烈振動。"
+                        ]
+                    }
+                }
+            }
+        };
+        
+        const isMobile = window.innerWidth < 640;
+        const ION_RADIUS = isMobile ? 14 : 20;
+        const COLLISION_RADIUS = isMobile ? 28 : 40;
+        const SPACING = isMobile ? 35 : 50;
+        const ELECTRON_RADIUS = isMobile ? 4 : 6; 
+        const E_PER_ION = 3;
+
+        let audioCtx = null;
+        function playClingSound() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const now = audioCtx.currentTime;
+            const bufferSize = audioCtx.sampleRate * 0.05;
+            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+
+            const noise = audioCtx.createBufferSource();
+            noise.buffer = buffer;
+            const noiseFilter = audioCtx.createBiquadFilter();
+            noiseFilter.type = 'highpass';
+            noiseFilter.frequency.setValueAtTime(1000, now);
+            const noiseGain = audioCtx.createGain();
+            noiseGain.gain.setValueAtTime(0.5, now);
+            noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+
+            noise.connect(noiseFilter);
+            noiseFilter.connect(noiseGain);
+            noiseGain.connect(audioCtx.destination);
+
+            const frequencies = [800, 1240, 2030]; 
+            frequencies.forEach(freq => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, now);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(now);
+                osc.stop(now + 0.5);
+            });
+            noise.start(now);
         }
 
-        function updateLegend() {
-            const t = translations[currentLang];
-            let html = '';
-            if (currentTab === 'metallic') {
-                html += `<div class="legend-item"><div class="dot bg-[#94a3b8]">+</div> ${t.l_metal_ion}</div>`;
-                html += `<div class="legend-item"><div class="dot-electron"></div> ${t.l_electron}</div>`;
-            } else if (currentTab === 'covalent') {
-                html += `<div class="legend-item"><div class="dot bg-[#475569]"></div> ${t.l_atom}</div>`;
-            } else if (currentTab === 'ionic') {
-                const cationName = currentSpecific === 'NaCl' ? t.l_na_ion : t.l_ag_ion;
-                const cationColor = currentSpecific === 'NaCl' ? '#ef4444' : '#06b6d4'; 
-                html += `<div class="legend-item"><div class="dot" style="background-color: ${cationColor}">+</div> ${cationName}</div>`;
-                html += `<div class="legend-item"><div class="dot bg-[#3b82f6]">-</div> ${t.l_cl_ion}</div>`;
-            } else if (currentTab === 'molecular') {
-                if (currentSpecific === 'CitricAcid') {
-                    html += `<div class="legend-item"><div class="dot bg-[#fde047]"></div> ${t.l_citric}</div>`;
+        class Ion {
+            constructor(x, y) {
+                this.x = x; this.y = y;
+                this.vx = 0; this.vy = 0;
+                this.baseX = x; this.baseY = y;
+                this.temp = 0; 
+            }
+            update() {
+                if (currentMode === 'conductivity') {
+                    this.x = this.baseX; this.y = this.baseY; return;
+                }
+                if (currentMode === 'thermal') {
+                    this.temp *= 0.995;
+                    const vib = this.temp * (isMobile ? 4 : 6);
+                    this.x = this.baseX + (Math.random() - 0.5) * vib;
+                    this.y = this.baseY + (Math.random() - 0.5) * vib;
+                    return; 
+                }
+                this.x += this.vx; this.y += this.vy;
+                this.vx *= 0.85; this.vy *= 0.85;
+                if (currentMode === 'ductility') {
+                    const centerY = height / 2;
+                    const neckingIntensity = Math.min(0.02, pullCount * 0.002);
+                    this.vy += (centerY - this.y) * neckingIntensity;
+                }
+                for (let other of ions) {
+                    if (other === this) continue;
+                    const dx = other.x - this.x;
+                    const dy = other.y - this.y;
+                    const distSq = dx*dx + dy*dy;
+                    const minSq = COLLISION_RADIUS * COLLISION_RADIUS;
+                    if (distSq < minSq) {
+                        const dist = Math.sqrt(distSq);
+                        const overlap = (COLLISION_RADIUS - dist) * 0.5;
+                        const nx = dx/dist; const ny = dy/dist;
+                        this.x -= nx * overlap; this.y -= ny * overlap;
+                        other.x += nx * overlap; other.y += ny * overlap;
+                    }
+                }
+                this.x = Math.max(ION_RADIUS, Math.min(width - ION_RADIUS, this.x));
+                this.y = Math.max(ION_RADIUS, Math.min(height - ION_RADIUS, this.y));
+            }
+            draw() {
+                const grad = ctx.createRadialGradient(this.x, this.y, 5, this.x, this.y, ION_RADIUS);
+                if (currentMode === 'thermal') {
+                    grad.addColorStop(0, `rgb(${236 + this.temp * 19}, ${240 - this.temp * 140}, ${241 - this.temp * 200})`);
+                    grad.addColorStop(1, `rgb(${127 + this.temp * 100}, ${140 - this.temp * 60}, ${141 - this.temp * 80})`);
                 } else {
-                    html += `<div class="legend-item">
-                                <div class="diatomic-icon">
-                                    <div class="diatomic-circle"></div>
-                                    <div class="diatomic-bridge"></div>
-                                    <div class="diatomic-circle" style="margin-left: -2px;"></div>
-                                </div>
-                                ${t.l_iodine}
-                             </div>`;
+                    grad.addColorStop(0, '#ecf0f1'); grad.addColorStop(1, '#7f8c8d');
                 }
+                ctx.fillStyle = grad;
+                ctx.beginPath(); ctx.arc(this.x, this.y, ION_RADIUS, 0, Math.PI * 2); ctx.fill();
+                ctx.strokeStyle = '#2c3e50'; ctx.lineWidth = 2; ctx.beginPath();
+                ctx.moveTo(this.x - 4, this.y); ctx.lineTo(this.x + 4, this.y);
+                ctx.moveTo(this.x, this.y - 4); ctx.lineTo(this.x, this.y + 4);
+                ctx.stroke();
             }
-            if (isSimulating || currentSolvent) {
-                if (currentSolvent === 'water') {
-                    html += `<div class="legend-item"><div class="water-icon"><div class="water-o"></div><div class="water-h" style="top:0; left:0;"></div><div class="water-h" style="top:0; left:8px;"></div></div> ${t.l_water}</div>`;
-                } else if (currentSolvent === 'organic') {
-                    html += `<div class="legend-item"><div class="dot bg-[#fb923c]"></div> ${t.l_org_solv}</div>`;
-                }
-            }
-            dynamicLegend.innerHTML = html || `<div class="text-xs text-slate-400 italic">${currentLang === 'en' ? 'Select experiment parameters' : '選擇實驗參數'}</div>`;
         }
 
-        function initSolute() {
-            particles = [];
-            const cols = 5, rows = 4, offset = 40;
-            const blockWidth = (cols - 1) * offset;
-            const blockHeight = (rows - 1) * offset;
-            const startX = (canvas.width / 2) - (blockWidth / 2);
-            const startY = canvas.height - blockHeight - 60;
-            blockBounds = { x: startX, y: startY, w: blockWidth, h: blockHeight };
-
-            for (let i = 0; i < cols; i++) {
-                for (let j = 0; j < rows; j++) {
-                    const x = startX + i * offset; 
-                    const y = startY + j * offset;
-                    let p;
-                    if (currentTab === 'metallic') {
-                        p = new Particle(x, y, 'ion', '#94a3b8', 1);
-                        particles.push(new Particle(x + 10, y + 10, 'electron', '#fbbf24', -1));
-                    } else if (currentTab === 'covalent') {
-                        p = new Particle(x, y, 'atom', '#475569');
-                    } else if (currentTab === 'ionic') {
-                        const isCation = (i + j) % 2 === 0;
-                        const color = isCation ? (currentSpecific === 'NaCl' ? '#ef4444' : '#06b6d4') : '#3b82f6';
-                        p = new Particle(x, y, 'ion', color, isCation ? 1 : -1);
-                    } else if (currentTab === 'molecular') {
-                        const color = currentSpecific === 'CitricAcid' ? '#fde047' : '#a855f7';
-                        p = new Particle(x, y, 'molecule', color);
-                    }
-                    p.shellCount = 0;
-                    particles.push(p);
-                }
+        class Electron {
+            constructor(startX, startY) { 
+                this.x = startX || Math.random() * width;
+                this.y = startY || Math.random() * height;
+                this.vx = (Math.random() - 0.5) * 1.5; 
+                this.vy = (Math.random() - 0.5) * 1.5;
+                this.ke = 0; 
             }
-            updateLegend();
-        }
-
-        function initSolvent() {
-            solventParticles = [];
-            let count = 150;
-            const color = currentSolvent === 'water' ? '#60a5fa' : '#fb923c';
-            for (let i = 0; i < count; i++) {
-                const p = new Particle(Math.random() * canvas.width, Math.random() * (canvas.height - 200), 'solvent', color);
-                p.isFree = true;
-                solventParticles.push(p);
-            }
-            updateLegend();
-        }
-
-        function updateSimulationLogic() {
-            const t = translations[currentLang];
-            let soluble = false; 
-            let reason = "";
-            const sName = currentLang === 'en' 
-                ? (currentSolvent === 'water' ? "water" : "organic solvent")
-                : (currentSolvent === 'water' ? "水" : "有機溶劑");
-            
-            if (currentTab === 'metallic') {
-                reason = currentLang === 'en' 
-                    ? `<strong>Metallic:</strong> The weak attraction between ${sName} and metal ions cannot overcome the strong metallic bonds between metal ions and delocalized electrons.`
-                    : `<strong>金屬結構：</strong> ${sName}與金屬離子之間的微弱吸引力無法克服離子與電子海之間強大的金屬鍵。`;
-            } else if (currentTab === 'covalent') {
-                reason = currentLang === 'en'
-                    ? `<strong>Giant Covalent:</strong> Weak attractive force between atoms and solvent molecules cannot break the strong covalent bonds between atoms in the 3D network lattice.`
-                    : `<strong>巨型共價：</strong> 原子與溶劑分子之間的微弱吸引力無法打破3D網狀晶格中原子之間的強大共價鍵。`;
-            } else if (currentTab === 'ionic') {
-                if (currentSolvent === 'water') {
-                    if (currentSpecific === 'NaCl') {
-                        soluble = true;
-                        reason = currentLang === 'en'
-                            ? `<strong>NaCl in Water:</strong> Strong ion-dipole attractions between water and ions can overcome the strong ionic bond betwen ions.`
-                            : `<strong>食鹽 (NaCl) 在水中：</strong> 水與離子之間強大的離子-偶極吸引力能克服離子之間的強離子鍵。`;
-                    } else {
-                        reason = currentLang === 'en'
-                            ? `<strong>AgCl in Water:</strong> AgCl is insoluble as ionic bonds between its ions are too strong for the weak attractive force(Ion-dipole forces) between water molecules and ions to overcome.`
-                            : `<strong>氯化銀 (AgCl) 在水中：</strong> 氯化銀不能溶於水，因為離子之間的離子鍵太強，離子與水分子間的弱吸引力不能克服。`;
-                    }
-                } else {
-                    reason = currentLang === 'en'
-                        ? `<strong>Ionic in Organic:</strong> Weak attractive force between organic solvents molecules and ions cannot overcome the strong ionic bond between ions.`
-                        : `<strong>離子化合物在有機溶劑中：</strong> 有機溶劑分子與離子之間的弱吸引力不能超越離子間的強大離子鍵。`;
+            update() {
+                if (currentMode === 'conductivity') {
+                    if (isConducting) this.vx += 0.045; 
+                    else { this.vx *= 0.97; this.vy *= 0.97; }
                 }
-            } else if (currentTab === 'molecular') {
-                if (currentSpecific === 'CitricAcid') {
-                    if (currentSolvent === 'water') {
-                        soluble = true;
-                        reason = currentLang === 'en'
-                            ? `<strong>Citric Acid in Water:</strong> This polar molecule forms strong hydrogen bonds with water molecules, facilitating dissolution.`
-                            : `<strong>檸檬酸在水中：</strong> 這種極性分子與水分子形成強大的氫鍵，促進了溶解過程。`;
-                    } else {
-                        reason = currentLang === 'en'
-                            ? `<strong>Citric Acid in Organic:</strong> Citric acid is highly polar. The weak van der Waals forces between the organic solvent molecules and citric acid molecules cannot overcome the strong hydrogen bonds between citric acid molecules.`
-                            : `<strong>檸檬酸在有機溶劑中：</strong> 檸檬酸具有高度極性。有機溶劑與檸檬酸之間微弱的范德華力無法克服檸檬酸分子間的強氫鍵。`;
+                if (currentMode === 'thermal') {
+                    if (isHeating) {
+                        const distToBurner = Math.abs(this.x - burnerPos);
+                        if (distToBurner < (isMobile ? 50 : 70)) this.ke = Math.min(1, this.ke + 0.06);
                     }
-                } else {
-                    if (currentSolvent === 'organic') {
-                        soluble = true;
-                        reason = currentLang === 'en'
-                            ? `<strong>Iodine in Organic:</strong> Non-polar iodine molecules form comparable van der Waals forces with non-polar organic solvent molecules.`
-                            : `<strong>碘在有機溶劑中：</strong> 非極性的碘分子與非極性的有機溶劑分子形成相近的范德華力。`;
-                    } else {
-                        reason = currentLang === 'en'
-                            ? `<strong>Iodine in Water:</strong> Weak van der Waals' forces between non-polar iodine molecule and polar water cannot overcome the strong hydrogen bonds between water molecules.`
-                            : `<strong>碘在水中：</strong> 非極性的碘份子與帶極性的水分子之間的范德華力無法克服水份子之間的氫鍵，`;
+                    this.ke *= 0.9985;
+                    for (let other of electrons) {
+                        if (other === this) continue;
+                        const dx = other.x - this.x; const dy = other.y - this.y;
+                        if (dx*dx + dy*dy < (isMobile ? 800 : 1600)) { 
+                            const diff = (this.ke - other.ke) * 0.18;
+                            this.ke -= diff; other.ke += diff;
+                        }
                     }
-                }
-            }
+                    ions.forEach(ion => {
+                        const dx = this.x - ion.x; const dy = this.y - ion.y;
+                        if (dx*dx + dy*dy < (isMobile ? 300 : 600)) {
+                            ion.temp += (this.ke - ion.temp) * 0.1;
+                        }
+                    });
+                } else this.ke = 0;
 
-            if (soluble) {
-                statusOverlay.textContent = t.status_soluble;
-                statusOverlay.className = "absolute top-4 left-4 bg-green-600 text-white px-3 py-1 rounded-full text-sm font-bold shadow-lg";
-                dissolutionTimer++;
-                if (dissolutionTimer % 40 === 0) { 
-                    const latticePart = particles.find(p => !p.isFree && p.type !== 'electron');
-                    if (latticePart) latticePart.isFree = true;
-                }
-            } else {
-                statusOverlay.textContent = t.status_insoluble;
-                statusOverlay.className = "absolute top-4 left-4 bg-red-600 text-white px-3 py-1 rounded-full text-sm font-bold shadow-lg";
-            }
-            analysisText.innerHTML = reason;
-        }
+                const speedFactor = 1 + this.ke * 6; 
+                this.x += this.vx * speedFactor; this.y += this.vy * speedFactor;
+                if (this.x > width + 10) this.x = -10; if (this.x < -10) this.x = width + 10;
+                if (this.y > height + 10) this.y = -10; if (this.y < -10) this.y = height + 10;
+                this.vx += (Math.random() - 0.5) * 0.15; this.vy += (Math.random() - 0.5) * 0.15;
 
-        function drawLoop() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            ctx.beginPath(); 
-            ctx.strokeStyle = '#e2e8f0'; 
-            ctx.lineWidth = 1;
-            particles.forEach(p1 => {
-                if (p1.isFree && p1.type !== 'electron') return; 
-                if (p1.type === 'electron') return;
-                particles.forEach(p2 => {
-                    if ((p2.isFree && p2.type !== 'electron') || p2.type === 'electron' || p1 === p2) return;
-                    const dist = Math.hypot(p1.x - p2.x, p1.y - p2.y);
-                    if (dist < 50) { 
-                        ctx.moveTo(p1.x, p1.y); 
-                        ctx.lineTo(p2.x, p2.y); 
+                let closest = null, minDistSq = Infinity;
+                ions.forEach(ion => {
+                    const dx = this.x - ion.x; const dy = this.y - ion.y;
+                    const d2 = dx*dx + dy*dy;
+                    if (d2 < minDistSq) { minDistSq = d2; closest = ion; }
+                    const repulseRadius = ION_RADIUS * 0.75;
+                    if (d2 < repulseRadius * repulseRadius) {
+                        const dist = Math.sqrt(d2) || 1;
+                        const force = (repulseRadius - dist) * 0.05;
+                        this.vx += (dx / dist) * force; this.vy += (dy / dist) * force;
                     }
                 });
-            });
-            ctx.stroke();
-
-            solventParticles.forEach(p => { 
-                p.update(canvas, particles, blockBounds); 
-                p.draw(ctx); 
-            });
-
-            particles.forEach(p => { 
-                p.update(canvas, particles, blockBounds); 
-                p.draw(ctx); 
-            });
-
-            if (isSimulating) updateSimulationLogic();
-            
-            animationFrame = requestAnimationFrame(drawLoop);
-        }
-
-        function setTab(tab) {
-            currentTab = tab;
-            document.querySelectorAll('[id^="tab-"]').forEach(el => el.classList.remove('tab-active'));
-            document.getElementById(`tab-${tab}`).classList.add('tab-active');
-            
-            const isSpecial = tab === 'ionic' || tab === 'molecular';
-            document.getElementById('specialOptions').classList.toggle('hidden', !isSpecial);
-            document.getElementById('ionicOptions').classList.toggle('hidden', tab !== 'ionic');
-            document.getElementById('molecularOptions').classList.toggle('hidden', tab !== 'molecular');
-            
-            currentSpecific = (tab === 'ionic') ? 'NaCl' : (tab === 'molecular' ? 'Iodine' : 'default');
-            updateSpecificButtonStyles(); 
-            resetSim();
-        }
-
-        function setSolvent(solvent) {
-            currentSolvent = solvent;
-            document.querySelectorAll('#btn-water, #btn-organic').forEach(el => el.classList.remove('btn-selected'));
-            document.getElementById(`btn-${solvent}`).classList.add('btn-selected');
-            resetSim();
-        }
-
-        function setSpecific(spec) { 
-            currentSpecific = spec; 
-            updateSpecificButtonStyles(); 
-            resetSim(); 
-        }
-
-        function updateSpecificButtonStyles() {
-            document.querySelectorAll('#ionicOptions button, #molecularOptions button').forEach(el => el.classList.remove('btn-selected'));
-            const activeBtn = document.getElementById(`btn-${currentSpecific}`);
-            if (activeBtn) activeBtn.classList.add('btn-selected');
-        }
-
-        function startSimulation() {
-            if (!currentSolvent) {
-                analysisText.innerHTML = `<span class="text-red-500 font-bold">${translations[currentLang].error_solvent}</span>`;
-                return;
+                if (closest && Math.sqrt(minDistSq) > SPACING * 0.85) {
+                    this.vx += (closest.x - this.x) * 0.005; this.vy += (closest.y - this.y) * 0.005;
+                }
+                this.vx *= 0.985; this.vy *= 0.985;
+                const baseMax = isConducting ? 4.5 : 2.8;
+                const maxSpeed = baseMax * speedFactor;
+                const speedSq = this.vx*this.vx + this.vy*this.vy;
+                if (speedSq > maxSpeed*maxSpeed) {
+                    const s = Math.sqrt(speedSq); this.vx = (this.vx/s) * maxSpeed; this.vy = (this.vy/s) * maxSpeed;
+                }
             }
-            if (isSimulating) return;
-            initSolvent(); 
-            isSimulating = true;
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, ELECTRON_RADIUS + (this.ke * (isMobile ? 2 : 3)), 0, Math.PI * 2);
+                if (currentMode === 'thermal') {
+                    const r = 241 + (231 - 241) * this.ke; const g = 196 + (76 - 196) * this.ke; const b = 15 + (60 - 15) * this.ke;
+                    ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+                    if (this.ke > 0.1) {
+                        ctx.shadowBlur = 3 + this.ke * 15; ctx.shadowColor = `rgba(231, 76, 60, ${this.ke})`;
+                    }
+                } else {
+                    ctx.fillStyle = isConducting ? '#ffffff' : '#f1c40f';
+                    if (isConducting) { ctx.shadowBlur = 8; ctx.shadowColor = '#fff'; }
+                }
+                ctx.fill(); ctx.shadowBlur = 0;
+                ctx.fillStyle = '#2c3e50'; ctx.font = `bold ${isMobile ? 7 : 10}px Arial`; 
+                ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('−', this.x, this.y);
+            }
         }
 
-        function resetSim() {
-            isSimulating = false; 
-            dissolutionTimer = 0;
-            const t = translations[currentLang];
-            statusOverlay.textContent = t.status_initial;
-            statusOverlay.className = "absolute top-4 left-4 bg-black/70 text-white px-3 py-1 rounded-full text-sm font-medium";
-            analysisText.innerHTML = `<span class="italic">${t.reset_prompt}</span>`;
-            initSolute();
-            solventParticles = [];
-            updateLegend();
+        let burnerPos = 0;
+
+        function initSim() {
+            ions = []; electrons = [];
+            isConducting = false; isHeating = false; pullCount = 0;
+            const lang = translations[currentLang];
+            condBtn.innerText = lang.voltageOff;
+            condBtn.className = "bg-amber-500 hover:bg-amber-600 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-lg " + (currentMode === 'conductivity' ? 'block' : 'hidden');
+            heatBtn.innerText = lang.heatOff;
+            heatBtn.className = "bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-lg " + (currentMode === 'thermal' ? 'block' : 'hidden');
+            terminals.classList.remove('voltage-on'); canvasWrapper.classList.remove('heating-on');
+
+            const midX = width / 2; const midY = height / 2;
+            let rows, cols;
+            if (currentMode === 'conductivity') {
+                cols = Math.ceil(width / SPACING) + 1; rows = 5;
+                const sy = midY - ((rows - 1) * SPACING) / 2;
+                for (let r = 0; r < rows; r++) {
+                    for (let c = 0; c < cols; c++) ions.push(new Ion(c * SPACING + (r%2 ? SPACING/2 : 0), sy + r * SPACING));
+                }
+            } else if (currentMode === 'malleability' || currentMode === 'thermal') {
+                cols = 8; rows = 4;
+                const sx = midX - ((cols - 1) * SPACING) / 2;
+                const sy = midY - ((rows - 1) * SPACING) / 2;
+                for (let r = 0; r < rows; r++) {
+                    for (let c = 0; c < cols; c++) ions.push(new Ion(sx + c * SPACING, sy + r * SPACING));
+                }
+                if (currentMode === 'thermal') {
+                    burnerPos = sx + SPACING; burner.style.left = `${burnerPos - 50}px`;
+                }
+            } else { 
+                cols = 6; rows = 5; 
+                const sx = midX - ((cols - 1) * SPACING) / 2;
+                const sy = midY - ((rows - 1) * SPACING) / 2;
+                for (let r = 0; r < rows; r++) {
+                    for (let c = 0; c < cols; c++) ions.push(new Ion(sx + c * SPACING, sy + r * SPACING));
+                }
+            }
+            const eCount = ions.length * E_PER_ION;
+            for (let i = 0; i < eCount; i++) {
+                const randomIon = ions[Math.floor(Math.random() * ions.length)];
+                electrons.push(new Electron(randomIon.x + (Math.random()-0.5)*100, randomIon.y + (Math.random()-0.5)*100));
+            }
+            updateDuctilityAssets();
         }
 
-        function resize() { 
-            const container = canvas.parentElement;
-            canvas.width = container.clientWidth; 
-            canvas.height = 400; 
-            initSolute();
+        function updateDuctilityAssets() {
+            if (currentMode !== 'ductility' || ions.length === 0) return;
+            let minX = width, maxX = 0;
+            ions.forEach(ion => { if (ion.x < minX) minX = ion.x; if (ion.x > maxX) maxX = ion.x; });
+            leftAssets.style.left = `${minX - 50}px`; rightAssets.style.left = `${maxX - 20}px`;
         }
 
-        window.onload = () => {
-            window.addEventListener('resize', resize);
-            resize();
-            setTab('metallic');
-            updateUI(); // Set language strings
-            drawLoop();
+        function hammer(mx, my) {
+            if (currentMode !== 'malleability') return;
+            playClingSound();
+            feedback.innerText = translations[currentLang].clang;
+            feedback.style.opacity = '1';
+            setTimeout(() => feedback.style.opacity = '0', 500);
+            ions.forEach(ion => {
+                const dx = ion.x - mx, dy = ion.y - my;
+                const d = Math.sqrt(dx*dx + dy*dy);
+                const hammerRadius = isMobile ? 70 : 100;
+                if (d < hammerRadius) {
+                    const f = (hammerRadius - d) / 20;
+                    ion.vx += (dx / d) * f; ion.vy += (dy / d) * f;
+                }
+            });
+        }
+
+        function pull() {
+            if (currentMode !== 'ductility') return;
+            pullCount++; canvasWrapper.classList.add('pulling');
+            setTimeout(() => canvasWrapper.classList.remove('pulling'), 200);
+            ions.forEach(ion => ion.vx += (ion.x < width/2 ? -0.7 : 0.7));
+        }
+
+        function toggleVoltage() {
+            isConducting = !isConducting;
+            const lang = translations[currentLang];
+            if (isConducting) {
+                condBtn.innerText = lang.voltageOn; condBtn.classList.replace('bg-amber-500', 'bg-green-600'); terminals.classList.add('voltage-on');
+            } else {
+                condBtn.innerText = lang.voltageOff; condBtn.classList.replace('bg-green-600', 'bg-amber-500'); terminals.classList.remove('voltage-on');
+            }
+        }
+
+        function toggleHeat() {
+            isHeating = !isHeating;
+            const lang = translations[currentLang];
+            if (isHeating) {
+                heatBtn.innerText = lang.heatOn; heatBtn.classList.replace('bg-orange-600', 'bg-red-600'); canvasWrapper.classList.add('heating-on');
+            } else {
+                heatBtn.innerText = lang.heatOff; heatBtn.classList.replace('bg-red-600', 'bg-orange-600'); canvasWrapper.classList.remove('heating-on');
+            }
+        }
+
+        // Global function to update UI elements based on current tab and language
+        function updateUI() {
+            const lang = translations[currentLang];
+            mainTitle.innerText = lang.title;
+            langText.innerText = lang.nextLang;
+            resetBtn.innerText = lang.reset; actionBtn.innerText = lang.pull;
+            tabMall.innerText = lang.tabs[0]; tabDuct.innerText = lang.tabs[1];
+            tabCond.innerText = lang.tabs[2]; tabThermal.innerText = lang.tabs[3];
+            const modeData = lang.modes[currentMode];
+            panelTitle.innerText = modeData.title;
+            panelList.innerHTML = modeData.list.map(item => `<li>${item}</li>`).join('');
+            if (isConducting) condBtn.innerText = lang.voltageOn; else condBtn.innerText = lang.voltageOff;
+            if (isHeating) heatBtn.innerText = lang.heatOn; else heatBtn.innerText = lang.heatOff;
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, width, height);
+            for(let i=0; i<2; i++) ions.forEach(ion => ion.update());
+            if (currentMode === 'ductility') updateDuctilityAssets();
+            ions.forEach(ion => {
+                const glowRadius = ION_RADIUS * 2.8;
+                const g = ctx.createRadialGradient(ion.x, ion.y, 0, ion.x, ion.y, glowRadius);
+                g.addColorStop(0, `rgba(52, 152, 219, ${currentMode === 'thermal' ? 0.15 + ion.temp * 0.1 : 0.15})`);
+                g.addColorStop(1, 'transparent');
+                ctx.fillStyle = g; ctx.beginPath(); ctx.arc(ion.x, ion.y, glowRadius, 0, Math.PI*2); ctx.fill();
+            });
+            electrons.forEach(e => { e.update(); e.draw(); });
+            ions.forEach(ion => ion.draw());
+            requestAnimationFrame(animate);
+        }
+
+        function setMode(mode) {
+            currentMode = mode;
+            [tabMall, tabDuct, tabCond, tabThermal].forEach(t => {
+                t.className = "px-4 md:px-6 py-2 font-bold border-b-4 border-transparent text-slate-400 hover:text-slate-600 transition-all text-sm md:text-base";
+            });
+            actionBtn.classList.add('hidden'); condBtn.classList.add('hidden'); heatBtn.classList.add('hidden');
+            terminals.classList.add('hidden'); terminals.classList.remove('voltage-on'); terminals.style.opacity = '0';
+            canvas.classList.remove('hammer-cursor'); leftAssets.style.opacity = '0'; rightAssets.style.opacity = '0';
+            canvasWrapper.classList.remove('heating-on');
+
+            if (mode === 'malleability') {
+                tabMall.className = "px-4 md:px-6 py-2 font-bold border-b-4 border-blue-600 text-blue-600 transition-all text-sm md:text-base";
+                canvas.classList.add('hammer-cursor');
+            } else if (mode === 'ductility') {
+                tabDuct.className = "px-4 md:px-6 py-2 font-bold border-b-4 border-blue-600 text-blue-600 transition-all text-sm md:text-base";
+                actionBtn.classList.remove('hidden'); leftAssets.style.opacity = '1'; rightAssets.style.opacity = '1';
+            } else if (mode === 'conductivity') {
+                tabCond.className = "px-4 md:px-6 py-2 font-bold border-b-4 border-blue-600 text-blue-600 transition-all text-sm md:text-base";
+                condBtn.classList.remove('hidden'); terminals.classList.remove('hidden'); terminals.style.opacity = '1';
+            } else if (mode === 'thermal') {
+                tabThermal.className = "px-4 md:px-6 py-2 font-bold border-b-4 border-blue-600 text-blue-600 transition-all text-sm md:text-base";
+                heatBtn.classList.remove('hidden');
+            }
+            updateUI(); initSim();
+        }
+
+        langToggle.onclick = () => {
+            currentLang = currentLang === 'en' ? 'zh' : 'en';
+            updateUI();
         };
+        canvas.addEventListener('mousedown', (e) => {
+            const rect = canvas.getBoundingClientRect(); hammer(e.clientX - rect.left, e.clientY - rect.top);
+        });
+        canvas.addEventListener('touchstart', (e) => {
+            if (currentMode !== 'malleability') return;
+            const rect = canvas.getBoundingClientRect(); const touch = e.touches[0];
+            hammer(touch.clientX - rect.left, touch.clientY - rect.top);
+        }, { passive: true });
+        
+        tabMall.onclick = () => setMode('malleability');
+        tabDuct.onclick = () => setMode('ductility');
+        tabCond.onclick = () => setMode('conductivity');
+        tabThermal.onclick = () => setMode('thermal');
+        actionBtn.onclick = pull; condBtn.onclick = toggleVoltage; heatBtn.onclick = toggleHeat; resetBtn.onclick = initSim;
+
+        window.onload = function () {
+            width = canvas.parentElement.clientWidth; height = 400; 
+            canvas.width = width; canvas.height = height;
+            setMode('malleability'); animate();
+        };
+
+        // Fix: Guard the resize event so that height-only changes (like mobile address bars toggling during scroll) do not trigger initSim()
+        window.addEventListener('resize', () => {
+            const newWidth = canvas.parentElement.clientWidth;
+            if (newWidth !== width) {
+                width = newWidth;
+                canvas.width = width;
+                initSim();
+            }
+        });
     </script>
 </body>
 </html>
