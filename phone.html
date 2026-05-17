@@ -525,14 +525,25 @@
 
         function hammer(mx, my) {
             if (currentMode !== 'malleability') return;
+            const hammerRadius = isMobile ? 70 : 100;
+            
+            // Check if any metal ion is close enough to be hit by the hammer
+            const hasHitIon = ions.some(ion => {
+                const dx = ion.x - mx, dy = ion.y - my;
+                return Math.sqrt(dx*dx + dy*dy) < hammerRadius;
+            });
+
+            // If no ions are within range, do not trigger sound or feedback
+            if (!hasHitIon) return;
+
             playClingSound();
             feedback.innerText = translations[currentLang].clang;
             feedback.style.opacity = '1';
             setTimeout(() => feedback.style.opacity = '0', 500);
+
             ions.forEach(ion => {
                 const dx = ion.x - mx, dy = ion.y - my;
                 const d = Math.sqrt(dx*dx + dy*dy);
-                const hammerRadius = isMobile ? 70 : 100;
                 if (d < hammerRadius) {
                     const f = (hammerRadius - d) / 20;
                     ion.vx += (dx / d) * f; ion.vy += (dy / d) * f;

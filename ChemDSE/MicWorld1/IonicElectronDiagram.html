@@ -19,21 +19,37 @@
         }
         
         @media (max-width: 640px) {
-            .diagram-container { transform: scale(0.75); margin: -40px 0; }
-            .ion-box { gap: 5px; }
+            .diagram-container { gap: 10px; min-height: 240px; }
+            .ion-box { gap: 4px; }
         }
 
-        .bracket { border-top: 2px solid black; border-bottom: 2px solid black; width: 15px; height: 160px; opacity: 0; transition: all 0.5s ease; flex-shrink: 0; }
+        .bracket { border-top: 2px solid black; border-bottom: 2px solid black; width: 15px; height: 150px; opacity: 0; transition: all 0.5s ease; flex-shrink: 0; }
         .bracket.visible { opacity: 1; }
         .bracket-left { border-left: 2px solid black; border-radius: 10px 0 0 10px; }
         .bracket-right { border-right: 2px solid black; border-radius: 0 10px 10px 0; }
         
-        .ion-box { display: flex; align-items: center; position: relative; }
+        @media (max-width: 640px) {
+            .bracket { height: 110px; width: 10px; border-top-width: 1.5px; border-bottom-width: 1.5px; }
+            .bracket-left { border-left-width: 1.5px; border-radius: 6px 0 0 6px; }
+            .bracket-right { border-right-width: 1.5px; border-radius: 0 6px 6px 0; }
+        }
+
+        .ion-box { display: flex; align-items: center; position: relative; margin-right: 24px; }
+        @media (max-width: 640px) {
+            .ion-box { margin-right: 16px; }
+        }
+
         .ion-charge { position: absolute; top: -10px; right: -20px; font-weight: bold; font-size: 1.2rem; white-space: nowrap; opacity: 0; transition: opacity 0.5s ease; }
         .ion-charge.visible { opacity: 1; }
+        @media (max-width: 640px) {
+            .ion-charge { font-size: 0.95rem; right: -14px; top: -8px; }
+        }
         
         .ion-count { font-size: 1.6rem; margin-right: 8px; font-weight: bold; opacity: 0; transform: translateX(-10px); transition: all 0.5s ease; position: relative; }
         .ion-count.visible { opacity: 1; transform: translateX(0); }
+        @media (max-width: 640px) {
+            .ion-count { font-size: 1.15rem; margin-right: 4px; }
+        }
         
         .flying-number {
             position: fixed;
@@ -215,7 +231,7 @@
                         <span id="anim-guidance" data-t="initDiagram">Initializing diagram...</span>
                     </div>
 
-                    <div class="bg-white border-2 border-slate-100 rounded-2xl mb-8 overflow-hidden py-10 relative">
+                    <div class="bg-white border-2 border-slate-100 rounded-2xl mb-8 overflow-visible py-10 relative">
                          <div id="final-canvas" class="diagram-container"></div>
                     </div>
 
@@ -468,14 +484,14 @@
             const bL = document.createElement('div'); bL.className = "bracket bracket-left";
             const bR = document.createElement('div'); bR.className = "bracket bracket-right";
             const content = document.createElement('div');
-            content.className = "px-4 py-8 flex items-center justify-center min-w-[100px]";
+            content.className = "px-2 py-4 sm:px-4 sm:py-8 flex items-center justify-center min-w-[70px] sm:min-w-[100px]";
             if (isMetal) {
-                content.innerHTML = `<span class="text-3xl font-bold chem-eqn">${symbol}</span>`;
+                content.innerHTML = `<span class="text-2xl sm:text-3xl font-bold chem-eqn">${symbol}</span>`;
             } else {
                 const shell = document.createElement('div');
-                shell.className = "shell-circle w-28 h-28";
+                shell.className = "shell-circle w-20 h-20 sm:w-28 sm:h-28";
                 shell.id = "nm-shell-visual";
-                shell.innerHTML = `<span class="text-2xl font-bold chem-eqn">${symbol}</span>`;
+                shell.innerHTML = `<span class="text-xl sm:text-2xl font-bold chem-eqn">${symbol}</span>`;
                 const pairAngles = [260, 280, 350, 10, 80, 100, 170, 190];
                 for(let i=0; i<8; i++) {
                     const angle = pairAngles[i];
@@ -483,8 +499,8 @@
                     const e = document.createElement('div');
                     e.className = `electron e-idx-${i}`;
                     e.style.cssText = `position:absolute; left:${50+50*Math.cos(rad)}%; top:${50+50*Math.sin(rad)}%; transform:translate(-50%,-50%);`;
-                    if (i < currentCompound.nmVal) { e.innerHTML = '<span style="font-weight:900; font-size: 1rem;">×</span>'; e.classList.add('e-cross'); } 
-                    else { e.innerHTML = '<div style="width:8px; height:8px; background:black; border-radius:50%;"></div>'; e.classList.add('e-dot'); }
+                    if (i < currentCompound.nmVal) { e.innerHTML = '<span class="font-extrabold text-sm sm:text-lg">×</span>'; e.classList.add('e-cross'); } 
+                    else { e.innerHTML = '<div class="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-black rounded-full"></div>'; e.classList.add('e-dot'); }
                     shell.appendChild(e);
                 }
                 content.appendChild(shell);
