@@ -523,7 +523,7 @@
                     } else {
                         reason = currentLang === 'en'
                             ? `<strong>AgCl in Water:</strong> AgCl is insoluble as ionic bonds between its ions are too strong for the weak attractive force(Ion-dipole forces) between water molecules and ions to overcome.`
-                            : `<strong>氯化銀 (AgCl) 在水中：</strong> 氯化銀不能溶於水，因為離子之間的離子鍵太強，離子與水分子間的弱吸引力不能克服。`;
+                            : `<strong>氯化銀 (AgCl) 在水中：</strong> 氯化銀不能溶於水，邊因為離子之間的離子鍵太強，離子與水分子間的弱吸引力不能克服。`;
                     }
                 } else {
                     reason = currentLang === 'en'
@@ -662,9 +662,14 @@
             updateLegend();
         }
 
+        let lastWidth = 0;
         function resize() { 
             const container = canvas.parentElement;
-            canvas.width = container.clientWidth; 
+            const newWidth = container.clientWidth;
+            // Only re-initialize if the width actually changes (prevents mobile vertical scroll reset)
+            if (newWidth === lastWidth) return;
+            lastWidth = newWidth;
+            canvas.width = newWidth; 
             canvas.height = 400; 
             initSolute();
         }
