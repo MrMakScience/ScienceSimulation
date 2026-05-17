@@ -18,10 +18,11 @@
             box-shadow: 0 10px 25px rgba(0,0,0,0.3);
             width: 100%;
             height: 400px;
-            touch-action: none;
+            /* Allow vertical scrolling/panning over the canvas on mobile devices */
+            touch-action: pan-y;
         }
         .hammer-cursor {
-            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 12-8.5 8.5c-.83.83-2.17.83-3 0 0 0 0 0 0 0-.83-.83-.83-2.17 0-3L12 9"/><path d="M17.64 15 22 10.64"/><path d="m20.91 11.7-1.25-1.25c-.6-.6-.9-1.4-.8-2.22l.1-1.49c.04-.62-.34-1.18-.93-1.34l-1.47-.4c-.8-.22-1.48-.73-1.9-1.41L13.89 2.3c-.32-.54-.96-.83-1.57-.7l-1.5.31c-.81.17-1.65-.03-2.31-.56L7.33.3c-.47-.38-1.14-.42-1.65-.11L4.35 1.12c-.52.31-.76.92-.58 1.5l.46 1.45c.25.79.2 1.65-.14 2.4l-.62 1.38c-.26.58-.15 1.25.29 1.71l1.06 1.1c.58.6.93 1.39.99 2.22l.1 1.49c.04.62.34-1.18.93-1.34l1.47.4c.8.22-1.48.73-1.9 1.41l.78 1.29c.32.54.96.83-1.57.7l1.5-.31c.81-.17-1.65.03-2.31.56l1.18 1.05c.47.38-1.14.42-1.65.11l1.33-.82c.52-.31.76-.92.58-1.5l-.46-1.45c-.25-.79-.2 1.65.14-2.4l.62-1.38c.26-.58.15-1.25-.29-1.71l-1.06-1.1Z"/></svg>') 16 16, auto;
+            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 12-8.5 8.5c-.83.83-2.17.83-3 0 0 0 0 0 0 0-.83-.83-.83-2.17 0-3L12 9"/><path d="M17.64 15 22 10.64"/><path d="m20.91 11.7-1.25-1.25c-.6-.6-.9-1.4-.8-2.22l.1-1.49c.04-.62-.34-1.18-.93-1.34l-1.47-.4c-.8-.22-1.48-.73-1.9-1.41L13.89 2.3c-.32-.54-.96-.83-1.57-.7l-1.5.31c-.81.17-1.65-.03-2.31-.56L7.33.3c-.47-.38-1.14-.42-1.65-.11L4.35 1.12c-.52.31-.76.92-.58 1.5l.46 1.45c.25.79.2 1.65-.14 2.4l-.62 1.38c-.26.58-.15 1.25.29 1.71l1.06 1.1c.58.6.93 1.39.99 2.22l.1 1.49c.04.62.34-1.18.93-1.34l-1.47.4c.8.22-1.48.73-1.9 1.41l.78 1.29c.32.54.96.83-1.57.7l1.5-.31c.81-.17-1.65.03-2.31.56l1.18 1.05c.47.38-1.14.42-1.65.11l1.33-.82c.52-.31.76-.92.58-1.5l-.46-1.45c-.25-.79-.2 1.65.14-2.4l.62-1.38c.26-.58.15-1.25-.29-1.71l-1.06-1.1Z"/></svg>') 16 16, auto;
         }
         .hand-container {
             pointer-events: none;
@@ -207,6 +208,7 @@
                             "The sea of delocalized electrons moves and forms metallic bond again in the new shape."
                         ]
                     },
+                    grid: {}, // placeholder if needed
                     ductility: {
                         title: "Ductility Simulation",
                         list: [
@@ -258,7 +260,7 @@
                         list: [
                             "<strong>點擊「拉伸金屬」</strong> 按鈕。",
                             "觀察金屬晶格如何變細並形成絲狀。",
-                            "自由電子隨着移動的晶格分佈。"
+                            "自由電子隨着移動的晶格分佈 brush。"
                         ]
                     },
                     conductivity: {
@@ -523,14 +525,25 @@
 
         function hammer(mx, my) {
             if (currentMode !== 'malleability') return;
+            const hammerRadius = isMobile ? 70 : 100;
+            
+            // Check if any metal ion is close enough to be hit by the hammer
+            const hasHitIon = ions.some(ion => {
+                const dx = ion.x - mx, dy = ion.y - my;
+                return Math.sqrt(dx*dx + dy*dy) < hammerRadius;
+            });
+
+            // If no ions are within range, do not trigger sound or feedback
+            if (!hasHitIon) return;
+
             playClingSound();
             feedback.innerText = translations[currentLang].clang;
             feedback.style.opacity = '1';
             setTimeout(() => feedback.style.opacity = '0', 500);
+
             ions.forEach(ion => {
                 const dx = ion.x - mx, dy = ion.y - my;
                 const d = Math.sqrt(dx*dx + dy*dy);
-                const hammerRadius = isMobile ? 70 : 100;
                 if (d < hammerRadius) {
                     const f = (hammerRadius - d) / 20;
                     ion.vx += (dx / d) * f; ion.vy += (dy / d) * f;
@@ -565,6 +578,7 @@
             }
         }
 
+        // Global function to update UI elements based on current tab and language
         function updateUI() {
             const lang = translations[currentLang];
             mainTitle.innerText = lang.title;
@@ -645,8 +659,14 @@
             canvas.width = width; canvas.height = height;
             setMode('malleability'); animate();
         };
+
         window.addEventListener('resize', () => {
-            width = canvas.parentElement.clientWidth; canvas.width = width; initSim();
+            const newWidth = canvas.parentElement.clientWidth;
+            if (newWidth !== width) {
+                width = newWidth;
+                canvas.width = width;
+                initSim();
+            }
         });
     </script>
 </body>
