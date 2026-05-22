@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>3D VSEPR Molecular Geometry Simulator</title>
+    <!-- Tailwind CSS for modern design -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Three.js for 3D graphics -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        /* Custom styles to prevent layout breakages and give a premium feel */
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #0b0f19;
+            color: #f3f4f6;
+            overflow-x: hidden;
+        }
+        .glassmorphism {
+            background: rgba(17, 24, 39, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        /* Custom scrollbar for control panel */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(11, 15, 25, 0.5);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(59, 130, 246, 0.5);
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(59, 130, 246, 0.8);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Header Navigation -->
+    <header class="glassmorphism sticky top-0 z-50 px-6 py-4 flex items-center justify-between border-b border-gray-800">
+        <div class="flex items-center space-x-3">
+            <div class="bg-blue-600 p-2 rounded-lg text-white">
+                <i class="fa-solid fa-atom text-xl animate-spin" style="animation-duration: 6s;"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">VSEPR 3D</h1>
+                <p class="text-xs text-gray-400">Molecular Geometry & Electron Pair Simulator</p>
+            </div>
+        </div>
+        <div class="flex items-center space-x-4">
+            <button id="resetCameraBtn" class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-200 text-xs font-semibold rounded-lg transition duration-200 flex items-center gap-1.5">
+                <i class="fa-solid fa-arrows-rotate"></i> Reset View
+            </button>
+            <span class="text-xs text-gray-400 hidden sm:inline-block">Drag to Rotate | Scroll to Zoom</span>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
+        
+        <!-- Left Side: Canvas Simulation -->
+        <div class="flex-1 relative min-h-[50vh] lg:min-h-0 bg-[#090d16] flex flex-col">
+            <!-- 3D Canvas Element with touch-none for flawless iPad/iPhone drag -->
+            <div id="canvas-container" class="w-full flex-1 relative cursor-grab active:cursor-grabbing touch-none">
+                <!-- Visual Indicators Floating on Canvas -->
+                <div class="absolute top-4 left-4 z-10 space-y-2 pointer-events-none">
+                    <div class="bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/5 text-xs">
+                        <span class="inline-block w-2.5 h-2.5 rounded-full bg-indigo-500 mr-2"></span>Central Atom (A)
+                    </div>
+                    <div class="bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/5 text-xs">
+                        <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 mr-2"></span>Bonding Atom (X)
+                    </div>
+                    <div class="bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/5 text-xs">
+                        <span class="inline-block w-2.5 h-2.5 rounded-full bg-amber-500/60 mr-2 border border-dashed border-amber-300"></span>Lone Pair (E)
+                    </div>
+                </div>
+
+                <div id="loadingIndicator" class="absolute inset-0 flex items-center justify-center bg-[#090d16] z-20 transition-opacity duration-300 pointer-events-none">
+                    <div class="text-center">
+                        <i class="fa-solid fa-circle-notch fa-spin text-4xl text-blue-500 mb-4"></i>
+                        <p class="text-gray-400 text-sm">Rendering molecular structure...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom Dashboard Quick HUD -->
+            <div class="glassmorphism border-t border-gray-800 p-4 grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+                <div class="p-2 bg-gray-900/40 rounded-xl border border-gray-800/60">
+                    <div class="text-xs text-gray-400">Electron Pair Geometry</div>
+                    <div id="hud-steric" class="text-lg font-bold text-blue-400">-</div>
+                </div>
+                <div class="p-2 bg-gray-900/40 rounded-xl border border-gray-800/60">
+                    <div class="text-xs text-gray-400">Bonding Pairs</div>
+                    <div id="hud-bonding" class="text-lg font-bold text-emerald-400">-</div>
+                </div>
+                <div class="p-2 bg-gray-900/40 rounded-xl border border-gray-800/60">
+                    <div class="text-xs text-gray-400">Lone Pairs</div>
+                    <div id="hud-lone" class="text-lg font-bold text-amber-400">-</div>
+                </div>
+                <div class="p-2 bg-gray-900/40 rounded-xl border border-gray-800/60">
+                    <div class="text-xs text-gray-400">Ideal Bond Angle</div>
+                    <div id="hud-angle" class="text-lg font-bold text-indigo-400">-</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Side: Interactive Controls and Informational Sidebar -->
+        <aside class="w-full lg:w-[450px] bg-[#111625]/90 border-t lg:border-t-0 lg:border-l border-gray-800 flex flex-col h-auto lg:h-[calc(100vh-73px)] overflow-y-auto">
+            
+            <!-- STEP 1: Steric selection (1-6) -->
+            <div class="p-6 border-b border-gray-800/60">
+                <h2 class="text-xs font-semibold text-blue-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                    <span class="w-1.5 h-1.5 bg-blue-400 rounded-full"></span> Select Electron Pairs (Electron Pair Geometry)
+                </h2>
+                <div class="grid grid-cols-6 gap-2">
+                    <!-- Buttons for Steric number 1 to 6 -->
+                    <button onclick="setSteric(1)" id="btn-s1" class="steric-btn py-3 bg-gray-800/40 hover:bg-gray-800 border border-gray-700/50 rounded-xl font-bold text-sm transition-all duration-200 hover:scale-[1.03]">1</button>
+                    <button onclick="setSteric(2)" id="btn-s2" class="steric-btn py-3 bg-gray-800/40 hover:bg-gray-800 border border-gray-700/50 rounded-xl font-bold text-sm transition-all duration-200 hover:scale-[1.03]">2</button>
+                    <button onclick="setSteric(3)" id="btn-s3" class="steric-btn py-3 bg-gray-800/40 hover:bg-gray-800 border border-gray-700/50 rounded-xl font-bold text-sm transition-all duration-200 hover:scale-[1.03]">3</button>
+                    <button onclick="setSteric(4)" id="btn-s4" class="steric-btn py-3 bg-gray-800/40 hover:bg-gray-800 border border-gray-700/50 rounded-xl font-bold text-sm transition-all duration-200 hover:scale-[1.03]">4</button>
+                    <button onclick="setSteric(5)" id="btn-s5" class="steric-btn py-3 bg-gray-800/40 hover:bg-gray-800 border border-gray-700/50 rounded-xl font-bold text-sm transition-all duration-200 hover:scale-[1.03]">5</button>
+                    <button onclick="setSteric(6)" id="btn-s6" class="steric-btn py-3 bg-gray-800/40 hover:bg-gray-800 border border-gray-700/50 rounded-xl font-bold text-sm transition-all duration-200 hover:scale-[1.03]">6</button>
+                </div>
+            </div>
+
+            <!-- STEP 2: Lone Pairs toggle/selector -->
+            <div class="p-6 border-b border-gray-800/60 bg-gray-900/20">
+                <div class="flex items-center justify-between mb-3">
+                    <h2 class="text-xs font-semibold text-amber-400 uppercase tracking-widest flex items-center gap-2">
+                        <span class="w-1.5 h-1.5 bg-amber-400 rounded-full"></span> Set Lone Pairs (E)
+                    </h2>
+                    <span id="lonepair-constraint-info" class="text-[10px] text-gray-400 italic">Tetrahedral variants available</span>
+                </div>
+                
+                <!-- Dynamic Lone Pair Selection Buttons -->
+                <div id="lonepair-container" class="grid grid-cols-4 gap-2">
+                    <!-- Dynamically populated -->
+                </div>
+            </div>
+
+            <!-- Visual & Educational Settings -->
+            <div class="px-6 py-4 border-b border-gray-800/60 bg-gray-900/40 space-y-3">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs text-gray-300 font-medium">Show Lone Pair Lobes:</span>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="toggleLobes" checked class="sr-only peer">
+                        <div class="w-11 h-6 bg-gray-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-gray-300 after:border-gray-300 after:border after:rounded-full after:h-5 after:width-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                </div>
+                <div class="flex items-center justify-between pt-2 border-t border-gray-800/40">
+                    <span class="text-xs text-gray-300 font-medium flex items-center gap-1.5">
+                        Show Shape Planes (Vertices):
+                        <span class="text-[9px] bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 px-1 rounded font-bold uppercase tracking-wide">Planes</span>
+                    </span>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="togglePlanes" checked class="sr-only peer">
+                        <div class="w-11 h-6 bg-gray-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-gray-300 after:border-gray-300 after:border after:rounded-full after:h-5 after:width-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Information Panel (Calculated state representation) -->
+            <div class="flex-1 p-6 space-y-6">
+                <!-- Molecule Name Banner -->
+                <div>
+                    <span id="vsepr-class-badge" class="px-2.5 py-1 text-[10px] font-bold uppercase rounded-md tracking-wider bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                        AX4E2
+                    </span>
+                    <h3 id="mol-name" class="text-2xl font-black text-white mt-2 mb-1">Square Planar</h3>
+                    <p id="mol-structure-type" class="text-xs text-gray-400 flex items-center gap-1.5">
+                        <i class="fa-solid fa-shapes"></i> Electron-pair geometry: <strong class="text-gray-300" id="el-geometry">-</strong>
+                    </p>
+                </div>
+
+                <!-- Description Block -->
+                <div class="p-4 bg-gray-900/40 rounded-xl border border-gray-800/60">
+                    <h4 class="text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">Theoretical Explanation</h4>
+                    <p id="mol-desc" class="text-sm text-gray-300 leading-relaxed">
+                        Loading VSEPR profile description...
+                    </p>
+                </div>
+
+                <!-- Examples & Practical Application -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="p-3.5 bg-gray-900/30 rounded-xl border border-gray-800/40">
+                        <span class="text-[10px] uppercase font-semibold text-gray-400 block mb-1">Key Examples</span>
+                        <div id="mol-examples" class="text-base font-bold text-indigo-300">-</div>
+                    </div>
+                    <div class="p-3.5 bg-gray-900/30 rounded-xl border border-gray-800/40">
+                        <span class="text-[10px] uppercase font-semibold text-gray-400 block mb-1">Hybridization</span>
+                        <div id="mol-hybrid" class="text-base font-bold text-teal-400">-</div>
+                    </div>
+                </div>
+
+                <!-- VSEPR Rules Reference -->
+                <div class="p-4 bg-blue-950/20 rounded-xl border border-blue-900/30">
+                    <h5 class="text-xs font-bold text-blue-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                        <i class="fa-solid fa-circle-info"></i> VSEPR Quick Facts
+                    </h5>
+                    <ul class="text-xs text-gray-400 space-y-1.5 list-disc pl-4">
+                        <li>Lone pairs exert more repulsive force than bonding pairs.</li>
+                        <li>Repulsion order: Lone Pair-Lone Pair &gt; Lone Pair-Bonding Pair &gt; Bonding Pair-Bonding Pair.</li>
+                        <li>Lone pairs demand larger spatial angles, pushing bonds closer together.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <footer class="p-4 border-t border-gray-800/60 bg-gray-950 text-center text-[11px] text-gray-500">
+                Interactive Molecular Model Simulator &copy; 2026. Powered by VSEPR Theory.
+            </footer>
+        </aside>
+    </div>
+
+    <!-- Webgl fallback and error banner if needed -->
+    <div id="alert-banner" class="fixed bottom-4 left-4 z-50 max-w-sm bg-red-950/80 border border-red-800 text-red-200 p-4 rounded-xl hidden shadow-2xl backdrop-blur-md">
+        <div class="flex items-start gap-3">
+            <i class="fa-solid fa-triangle-exclamation text-xl text-red-400 mt-0.5"></i>
+            <div>
+                <h4 class="font-bold text-sm">System Alert</h4>
+                <p id="alert-msg" class="text-xs text-red-300 mt-1"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main JavaScript Logic -->
+    <script>
+        // VSEPR Database containing 1 to 6 electron pair cases.
+        // Trigonal planar (3) and tetrahedral (4) have lone pair options.
+        // Faces arrays define indices of bonding atoms (0 to bonding-1) to construct outer polyhedrals.
+        const VSEPR_DATABASE = {
+            // --- STERIC 1 ---
+            "1-0": {
+                name: "Linear (Diatomic)",
+                vseprClass: "AX",
+                electronGeometry: "Linear",
+                description: "With only one bonding pair, the molecule must be linear. VSEPR repulsion rules are trivial here, as there's only one orientation possible between two points.",
+                angle: "180°",
+                examples: "H₂, HF, CO (Diatomics)",
+                hybridization: "Unspecified/s",
+                geometryType: "linear",
+                steric: 1,
+                bonding: 1,
+                lone: 0,
+                vectors: [[0, 0, 1.3]], // Linear on Z-axis
+                faces: []
+            },
+
+            // --- STERIC 2 ---
+            "2-0": {
+                name: "Linear",
+                vseprClass: "AX₂",
+                electronGeometry: "Linear",
+                description: "Two bonding domains are maximized in distance when separated by 180 degrees. This creates a perfectly straight arrangement with no lone pair distortion.",
+                angle: "180°",
+                examples: "CO₂, BeCl₂, HCN",
+                hybridization: "sp",
+                geometryType: "linear",
+                steric: 2,
+                bonding: 2,
+                lone: 0,
+                vectors: [[0, 0, 1.4], [0, 0, -1.4]],
+                faces: []
+            },
+
+            // --- STERIC 3 ---
+            "3-0": {
+                name: "Trigonal Planar",
+                vseprClass: "AX₃",
+                electronGeometry: "Trigonal Planar",
+                description: "Three electron domains organize themselves flat on a single plane pointing to the vertices of an equilateral triangle, minimizing electrostatic repulsion.",
+                angle: "120°",
+                examples: "BF₃, SO₃, NO₃⁻",
+                hybridization: "sp²",
+                geometryType: "trigonal_planar",
+                steric: 3,
+                bonding: 3,
+                lone: 0,
+                vectors: [
+                    [0, 1.4, 0],
+                    [-1.21, -0.7, 0],
+                    [1.21, -0.7, 0]
+                ],
+                faces: [[0, 1, 2]] // Single planar triangle
+            },
+            "3-1": {
+                name: "Bent / V-Shaped (Trigonal Planar Base)",
+                vseprClass: "AX₂E",
+                electronGeometry: "Trigonal Planar",
+                description: "Formed when one of the three electron domains in a trigonal planar arrangement is occupied by a non-bonding lone pair. The lone pair pushes the two bonding pairs closer together, compressing the angle to slightly below 120°.",
+                angle: "~117°",
+                examples: "SO₂, O₃, PbCl₂",
+                hybridization: "sp²",
+                geometryType: "bent_trigonal_planar",
+                steric: 3,
+                bonding: 2,
+                lone: 1,
+                vectors: [
+                    // Bonding atoms
+                    [-1.21, -0.7, 0],
+                    [1.21, -0.7, 0],
+                    // Lone pair vector at top
+                    [0, 1.4, 0]
+                ],
+                faces: [] // Under 3 outer atoms, no face
+            },
+
+            // --- STERIC 4 (Tetrahedral Base) ---
+            "4-0": {
+                name: "Tetrahedral",
+                vseprClass: "AX₄",
+                electronGeometry: "Tetrahedral",
+                description: "Four bonding electron domains extend to the corners of a three-dimensional regular tetrahedron, maximizing space. This allows a greater angle (109.5°) than a flat square (90°). Connecting the vertices generates a perfect 4-faced solid (tetrahedron).",
+                angle: "109.5°",
+                examples: "CH₄, SiF₄, NH₄⁺",
+                hybridization: "sp³",
+                geometryType: "tetrahedral",
+                steric: 4,
+                bonding: 4,
+                lone: 0,
+                vectors: [
+                    [0, 1.4, 0],
+                    [1.32, -0.47, 0],
+                    [-0.66, -0.47, 1.14],
+                    [-0.66, -0.47, -1.14]
+                ],
+                faces: [
+                    [0, 1, 2],
+                    [0, 2, 3],
+                    [0, 3, 1],
+                    [1, 3, 2]
+                ] // Complete 4-faced tetrahedron!
+            },
+            "4-1": {
+                name: "Trigonal Pyramidal",
+                vseprClass: "AX₃E",
+                electronGeometry: "Tetrahedral",
+                description: "Formed by removing one vertex of a tetrahedral electron-pair geometry. The non-bonding lone pair sits at the top vertex, exerting higher pressure. Connecting the 3 outer bonding atoms and the central blue atom creates a complete, 3D trigonal pyramid.",
+                angle: "~107°",
+                examples: "NH₃, PH₃, H₃O⁺",
+                hybridization: "sp³",
+                geometryType: "trigonal_pyramidal",
+                steric: 4,
+                bonding: 3,
+                lone: 1,
+                vectors: [
+                    // Outer atoms (Indices 0, 1, 2)
+                    [1.32, -0.47, 0],
+                    [-0.66, -0.47, 1.14],
+                    [-0.66, -0.47, -1.14],
+                    // Lone pair vector at top
+                    [0, 1.4, 0]
+                ],
+                // Index 3 represents the central blue atom [0, 0, 0] added via the includesCentral configuration
+                faces: [
+                    [0, 1, 2], // Base triangle face (green-green-green)
+                    [3, 0, 1], // Side triangle 1 (blue-green-green)
+                    [3, 1, 2], // Side triangle 2 (blue-green-green)
+                    [3, 2, 0]  // Side triangle 3 (blue-green-green)
+                ],
+                includesCentral: true
+            },
+            "4-2": {
+                name: "Bent / V-Shaped (Tetrahedral Base)",
+                vseprClass: "AX₂E₂",
+                electronGeometry: "Tetrahedral",
+                description: "With two bonding domains and two non-bonding lone pairs, this molecule experiences high Lone Pair-Lone Pair repulsion. The lone pairs expand, squeezing the bonding angle down significantly (e.g. to 104.5° in water).",
+                angle: "~104.5°",
+                examples: "H₂O, OF₂, SCl₂",
+                hybridization: "sp³",
+                geometryType: "bent_tetrahedral",
+                steric: 4,
+                bonding: 2,
+                lone: 2,
+                vectors: [
+                    // Bonding atoms
+                    [-0.66, -0.47, 1.14],
+                    [-0.66, -0.47, -1.14],
+                    // Lone pairs
+                    [0, 1.4, 0],
+                    [1.32, -0.47, 0]
+                ],
+                faces: []
+            },
+            "4-3": {
+                name: "Linear (Tetrahedral Base)",
+                vseprClass: "AXE₃",
+                electronGeometry: "Tetrahedral",
+                description: "In an AXE₃ system, there is only one bonding pair and three dominant lone pairs occupying the tetrahedral cloud space. Despite the tetrahedral electron configuration, the resulting physical molecular geometry is inevitably straight/linear.",
+                angle: "180°",
+                examples: "HF, OH⁻, HCl",
+                hybridization: "sp³",
+                geometryType: "linear_tetrahedral",
+                steric: 4,
+                bonding: 1,
+                lone: 3,
+                vectors: [
+                    // Bonding atom
+                    [-0.66, -0.47, 1.14],
+                    // Lone pairs
+                    [0, 1.4, 0],
+                    [1.32, -0.47, 0],
+                    [-0.66, -0.47, -1.14]
+                ],
+                faces: []
+            },
+
+            // --- STERIC 5 ---
+            "5-0": {
+                name: "Trigonal Bipyramidal",
+                vseprClass: "AX₅",
+                electronGeometry: "Trigonal Bipyramidal",
+                description: "Five bonding domains yield a combination of two axial coordinates (separated by 180° from each other) and three equatorial coordinates (lying flat at 120° relative to one another). This forms 6 distinct triangular faces joining the vertices.",
+                angle: "90°, 120°",
+                examples: "PCl₅, AsF₅, SOF₄",
+                hybridization: "sp³d",
+                geometryType: "trigonal_bipyramidal",
+                steric: 5,
+                bonding: 5,
+                lone: 0,
+                vectors: [
+                    [0, 1.4, 0],       // Axial up (0)
+                    [0, -1.4, 0],      // Axial down (1)
+                    [1.4, 0, 0],       // Equatorial 1 (2)
+                    [-0.7, 0, 1.21],   // Equatorial 2 (3)
+                    [-0.7, 0, -1.21]   // Equatorial 3 (4)
+                ],
+                faces: [
+                    // Upper half faces
+                    [0, 2, 3], [0, 3, 4], [0, 4, 2],
+                    // Lower half faces
+                    [1, 3, 2], [1, 4, 3], [1, 2, 4]
+                ] // Perfect closed trigonal bipyramid
+            },
+
+            // --- STERIC 6 ---
+            "6-0": {
+                name: "Octahedral",
+                vseprClass: "AX₆",
+                electronGeometry: "Octahedral",
+                description: "Six equivalent electron domains extend symmetrically outwards along the primary positive and negative Cartesian axes. Enclosing these vertices yields an 8-faced geometric solid (regular octahedron).",
+                angle: "90°",
+                examples: "SF₆, SeF₆, Mo(CO)₆",
+                hybridization: "sp³d²",
+                geometryType: "octahedral",
+                steric: 6,
+                bonding: 6,
+                lone: 0,
+                vectors: [
+                    [0, 1.4, 0],    // Up (0)
+                    [0, -1.4, 0],   // Down (1)
+                    [1.4, 0, 0],    // Right (2)
+                    [-1.4, 0, 0],   // Left (3)
+                    [0, 0, 1.4],    // Out (4)
+                    [0, 0, -1.4]    // In (5)
+                ],
+                faces: [
+                    // Top 4 faces
+                    [0, 2, 4], [0, 4, 3], [0, 3, 5], [0, 5, 2],
+                    // Bottom 4 faces
+                    [1, 4, 2], [1, 3, 4], [1, 5, 3], [1, 2, 5]
+                ] // Complete closed octahedron!
+            }
+        };
+
+        // UI State Variables
+        let currentSteric = 4;
+        let currentLonePairs = 0;
+        let showLobes = true;
+        let showPlanes = true; // Enabled by default to show off this awesome visual aid!
+
+        // ThreeJS Scene Variables
+        let scene, camera, renderer, container;
+        let atomsGroup;
+        let isDragging = false;
+        let previousMousePosition = { x: 0, y: 0 };
+        let targetRotation = { x: 0.3, y: 0.5 };
+        let currentRotation = { x: 0.3, y: 0.5 };
+        let zoomDistance = 6.5;
+        let targetZoomDistance = 6.5;
+
+        // Custom Custom Alert Helper (No Alerts Policy)
+        function triggerAlert(message) {
+            const banner = document.getElementById('alert-banner');
+            const msgEl = document.getElementById('alert-msg');
+            msgEl.textContent = message;
+            banner.classList.remove('hidden');
+            setTimeout(() => {
+                banner.classList.add('hidden');
+            }, 6000);
+        }
+
+        // Initialize WebGL Application
+        function initApp() {
+            container = document.getElementById('canvas-container');
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+
+            // 1. Setup Scene
+            scene = new THREE.Scene();
+            scene.fog = new THREE.FogExp2(0x090d16, 0.04);
+
+            // 2. Setup Camera
+            camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
+            updateCameraPosition();
+
+            // 3. Setup Renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(width, height);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            container.appendChild(renderer.domElement);
+
+            // Hide Loading Spinner on Render Start
+            document.getElementById('loadingIndicator').style.opacity = 0;
+
+            // 4. Setup Lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+            scene.add(ambientLight);
+
+            const dirLight1 = new THREE.DirectionalLight(0xffffff, 0.8);
+            dirLight1.position.set(5, 10, 7);
+            scene.add(dirLight1);
+
+            const dirLight2 = new THREE.DirectionalLight(0x3b82f6, 0.4); // Blue accent fill light
+            dirLight2.position.set(-5, -5, -5);
+            scene.add(dirLight2);
+
+            const pointLight = new THREE.PointLight(0x4f46e5, 1.2, 10);
+            pointLight.position.set(0, 0, 0);
+            scene.add(pointLight);
+
+            // 5. Add Grid / Starfield Background Details
+            createEnvironmentParticles();
+
+            // 6. Setup Interactive Group
+            atomsGroup = new THREE.Group();
+            scene.add(atomsGroup);
+
+            // 7. Add Interactive Control Listeners
+            setupInteractionListeners();
+
+            // 8. Run first state render
+            setSteric(4); // Default is tetrahedral configuration
+
+            // 9. Start Animation Loop
+            animate();
+        }
+
+        // Create environment backdrop to make visualization stunning
+        function createEnvironmentParticles() {
+            const particleCount = 200;
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(particleCount * 3);
+            const colors = new Float32Array(particleCount * 3);
+
+            for (let i = 0; i < particleCount; i++) {
+                // Large sparse cloud
+                positions[i * 3] = (Math.random() - 0.5) * 40;
+                positions[i * 3 + 1] = (Math.random() - 0.5) * 40;
+                positions[i * 3 + 2] = (Math.random() - 0.5) * 40;
+
+                // Dust colors
+                colors[i * 3] = 0.23; // Indigo/blue tint
+                colors[i * 3 + 1] = 0.32;
+                colors[i * 3 + 2] = 0.61;
+            }
+
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+            const material = new THREE.PointsMaterial({
+                size: 0.15,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.5
+            });
+
+            const starField = new THREE.Points(geometry, material);
+            scene.add(starField);
+        }
+
+        // Updates camera position based on rotation angles & distance
+        function updateCameraPosition() {
+            camera.position.x = zoomDistance * Math.sin(currentRotation.y) * Math.cos(currentRotation.x);
+            camera.position.y = zoomDistance * Math.sin(currentRotation.x);
+            camera.position.z = zoomDistance * Math.cos(currentRotation.y) * Math.cos(currentRotation.x);
+            camera.lookAt(0, 0, 0);
+        }
+
+        // Manage mouse and touch camera navigation
+        function setupInteractionListeners() {
+            // Drag rotation
+            container.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                previousMousePosition = { x: e.clientX, y: e.clientY };
+            });
+
+            window.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+
+                const deltaX = e.clientX - previousMousePosition.x;
+                const deltaY = e.clientY - previousMousePosition.y;
+
+                targetRotation.y -= deltaX * 0.007;
+                targetRotation.x -= deltaY * 0.007;
+
+                // Restrict vertical rotation to avoid flip gimbal lock
+                targetRotation.x = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, targetRotation.x));
+
+                previousMousePosition = { x: e.clientX, y: e.clientY };
+            });
+
+            window.addEventListener('mouseup', () => {
+                isDragging = false;
+            });
+
+            // Touch support for mobiles/tablets (iPhone, iPad, Android)
+            container.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 1) {
+                    isDragging = true;
+                    previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+                }
+            }, { passive: true });
+
+            window.addEventListener('touchmove', (e) => {
+                if (!isDragging || e.touches.length !== 1) return;
+
+                const deltaX = e.touches[0].clientX - previousMousePosition.x;
+                const deltaY = e.touches[0].clientY - previousMousePosition.y;
+
+                targetRotation.y -= deltaX * 0.008;
+                targetRotation.x -= deltaY * 0.008;
+
+                targetRotation.x = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, targetRotation.x));
+
+                previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            }, { passive: true });
+
+            window.addEventListener('touchend', () => {
+                isDragging = false;
+            });
+
+            window.addEventListener('touchcancel', () => {
+                isDragging = false;
+            });
+
+            // Zoom using wheel scroll
+            container.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                targetZoomDistance += e.deltaY * 0.005;
+                targetZoomDistance = Math.max(3, Math.min(15, targetZoomDistance));
+            }, { passive: false });
+
+            // Responsive scale resize
+            window.addEventListener('resize', onWindowResize);
+
+            // Reset view button action
+            document.getElementById('resetCameraBtn').addEventListener('click', () => {
+                targetRotation.x = 0.3;
+                targetRotation.y = 0.5;
+                targetZoomDistance = 6.5;
+            });
+
+            // Toggle lone pair lobes visibility
+            document.getElementById('toggleLobes').addEventListener('change', (e) => {
+                showLobes = e.target.checked;
+                reconstructMolecule();
+            });
+
+            // Toggle geometric planes visibility
+            document.getElementById('togglePlanes').addEventListener('change', (e) => {
+                showPlanes = e.target.checked;
+                reconstructMolecule();
+            });
+        }
+
+        // Window resize adjustment handler
+        function onWindowResize() {
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+            renderer.setSize(width, height);
+        }
+
+        // Select steric pair and auto-update lone pair capabilities
+        function setSteric(stericNo) {
+            currentSteric = stericNo;
+
+            // Highlight chosen Steric button
+            document.querySelectorAll('.steric-btn').forEach(btn => {
+                btn.className = "steric-btn py-3 bg-gray-800/40 hover:bg-gray-800 border border-gray-700/50 rounded-xl font-bold text-sm text-gray-400 transition-all duration-200 hover:scale-[1.03]";
+            });
+            const activeBtn = document.getElementById(`btn-s${stericNo}`);
+            if (activeBtn) {
+                activeBtn.className = "steric-btn py-3 bg-blue-600 border border-blue-500 rounded-xl font-black text-sm text-white shadow-lg shadow-blue-500/20 transition-all duration-200 scale-105";
+            }
+
+            // Populate lone pair selector based on constraints:
+            const lpContainer = document.getElementById('lonepair-container');
+            const lpConstraintInfo = document.getElementById('lonepair-constraint-info');
+            lpContainer.innerHTML = '';
+
+            let maxLp = 0;
+            if (stericNo === 4) {
+                maxLp = 3; // Tetrahedral has 0, 1, 2, 3 lone pair cases
+                lpConstraintInfo.textContent = "Tetrahedral variations enabled!";
+                lpConstraintInfo.className = "text-[10px] text-amber-400 font-semibold italic";
+            } else if (stericNo === 3) {
+                maxLp = 1; // Trigonal Planar has 0, 1 lone pair cases (Bent)
+                lpConstraintInfo.textContent = "Trigonal Planar variations enabled!";
+                lpConstraintInfo.className = "text-[10px] text-amber-400 font-semibold italic";
+            } else {
+                maxLp = 0; // All other steric cases only 0 lone pairs
+                lpConstraintInfo.textContent = "Lone pairs restricted for this steric number";
+                lpConstraintInfo.className = "text-[10px] text-gray-500 italic";
+            }
+
+            for (let lpValue = 0; lpValue <= maxLp; lpValue++) {
+                const lpBtn = document.createElement('button');
+                lpBtn.id = `btn-lp-${lpValue}`;
+                lpBtn.className = "py-2 px-3 bg-gray-800/30 border border-gray-700/50 hover:bg-gray-700 text-sm font-semibold rounded-lg transition-all duration-150";
+                lpBtn.textContent = lpValue;
+                lpBtn.onclick = () => selectLonePairs(lpValue);
+                lpContainer.appendChild(lpBtn);
+            }
+
+            // Set default / fallback lone pairs to 0 if the previous selection is invalid
+            if (currentLonePairs > maxLp) {
+                currentLonePairs = 0;
+            }
+            selectLonePairs(currentLonePairs);
+        }
+
+        // Select lone pairs amount
+        function selectLonePairs(lpCount) {
+            currentLonePairs = lpCount;
+
+            // Highlight appropriate active Lone Pair button
+            const buttons = document.querySelectorAll('[id^="btn-lp-"]');
+            buttons.forEach(btn => {
+                btn.className = "py-2 px-3 bg-gray-800/30 border border-gray-700/50 hover:bg-gray-700 text-gray-400 text-sm font-medium rounded-lg transition-all duration-150";
+            });
+            const activeLpBtn = document.getElementById(`btn-lp-${lpCount}`);
+            if (activeLpBtn) {
+                activeLpBtn.className = "py-2 px-4 bg-amber-500 hover:bg-amber-400 border border-amber-400 rounded-lg font-bold text-gray-950 text-sm transition-all duration-150 shadow-md shadow-amber-500/10";
+            }
+
+            // Update state and recreate the molecule graphics
+            reconstructMolecule();
+            updateUIPanel();
+        }
+
+        // Draw molecular structures using ThreeJS geometries
+        function reconstructMolecule() {
+            // Clear existing atoms inside group
+            while (atomsGroup.children.length > 0) {
+                const obj = atomsGroup.children[0];
+                atomsGroup.remove(obj);
+            }
+
+            const modelKey = `${currentSteric}-${currentLonePairs}`;
+            const modelData = VSEPR_DATABASE[modelKey] || VSEPR_DATABASE[`${currentSteric}-0`];
+
+            if (!modelData) {
+                triggerAlert(`Unrecognized configuration selected: ${modelKey}`);
+                return;
+            }
+
+            // 1. Central Atom (Atom A) - Large Purple sphere
+            const centralGeo = new THREE.SphereGeometry(0.5, 32, 32);
+            const centralMat = new THREE.MeshPhongMaterial({
+                color: 0x6366f1, // Purple-ish indigo
+                shininess: 100,
+                bumpScale: 0.05,
+                specular: 0x818cf8
+            });
+            const centralAtom = new THREE.Mesh(centralGeo, centralMat);
+            atomsGroup.add(centralAtom);
+
+            const bondingCount = modelData.bonding;
+            const totalVectors = modelData.vectors;
+
+            // Store positions for drawing connecting shape planes
+            const bondingPositions = [];
+
+            // 2. Add Bonding Atoms (Atom X) and Bonds (Cylinders)
+            for (let i = 0; i < bondingCount; i++) {
+                const vecData = totalVectors[i];
+                if (!vecData) continue;
+
+                const targetPos = new THREE.Vector3(vecData[0], vecData[1], vecData[2]);
+                bondingPositions.push(targetPos);
+
+                // Create Outer Bonding Atom (Sphere)
+                const outerGeo = new THREE.SphereGeometry(0.35, 32, 32);
+                const outerMat = new THREE.MeshPhongMaterial({
+                    color: 0x10b981, // Vivid Emerald
+                    shininess: 80,
+                    specular: 0x34d399
+                });
+                const outerAtom = new THREE.Mesh(outerGeo, outerMat);
+                outerAtom.position.copy(targetPos);
+                atomsGroup.add(outerAtom);
+
+                // Create cylindrical bond linking them
+                const bondDirection = new THREE.Vector3().copy(targetPos).normalize();
+                const bondLength = targetPos.length();
+                const bondGeo = new THREE.CylinderGeometry(0.08, 0.08, bondLength, 16);
+                const bondMat = new THREE.MeshPhongMaterial({
+                    color: 0x4b5563, // Slate Grey bond
+                    shininess: 30
+                });
+
+                const bond = new THREE.Mesh(bondGeo, bondMat);
+                // Position bond in middle of connection
+                bond.position.copy(targetPos).multiplyScalar(0.5);
+
+                // Align cylinder with the bond direction vector
+                const upVector = new THREE.Vector3(0, 1, 0);
+                bond.quaternion.setFromUnitVectors(upVector, bondDirection);
+                atomsGroup.add(bond);
+            }
+
+            // 3. Add Geometric Polyhedral Planes (NOT involving central atom, unless requested)
+            if (showPlanes && modelData.faces && modelData.faces.length > 0) {
+                const planeVertices = [...bondingPositions];
+                
+                // For cases like Trigonal Pyramidal, we append the central atom [0, 0, 0] so it can be indexed
+                if (modelData.includesCentral) {
+                    planeVertices.push(new THREE.Vector3(0, 0, 0));
+                }
+
+                if (planeVertices.length >= 3) {
+                    const polyGeometry = new THREE.BufferGeometry();
+                    const verticesArray = [];
+
+                    // Flatten coordinates of selected atoms
+                    planeVertices.forEach(pos => {
+                        verticesArray.push(pos.x, pos.y, pos.z);
+                    });
+
+                    polyGeometry.setAttribute('position', new THREE.Float32BufferAttribute(verticesArray, 3));
+
+                    // Flat index representation of the geometric planes
+                    const indices = [];
+                    modelData.faces.forEach(faceIndices => {
+                        indices.push(faceIndices[0], faceIndices[1], faceIndices[2]);
+                    });
+
+                    polyGeometry.setIndex(indices);
+                    polyGeometry.computeVertexNormals();
+
+                    // Semi-translucent glowing emerald material to represent the planes
+                    const faceMaterial = new THREE.MeshPhongMaterial({
+                        color: 0x10b981,
+                        transparent: true,
+                        opacity: 0.28,
+                        side: THREE.DoubleSide,
+                        shininess: 90,
+                        depthWrite: false // Prevents visual artifacts on transparent overlap
+                    });
+
+                    const polyMesh = new THREE.Mesh(polyGeometry, faceMaterial);
+                    atomsGroup.add(polyMesh);
+
+                    // Highlighted wireframe outlines on the edges of the planes
+                    const edgesGeometry = new THREE.EdgesGeometry(polyGeometry);
+                    const lineMaterial = new THREE.LineBasicMaterial({
+                        color: 0x34d399,
+                        transparent: true,
+                        opacity: 0.7,
+                        linewidth: 2
+                    });
+                    const edgeLines = new THREE.LineSegments(edgesGeometry, lineMaterial);
+                    atomsGroup.add(edgeLines);
+                }
+            }
+
+            // 4. Add Lone Pairs (E) if present and enabled
+            if (showLobes) {
+                for (let i = bondingCount; i < currentSteric; i++) {
+                    const vecData = totalVectors[i];
+                    if (!vecData) continue;
+
+                    const targetPos = new THREE.Vector3(vecData[0], vecData[1], vecData[2]);
+                    const lonePairDirection = new THREE.Vector3().copy(targetPos).normalize();
+
+                    // Represent Lone Pair as a double-lobe shape or balloon shape using sphere deformation
+                    const lobeGroup = new THREE.Group();
+
+                    // Distended Pear/Balloon Geometry for electron density cloud
+                    const lobeGeo = new THREE.SphereGeometry(0.4, 32, 32);
+                    // Scale to make it look like a teardrop/lobe shape pointing outward
+                    lobeGeo.scale(0.85, 1.4, 0.85);
+
+                    const lobeMat = new THREE.MeshPhysicalMaterial({
+                        color: 0xf59e0b, // Warm golden Amber
+                        transparent: true,
+                        opacity: 0.45,
+                        roughness: 0.1,
+                        metalness: 0.1,
+                        clearcoat: 1.0,
+                        transmission: 0.4, // Glassy look
+                        side: THREE.DoubleSide
+                    });
+
+                    const lobeMesh = new THREE.Mesh(lobeGeo, lobeMat);
+                    // Shift the center of the balloon slightly outwards from origin
+                    lobeMesh.position.y = 0.65;
+                    lobeGroup.add(lobeMesh);
+
+                    // Add small floating twin electron spheres to visualize the actual electrons inside the cloud lobe
+                    const electronGeo = new THREE.SphereGeometry(0.08, 16, 16);
+                    const electronMat = new THREE.MeshBasicMaterial({ color: 0xfffbeb }); // White-yellow emission glowing look
+
+                    const electron1 = new THREE.Mesh(electronGeo, electronMat);
+                    electron1.position.set(-0.16, 0.9, 0);
+                    lobeGroup.add(electron1);
+
+                    const electron2 = new THREE.Mesh(electronGeo, electronMat);
+                    electron2.position.set(0.16, 0.9, 0);
+                    lobeGroup.add(electron2);
+
+                    // Position and orient the whole lobe group pointing outwards along target vector direction
+                    const upVector = new THREE.Vector3(0, 1, 0);
+                    lobeGroup.quaternion.setFromUnitVectors(upVector, lonePairDirection);
+                    // Place the base of the lobe at the central atom coordinates
+                    lobeGroup.position.set(0, 0, 0);
+
+                    atomsGroup.add(lobeGroup);
+                }
+            }
+        }
+
+        // Update descriptions, angles and formulas dynamically
+        function updateUIPanel() {
+            const modelKey = `${currentSteric}-${currentLonePairs}`;
+            const modelData = VSEPR_DATABASE[modelKey] || VSEPR_DATABASE[`${currentSteric}-0`];
+
+            if (!modelData) return;
+
+            // Update texts in UI Sidebar
+            document.getElementById('hud-steric').textContent = modelData.steric;
+            document.getElementById('hud-bonding').textContent = modelData.bonding;
+            document.getElementById('hud-lone').textContent = modelData.lone;
+            document.getElementById('hud-angle').textContent = modelData.angle;
+
+            // Format formula nice representation AXE
+            let formulaHtml = `<span class="font-extrabold text-blue-400">A</span><span class="font-bold text-emerald-400">X</span><sub class="text-emerald-500 font-bold">${modelData.bonding}</sub>`;
+            if (modelData.lone > 0) {
+                formulaHtml += `<span class="font-bold text-amber-500">E</span><sub class="text-amber-500 font-bold">${modelData.lone}</sub>`;
+            }
+            document.getElementById('vsepr-class-badge').innerHTML = formulaHtml;
+
+            document.getElementById('mol-name').textContent = modelData.name;
+            document.getElementById('el-geometry').textContent = modelData.electronGeometry;
+            document.getElementById('mol-desc').textContent = modelData.description;
+            document.getElementById('mol-examples').innerHTML = modelData.examples;
+            
+            // Clean dynamic element update guard
+            const hybridEl = document.getElementById('mol-hybrid');
+            if (hybridEl) {
+                hybridEl.textContent = modelData.hybridization;
+            }
+        }
+
+        // Animation rendering loop
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Smooth Interpolation/Damping for rotation controls (Inertia effect)
+            currentRotation.x += (targetRotation.x - currentRotation.x) * 0.15;
+            currentRotation.y += (targetRotation.y - currentRotation.y) * 0.15;
+            zoomDistance += (targetZoomDistance - zoomDistance) * 0.15;
+
+            updateCameraPosition();
+
+            // Self rotation of molecule group over time for realistic live preview
+            if (!isDragging) {
+                atomsGroup.rotation.y += 0.003;
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        // Start initialization sequence upon window loading
+        window.onload = function () {
+            try {
+                initApp();
+            } catch (err) {
+                triggerAlert("WebGL initialization failed. Please make sure hardware acceleration is active.");
+                console.error("ThreeJS Startup Error: ", err);
+            }
+        };
+    </script>
+</body>
+</html>
