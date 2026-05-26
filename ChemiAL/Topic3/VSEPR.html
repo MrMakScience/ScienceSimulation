@@ -91,7 +91,7 @@
             <!-- Bottom Dashboard Quick HUD -->
             <div class="glassmorphism border-t border-gray-800 p-4 grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
                 <div class="p-2 bg-gray-900/40 rounded-xl border border-gray-800/60">
-                    <div class="text-xs text-gray-400">Electron Pair Geometry</div>
+                    <div class="text-xs text-gray-400">Total no. of e- Pair</div>
                     <div id="hud-steric" class="text-lg font-bold text-blue-400">-</div>
                 </div>
                 <div class="p-2 bg-gray-900/40 rounded-xl border border-gray-800/60">
@@ -115,7 +115,7 @@
             <!-- STEP 1: Steric selection (1-6) -->
             <div class="p-6 border-b border-gray-800/60">
                 <h2 class="text-xs font-semibold text-blue-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                    <span class="w-1.5 h-1.5 bg-blue-400 rounded-full"></span> Select Electron Pairs (Electron Pair Geometry)
+                    <span class="w-1.5 h-1.5 bg-blue-400 rounded-full"></span> Select total no. of electron pairs
                 </h2>
                 <div class="grid grid-cols-6 gap-2">
                     <!-- Buttons for Steric number 1 to 6 -->
@@ -152,20 +152,31 @@
                         <div class="w-11 h-6 bg-gray-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-gray-300 after:border-gray-300 after:border after:rounded-full after:h-5 after:width-5 after:transition-all peer-checked:bg-blue-600"></div>
                     </label>
                 </div>
-                <div class="flex items-center justify-between pt-2 border-t border-gray-800/40">
-                    <span class="text-xs text-gray-300 font-medium flex items-center gap-1.5">
-                        Show Shape Planes (Vertices):
-                        <span class="text-[9px] bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 px-1 rounded font-bold uppercase tracking-wide">Planes</span>
-                    </span>
-                    <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" id="togglePlanes" checked class="sr-only peer">
-                        <div class="w-11 h-6 bg-gray-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-gray-300 after:border-gray-300 after:border after:rounded-full after:h-5 after:width-5 after:transition-all peer-checked:bg-emerald-600"></div>
-                    </label>
+                <div class="pt-2 border-t border-gray-800/40 space-y-2">
+                    <span class="text-xs text-gray-300 font-medium block">Visual Reference Plane:</span>
+                    <div class="grid grid-cols-3 gap-1 bg-gray-950 p-1 rounded-lg border border-gray-800">
+                        <button id="plane-none" onclick="setPlaneMode('none')" class="py-1.5 text-[10px] font-bold rounded-md transition-all text-gray-400 hover:text-gray-200">None</button>
+                        <button id="plane-shape" onclick="setPlaneMode('shape')" class="py-1.5 text-[10px] font-bold rounded-md transition-all text-gray-400 hover:text-gray-200">Vertices Plane</button>
+                        <button id="plane-bond" onclick="setPlaneMode('bond')" class="py-1.5 text-[10px] font-bold rounded-md transition-all text-gray-400 hover:text-gray-200">Coplanar Plane</button>
+                    </div>
                 </div>
             </div>
 
-            <!-- Information Panel (Calculated state representation) -->
+            <!-- Interactive Information Panel & 2D REPRESENTATION -->
             <div class="flex-1 p-6 space-y-6">
+                <!-- 2D Chemical Drawing Representation -->
+                <div class="p-4 bg-gray-900/60 rounded-xl border border-gray-800/80 shadow-inner">
+                    <h4 class="text-xs font-bold text-gray-300 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
+                        <i class="fa-solid fa-pen-nib text-indigo-400"></i> Textbook 2D Representation (Wedge/Dash)
+                    </h4>
+                    <div class="flex items-center justify-center py-4 bg-gray-950/80 rounded-lg border border-gray-800/50 min-h-[140px] relative">
+                        <div id="canvas-2d-representation" class="w-full flex justify-center items-center">
+                            <!-- Dynamically Drawn Chemical Diagram as SVGs -->
+                        </div>
+                    </div>
+                    <p class="text-[11px] text-gray-400 mt-2 text-center">Use this wedge-and-dash format to project 3D shapes on paper.</p>
+                </div>
+
                 <!-- Molecule Name Banner -->
                 <div>
                     <span id="vsepr-class-badge" class="px-2.5 py-1 text-[10px] font-bold uppercase rounded-md tracking-wider bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
@@ -233,6 +244,7 @@
         // VSEPR Database containing 1 to 6 electron pair cases.
         // Trigonal planar (3) and tetrahedral (4) have lone pair options.
         // Faces arrays define indices of bonding atoms (0 to bonding-1) to construct outer polyhedrals.
+        // bondPlaneNormal defines the mathematical normal of the plane containing coplanar bonds for wedge/dash rendering.
         const VSEPR_DATABASE = {
             // --- STERIC 1 ---
             "1-0": {
@@ -248,7 +260,14 @@
                 bonding: 1,
                 lone: 0,
                 vectors: [[0, 0, 1.3]], // Linear on Z-axis
-                faces: []
+                faces: [],
+                svgDraw: `
+                    <svg viewBox="0 0 200 120" class="w-40 h-24">
+                        <text x="50" y="65" fill="#10b981" font-size="24" font-weight="bold" text-anchor="middle">H</text>
+                        <line x1="70" y1="58" x2="130" y2="58" stroke="#f3f4f6" stroke-width="3" />
+                        <text x="150" y="65" fill="#10b981" font-size="24" font-weight="bold" text-anchor="middle">F</text>
+                    </svg>`,
+                bondPlaneNormal: [0, 1, 0]
             },
 
             // --- STERIC 2 ---
@@ -265,7 +284,18 @@
                 bonding: 2,
                 lone: 0,
                 vectors: [[0, 0, 1.4], [0, 0, -1.4]],
-                faces: []
+                faces: [],
+                svgDraw: `
+                    <svg viewBox="0 0 220 120" class="w-44 h-24">
+                        <text x="35" y="65" fill="#10b981" font-size="20" font-weight="bold" text-anchor="middle">O</text>
+                        <line x1="55" y1="55" x2="95" y2="55" stroke="#f3f4f6" stroke-width="3" />
+                        <line x1="55" y1="63" x2="95" y2="63" stroke="#f3f4f6" stroke-width="3" />
+                        <text x="110" y="65" fill="#6366f1" font-size="22" font-weight="bold" text-anchor="middle">C</text>
+                        <line x1="125" y1="55" x2="165" y2="55" stroke="#f3f4f6" stroke-width="3" />
+                        <line x1="125" y1="63" x2="165" y2="63" stroke="#f3f4f6" stroke-width="3" />
+                        <text x="185" y="65" fill="#10b981" font-size="20" font-weight="bold" text-anchor="middle">O</text>
+                    </svg>`,
+                bondPlaneNormal: [0, 1, 0]
             },
 
             // --- STERIC 3 ---
@@ -286,7 +316,22 @@
                     [-1.21, -0.7, 0],
                     [1.21, -0.7, 0]
                 ],
-                faces: [[0, 1, 2]] // Single planar triangle
+                faces: [[0, 1, 2]], // Single planar triangle
+                svgDraw: `
+                    <svg viewBox="0 0 200 160" class="w-40 h-32">
+                        <!-- Central Atom -->
+                        <text x="100" y="90" fill="#6366f1" font-size="22" font-weight="bold" text-anchor="middle">B</text>
+                        <!-- Top Bond -->
+                        <line x1="100" y1="68" x2="100" y2="30" stroke="#f3f4f6" stroke-width="3" />
+                        <text x="100" y="24" fill="#10b981" font-size="20" font-weight="bold" text-anchor="middle">F</text>
+                        <!-- Bottom Left Bond -->
+                        <line x1="85" y1="95" x2="50" y2="115" stroke="#f3f4f6" stroke-width="3" />
+                        <text x="35" y="125" fill="#10b981" font-size="20" font-weight="bold" text-anchor="middle">F</text>
+                        <!-- Bottom Right Bond -->
+                        <line x1="115" y1="95" x2="150" y2="115" stroke="#f3f4f6" stroke-width="3" />
+                        <text x="165" y="125" fill="#10b981" font-size="20" font-weight="bold" text-anchor="middle">F</text>
+                    </svg>`,
+                bondPlaneNormal: [0, 0, 1]
             },
             "3-1": {
                 name: "Bent / V-Shaped (Trigonal Planar Base)",
@@ -307,7 +352,28 @@
                     // Lone pair vector at top
                     [0, 1.4, 0]
                 ],
-                faces: [] // Under 3 outer atoms, no face
+                faces: [],
+                svgDraw: `
+                    <svg viewBox="0 0 200 160" class="w-40 h-32">
+                        <!-- Lone Pair bubble at top -->
+                        <g class="lone-pair-2d">
+                            <path d="M 100,70 C 85,45 85,25 100,25 C 115,25 115,45 100,70 Z" fill="rgba(245, 158, 11, 0.25)" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="3,2" />
+                            <!-- Two dots inside lone pair -->
+                            <circle cx="96" cy="40" r="2.5" fill="#ffffff" />
+                            <circle cx="104" cy="40" r="2.5" fill="#ffffff" />
+                        </g>
+                        <!-- Central Atom -->
+                        <text x="100" y="95" fill="#6366f1" font-size="22" font-weight="bold" text-anchor="middle">S</text>
+                        <!-- Bottom Left Double Bond -->
+                        <line x1="83" y1="98" x2="53" y2="118" stroke="#f3f4f6" stroke-width="3" />
+                        <line x1="87" y1="104" x2="57" y2="124" stroke="#f3f4f6" stroke-width="3" />
+                        <text x="40" y="132" fill="#10b981" font-size="20" font-weight="bold" text-anchor="middle">O</text>
+                        <!-- Bottom Right Double Bond -->
+                        <line x1="117" y1="98" x2="147" y2="118" stroke="#f3f4f6" stroke-width="3" />
+                        <line x1="113" y1="104" x2="143" y2="124" stroke="#f3f4f6" stroke-width="3" />
+                        <text x="160" y="132" fill="#10b981" font-size="20" font-weight="bold" text-anchor="middle">O</text>
+                    </svg>`,
+                bondPlaneNormal: [0, 0, 1]
             },
 
             // --- STERIC 4 (Tetrahedral Base) ---
@@ -324,17 +390,37 @@
                 bonding: 4,
                 lone: 0,
                 vectors: [
-                    [0, 1.4, 0],
-                    [1.32, -0.47, 0],
-                    [-0.66, -0.47, 1.14],
-                    [-0.66, -0.47, -1.14]
+                    [0, 1.4, 0],               // V0 (in XY plane, z=0)
+                    [1.32, -0.47, 0],          // V1 (in XY plane, z=0)
+                    [-0.66, -0.47, 1.14],      // V2 (points in front, z=+1.14)
+                    [-0.66, -0.47, -1.14]      // V3 (points behind, z=-1.14)
                 ],
                 faces: [
                     [0, 1, 2],
                     [0, 2, 3],
                     [0, 3, 1],
                     [1, 3, 2]
-                ] // Complete 4-faced tetrahedron!
+                ],
+                svgDraw: `
+                    <svg viewBox="0 0 200 170" class="w-40 h-34">
+                        <!-- Central Atom -->
+                        <text x="100" y="90" fill="#6366f1" font-size="24" font-weight="bold" text-anchor="middle">C</text>
+                        <!-- Top Bond (In-plane line) -->
+                        <line x1="100" y1="65" x2="100" y2="25" stroke="#f3f4f6" stroke-width="3" />
+                        <text x="100" y="20" fill="#10b981" font-size="20" font-weight="bold" text-anchor="middle">H</text>
+                        <!-- Left Bond (In-plane line) -->
+                        <line x1="82" y1="95" x2="45" y2="105" stroke="#f3f4f6" stroke-width="3" />
+                        <text x="30" y="112" fill="#10b981" font-size="20" font-weight="bold" text-anchor="middle">H</text>
+                        <!-- Outward Bond (Wedge) -->
+                        <polygon points="112,98 145,130 138,135" fill="#f3f4f6" />
+                        <text x="145" y="152" fill="#10b981" font-size="20" font-weight="bold" text-anchor="middle">H</text>
+                        <!-- Inward Bond (Dash) -->
+                        <line x1="108" y1="94" x2="135" y2="104" stroke="#f3f4f6" stroke-width="3" stroke-dasharray="2,4" />
+                        <line x1="112" y1="96" x2="138" y2="106" stroke="#f3f4f6" stroke-width="3" stroke-dasharray="2,4" />
+                        <line x1="116" y1="98" x2="141" y2="108" stroke="#f3f4f6" stroke-width="3" stroke-dasharray="2,4" />
+                        <text x="155" y="112" fill="#10b981" font-size="20" font-weight="bold" text-anchor="middle">H</text>
+                    </svg>`,
+                bondPlaneNormal: [0, 0, 1] // XY plane contains Central, V0, and V1
             },
             "4-1": {
                 name: "Trigonal Pyramidal",
@@ -350,20 +436,42 @@
                 lone: 1,
                 vectors: [
                     // Outer atoms (Indices 0, 1, 2)
-                    [1.32, -0.47, 0],
-                    [-0.66, -0.47, 1.14],
-                    [-0.66, -0.47, -1.14],
+                    [1.32, -0.47, 0],          // V0 (in XY plane, z=0)
+                    [-0.66, -0.47, 1.14],      // V1 (points in front, z=+1.14)
+                    [-0.66, -0.47, -1.14],     // V2 (points behind, z=-1.14)
                     // Lone pair vector at top
-                    [0, 1.4, 0]
+                    [0, 1.4, 0]                // V3 (in XY plane, z=0)
                 ],
-                // Index 3 represents the central blue atom [0, 0, 0] added via the includesCentral configuration
                 faces: [
                     [0, 1, 2], // Base triangle face (green-green-green)
                     [3, 0, 1], // Side triangle 1 (blue-green-green)
                     [3, 1, 2], // Side triangle 2 (blue-green-green)
                     [3, 2, 0]  // Side triangle 3 (blue-green-green)
                 ],
-                includesCentral: true
+                includesCentral: true,
+                svgDraw: `
+                    <svg viewBox="0 0 200 170" class="w-40 h-34">
+                        <!-- Lone Pair on top of Nitrogen -->
+                        <g class="lone-pair-2d">
+                            <path d="M 100,60 C 85,35 85,15 100,15 C 115,15 115,35 100,60 Z" fill="rgba(245, 158, 11, 0.25)" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="3,2" />
+                            <circle cx="96" cy="30" r="2.5" fill="#ffffff" />
+                            <circle cx="104" cy="30" r="2.5" fill="#ffffff" />
+                        </g>
+                        <!-- Central Nitrogen Atom -->
+                        <text x="100" y="85" fill="#6366f1" font-size="24" font-weight="bold" text-anchor="middle">N</text>
+                        <!-- Left Bond (In-plane line) -->
+                        <line x1="82" y1="90" x2="45" y2="100" stroke="#f3f4f6" stroke-width="3" />
+                        <text x="30" y="108" fill="#10b981" font-size="20" font-weight="bold" text-anchor="middle">H</text>
+                        <!-- Outward Bond (Wedge) -->
+                        <polygon points="112,93 145,125 138,130" fill="#f3f4f6" />
+                        <text x="145" y="147" fill="#10b981" font-size="20" font-weight="bold" text-anchor="middle">H</text>
+                        <!-- Inward Bond (Dash) -->
+                        <line x1="108" y1="89" x2="135" y2="99" stroke="#f3f4f6" stroke-width="3" stroke-dasharray="2,4" />
+                        <line x1="112" y1="91" x2="138" y2="101" stroke="#f3f4f6" stroke-width="3" stroke-dasharray="2,4" />
+                        <line x1="116" y1="93" x2="141" y2="103" stroke="#f3f4f6" stroke-width="3" stroke-dasharray="2,4" />
+                        <text x="155" y="108" fill="#10b981" font-size="20" font-weight="bold" text-anchor="middle">H</text>
+                    </svg>`,
+                bondPlaneNormal: [0, 0, 1] // XY plane contains central, V0 bond, and V3 lone pair
             },
             "4-2": {
                 name: "Bent / V-Shaped (Tetrahedral Base)",
@@ -379,13 +487,38 @@
                 lone: 2,
                 vectors: [
                     // Bonding atoms
-                    [-0.66, -0.47, 1.14],
-                    [-0.66, -0.47, -1.14],
+                    [-0.66, -0.47, 1.14],      // V0
+                    [-0.66, -0.47, -1.14],     // V1
                     // Lone pairs
-                    [0, 1.4, 0],
-                    [1.32, -0.47, 0]
+                    [0, 1.4, 0],               // V2
+                    [1.32, -0.47, 0]           // V3
                 ],
-                faces: []
+                faces: [],
+                svgDraw: `
+                    <svg viewBox="0 0 200 170" class="w-40 h-34">
+                        <!-- Two Lone pairs on top/side -->
+                        <g class="lone-pair-2d">
+                            <path d="M 85,60 C 65,45 55,28 72,18 C 88,8 100,28 85,60 Z" fill="rgba(245, 158, 11, 0.2)" stroke="#f59e0b" stroke-width="1.2" stroke-dasharray="3,2" />
+                            <circle cx="71" cy="31" r="2.2" fill="#ffffff" />
+                            <circle cx="78" cy="27" r="2.2" fill="#ffffff" />
+                        </g>
+
+                        <g class="lone-pair-2d">
+                            <path d="M 115,60 C 135,45 145,28 128,18 C 112,8 100,28 115,60 Z" fill="rgba(245, 158, 11, 0.2)" stroke="#f59e0b" stroke-width="1.2" stroke-dasharray="3,2" />
+                            <circle cx="129" cy="31" r="2.2" fill="#ffffff" />
+                            <circle cx="122" cy="27" r="2.2" fill="#ffffff" />
+                        </g>
+
+                        <!-- Central Atom -->
+                        <text x="100" y="85" fill="#6366f1" font-size="24" font-weight="bold" text-anchor="middle">O</text>
+                        <!-- Bottom Left Bond -->
+                        <line x1="82" y1="92" x2="52" y2="122" stroke="#f3f4f6" stroke-width="3" />
+                        <text x="40" y="142" fill="#10b981" font-size="20" font-weight="bold" text-anchor="middle">H</text>
+                        <!-- Bottom Right Bond -->
+                        <line x1="118" y1="92" x2="148" y2="122" stroke="#f3f4f6" stroke-width="3" />
+                        <text x="160" y="142" fill="#10b981" font-size="20" font-weight="bold" text-anchor="middle">H</text>
+                    </svg>`,
+                bondPlaneNormal: [1.0716, -1.5048, 0] // Plane contains central atom & both bonds (V0, V1)
             },
             "4-3": {
                 name: "Linear (Tetrahedral Base)",
@@ -407,7 +540,32 @@
                     [1.32, -0.47, 0],
                     [-0.66, -0.47, -1.14]
                 ],
-                faces: []
+                faces: [],
+                svgDraw: `
+                    <svg viewBox="0 0 200 120" class="w-40 h-24">
+                        <!-- Three beautiful lone pair balloon lobes on Fluorine matching user request -->
+                        <g class="lone-pair-2d">
+                            <!-- Up-Right lobe -->
+                            <path d="M 141,51 C 146,31 161,21 169,29 C 177,37 163,50 141,51 Z" fill="rgba(245, 158, 11, 0.2)" stroke="#f59e0b" stroke-width="1.2" stroke-dasharray="3,2" />
+                            <circle cx="160" cy="33" r="2.2" fill="#ffffff" />
+                            <circle cx="166" cy="39" r="2.2" fill="#ffffff" />
+                            
+                            <!-- Straight Right lobe -->
+                            <path d="M 144,58 C 164,48 184,48 184,58 C 184,68 164,68 144,58 Z" fill="rgba(245, 158, 11, 0.2)" stroke="#f59e0b" stroke-width="1.2" stroke-dasharray="3,2" />
+                            <circle cx="172" cy="54" r="2.2" fill="#ffffff" />
+                            <circle cx="172" cy="62" r="2.2" fill="#ffffff" />
+                            
+                            <!-- Down-Right lobe -->
+                            <path d="M 141,65 C 163,66 177,79 169,87 C 161,95 146,85 141,65 Z" fill="rgba(245, 158, 11, 0.2)" stroke="#f59e0b" stroke-width="1.2" stroke-dasharray="3,2" />
+                            <circle cx="160" cy="83" r="2.2" fill="#ffffff" />
+                            <circle cx="166" cy="77" r="2.2" fill="#ffffff" />
+                        </g>
+                        <!-- Atoms -->
+                        <text x="40" y="65" fill="#10b981" font-size="24" font-weight="bold" text-anchor="middle">H</text>
+                        <line x1="60" y1="58" x2="120" y2="58" stroke="#f3f4f6" stroke-width="3" />
+                        <text x="140" y="65" fill="#6366f1" font-size="24" font-weight="bold" text-anchor="middle">F</text>
+                    </svg>`,
+                bondPlaneNormal: [1.0716, -1.5048, 0]
             },
 
             // --- STERIC 5 ---
@@ -424,7 +582,7 @@
                 bonding: 5,
                 lone: 0,
                 vectors: [
-                    [0, 1.4, 0],       // Axial up (0)
+                    [0, 1.4, 0],       // Axial up (0) -> Corresponds to first equatorial/axial group
                     [0, -1.4, 0],      // Axial down (1)
                     [1.4, 0, 0],       // Equatorial 1 (2)
                     [-0.7, 0, 1.21],   // Equatorial 2 (3)
@@ -435,7 +593,32 @@
                     [0, 2, 3], [0, 3, 4], [0, 4, 2],
                     // Lower half faces
                     [1, 3, 2], [1, 4, 3], [1, 2, 4]
-                ] // Perfect closed trigonal bipyramid
+                ],
+                svgDraw: `
+                    <svg viewBox="0 0 200 170" class="w-40 h-34">
+                        <!-- Central P Atom -->
+                        <text x="100" y="90" fill="#6366f1" font-size="22" font-weight="bold" text-anchor="middle">P</text>
+                        <!-- Axial Up -->
+                        <line x1="100" y1="68" x2="100" y2="30" stroke="#f3f4f6" stroke-width="3" />
+                        <text x="100" y="24" fill="#10b981" font-size="18" font-weight="bold" text-anchor="middle">Cl</text>
+                        <!-- Axial Down -->
+                        <line x1="100" y1="100" x2="100" y2="138" stroke="#f3f4f6" stroke-width="3" />
+                        <text x="100" y="156" fill="#10b981" font-size="18" font-weight="bold" text-anchor="middle">Cl</text>
+                        <!-- Equatorial Right -->
+                        <line x1="116" y1="90" x2="148" y2="90" stroke="#f3f4f6" stroke-width="3" />
+                        <text x="164" y="96" fill="#10b981" font-size="18" font-weight="bold" text-anchor="middle">Cl</text>
+                        <!-- Equatorial Wedge (Front-Left) -->
+                        <polygon points="85,95 50,115 54,122" fill="#f3f4f6" />
+                        <text x="36" y="132" fill="#10b981" font-size="18" font-weight="bold" text-anchor="middle">Cl</text>
+                        <!-- Equatorial Dash (Back-Left) -->
+                        <line x1="86" y1="84" x2="56" y2="74" stroke="#f3f4f6" stroke-width="3" stroke-dasharray="2,4" />
+                        <line x1="88" y1="87" x2="58" y2="77" stroke="#f3f4f6" stroke-width="3" stroke-dasharray="2,4" />
+                        <text x="38" y="72" fill="#10b981" font-size="18" font-weight="bold" text-anchor="middle">Cl</text>
+                    </svg>`,
+                // CUSTOM REQUIREMENT: Pass plane through A, Axial Up (index 0), and Equatorial 1 (index 2).
+                // Vector 0 is [0, 1.4, 0] and Vector 2 is [1.4, 0, 0].
+                // Normal to this plane (the XY plane) is [0, 0, 1].
+                bondPlaneNormal: [0, 0, 1]
             },
 
             // --- STERIC 6 ---
@@ -464,7 +647,37 @@
                     [0, 2, 4], [0, 4, 3], [0, 3, 5], [0, 5, 2],
                     // Bottom 4 faces
                     [1, 4, 2], [1, 3, 4], [1, 5, 3], [1, 2, 5]
-                ] // Complete closed octahedron!
+                ],
+                svgDraw: `
+                    <svg viewBox="0 0 200 170" class="w-40 h-34">
+                        <!-- Central S Atom -->
+                        <text x="100" y="90" fill="#6366f1" font-size="22" font-weight="bold" text-anchor="middle">S</text>
+                        <!-- Axial Up -->
+                        <line x1="100" y1="68" x2="100" y2="30" stroke="#f3f4f6" stroke-width="3" />
+                        <text x="100" y="24" fill="#10b981" font-size="18" font-weight="bold" text-anchor="middle">F</text>
+                        <!-- Axial Down -->
+                        <line x1="100" y1="100" x2="100" y2="138" stroke="#f3f4f6" stroke-width="3" />
+                        <text x="100" y="156" fill="#10b981" font-size="18" font-weight="bold" text-anchor="middle">F</text>
+                        
+                        <!-- Wedges (Front Left & Front Right) -->
+                        <polygon points="85,95 48,112 52,118" fill="#f3f4f6" />
+                        <text x="36" y="126" fill="#10b981" font-size="18" font-weight="bold" text-anchor="middle">F</text>
+                        
+                        <polygon points="115,95 152,112 148,118" fill="#f3f4f6" />
+                        <text x="164" y="126" fill="#10b981" font-size="18" font-weight="bold" text-anchor="middle">F</text>
+
+                        <!-- Dashes (Back Left & Back Right) -->
+                        <line x1="86" y1="84" x2="54" y2="74" stroke="#f3f4f6" stroke-width="3" stroke-dasharray="2,4" />
+                        <text x="38" y="70" fill="#10b981" font-size="18" font-weight="bold" text-anchor="middle">F</text>
+
+                        <line x1="114" y1="84" x2="146" y2="74" stroke="#f3f4f6" stroke-width="3" stroke-dasharray="2,4" />
+                        <text x="162" y="70" fill="#10b981" font-size="18" font-weight="bold" text-anchor="middle">F</text>
+                    </svg>`,
+                // CUSTOM REQUIREMENT: Diagonal plane containing the collinear axial atoms (Up, Down, Central) 
+                // and perfectly splitting the equatorial ones diagonally as indicated by the red dashed line.
+                // Setting normal to [1, 0, 1] creates a vertical plane rotated at 45 degrees, which holds the 
+                // vertical Y-axis axial bonds while passing cleanly between the left/right/in/out equatorial bonds.
+                bondPlaneNormal: [1, 0, 1]
             }
         };
 
@@ -472,7 +685,7 @@
         let currentSteric = 4;
         let currentLonePairs = 0;
         let showLobes = true;
-        let showPlanes = true; // Enabled by default to show off this awesome visual aid!
+        let currentPlaneMode = 'shape'; // default mode ('none', 'shape', 'bond')
 
         // ThreeJS Scene Variables
         let scene, camera, renderer, container;
@@ -510,7 +723,7 @@
             updateCameraPosition();
 
             // 3. Setup Renderer
-            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer = new THREE.WebGLRenderer({ antialias: true, opacity: true });
             renderer.setSize(width, height);
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             renderer.shadowMap.enabled = true;
@@ -547,6 +760,7 @@
 
             // 8. Run first state render
             setSteric(4); // Default is tetrahedral configuration
+            setPlaneMode('shape'); // Default visual aid
 
             // 9. Start Animation Loop
             animate();
@@ -671,12 +885,7 @@
             document.getElementById('toggleLobes').addEventListener('change', (e) => {
                 showLobes = e.target.checked;
                 reconstructMolecule();
-            });
-
-            // Toggle geometric planes visibility
-            document.getElementById('togglePlanes').addEventListener('change', (e) => {
-                showPlanes = e.target.checked;
-                reconstructMolecule();
+                updateUIPanel(); // Refreshes 2D view on state change
             });
         }
 
@@ -687,6 +896,26 @@
             camera.aspect = width / height;
             camera.updateProjectionMatrix();
             renderer.setSize(width, height);
+        }
+
+        // Set Reference Plane Rendering Mode (None, Vertices Shape, Coplanar Bonds)
+        function setPlaneMode(mode) {
+            currentPlaneMode = mode;
+            
+            // Highlight active mode button in UI
+            const modes = ['none', 'shape', 'bond'];
+            modes.forEach(m => {
+                const btn = document.getElementById(`plane-${m}`);
+                if (btn) {
+                    if (m === mode) {
+                        btn.className = "py-1.5 text-[10px] font-bold rounded-md transition-all text-blue-400 bg-blue-500/10 border border-blue-500/20 shadow-md shadow-blue-500/5";
+                    } else {
+                        btn.className = "py-1.5 text-[10px] font-bold rounded-md transition-all text-gray-400 hover:text-gray-200";
+                    }
+                }
+            });
+
+            reconstructMolecule();
         }
 
         // Select steric pair and auto-update lone pair capabilities
@@ -828,58 +1057,102 @@
                 atomsGroup.add(bond);
             }
 
-            // 3. Add Geometric Polyhedral Planes (NOT involving central atom, unless requested)
-            if (showPlanes && modelData.faces && modelData.faces.length > 0) {
-                const planeVertices = [...bondingPositions];
-                
-                // For cases like Trigonal Pyramidal, we append the central atom [0, 0, 0] so it can be indexed
-                if (modelData.includesCentral) {
-                    planeVertices.push(new THREE.Vector3(0, 0, 0));
+            // 3. Render reference planes based on selected mode (MUTUALLY EXCLUSIVE)
+            if (currentPlaneMode === 'shape') {
+                // Add Geometric Polyhedral Planes (NOT involving central atom, unless requested)
+                if (modelData.faces && modelData.faces.length > 0) {
+                    const planeVertices = [...bondingPositions];
+                    
+                    // For cases like Trigonal Pyramidal, we append the central atom [0, 0, 0] so it can be indexed
+                    if (modelData.includesCentral) {
+                        planeVertices.push(new THREE.Vector3(0, 0, 0));
+                    }
+
+                    if (planeVertices.length >= 3) {
+                        const polyGeometry = new THREE.BufferGeometry();
+                        const verticesArray = [];
+
+                        // Flatten coordinates of selected atoms
+                        planeVertices.forEach(pos => {
+                            verticesArray.push(pos.x, pos.y, pos.z);
+                        });
+
+                        polyGeometry.setAttribute('position', new THREE.Float32BufferAttribute(verticesArray, 3));
+
+                        // Flat index representation of the geometric planes
+                        const indices = [];
+                        modelData.faces.forEach(faceIndices => {
+                            indices.push(faceIndices[0], faceIndices[1], faceIndices[2]);
+                        });
+
+                        polyGeometry.setIndex(indices);
+                        polyGeometry.computeVertexNormals();
+
+                        // Semi-translucent glowing emerald material to represent the planes
+                        const faceMaterial = new THREE.MeshPhongMaterial({
+                            color: 0x10b981,
+                            transparent: true,
+                            opacity: 0.28,
+                            side: THREE.DoubleSide,
+                            shininess: 90,
+                            depthWrite: false // Prevents visual artifacts on transparent overlap
+                        });
+
+                        const polyMesh = new THREE.Mesh(polyGeometry, faceMaterial);
+                        atomsGroup.add(polyMesh);
+
+                        // Highlighted wireframe outlines on the edges of the planes
+                        const edgesGeometry = new THREE.EdgesGeometry(polyGeometry);
+                        const lineMaterial = new THREE.LineBasicMaterial({
+                            color: 0x34d399,
+                            transparent: true,
+                            opacity: 0.7,
+                            linewidth: 2
+                        });
+                        const edgeLines = new THREE.LineSegments(edgesGeometry, lineMaterial);
+                        atomsGroup.add(edgeLines);
+                    }
                 }
+            } 
+            else if (currentPlaneMode === 'bond') {
+                // Add Coplanar Bond Reference Plane
+                if (modelData.bondPlaneNormal) {
+                    const nx = modelData.bondPlaneNormal[0];
+                    const ny = modelData.bondPlaneNormal[1];
+                    const nz = modelData.bondPlaneNormal[2];
+                    const normalVec = new THREE.Vector3(nx, ny, nz).normalize();
 
-                if (planeVertices.length >= 3) {
-                    const polyGeometry = new THREE.BufferGeometry();
-                    const verticesArray = [];
-
-                    // Flatten coordinates of selected atoms
-                    planeVertices.forEach(pos => {
-                        verticesArray.push(pos.x, pos.y, pos.z);
-                    });
-
-                    polyGeometry.setAttribute('position', new THREE.Float32BufferAttribute(verticesArray, 3));
-
-                    // Flat index representation of the geometric planes
-                    const indices = [];
-                    modelData.faces.forEach(faceIndices => {
-                        indices.push(faceIndices[0], faceIndices[1], faceIndices[2]);
-                    });
-
-                    polyGeometry.setIndex(indices);
-                    polyGeometry.computeVertexNormals();
-
-                    // Semi-translucent glowing emerald material to represent the planes
-                    const faceMaterial = new THREE.MeshPhongMaterial({
-                        color: 0x10b981,
+                    // Create circular flat disc (Centered perfectly at 0, 0, 0)
+                    const discGeo = new THREE.CircleGeometry(1.8, 64);
+                    const discMat = new THREE.MeshPhongMaterial({
+                        color: 0x3b82f6, // Educational Blue
                         transparent: true,
                         opacity: 0.28,
                         side: THREE.DoubleSide,
-                        shininess: 90,
-                        depthWrite: false // Prevents visual artifacts on transparent overlap
+                        shininess: 85,
+                        depthWrite: false
                     });
 
-                    const polyMesh = new THREE.Mesh(polyGeometry, faceMaterial);
-                    atomsGroup.add(polyMesh);
+                    const discMesh = new THREE.Mesh(discGeo, discMat);
+                    
+                    // Align plane disc with specified normal vector
+                    const defaultNormal = new THREE.Vector3(0, 0, 1); // default CircleGeometry normal
+                    discMesh.quaternion.setFromUnitVectors(defaultNormal, normalVec);
+                    discMesh.position.set(0, 0, 0); // PERFECTLY CENTERED on the central blue atom
+                    atomsGroup.add(discMesh);
 
-                    // Highlighted wireframe outlines on the edges of the planes
-                    const edgesGeometry = new THREE.EdgesGeometry(polyGeometry);
-                    const lineMaterial = new THREE.LineBasicMaterial({
-                        color: 0x34d399,
+                    // Add nice glowing ring outline
+                    const ringGeo = new THREE.RingGeometry(1.78, 1.82, 64);
+                    const ringMat = new THREE.MeshBasicMaterial({
+                        color: 0x60a5fa,
                         transparent: true,
-                        opacity: 0.7,
-                        linewidth: 2
+                        opacity: 0.6,
+                        side: THREE.DoubleSide
                     });
-                    const edgeLines = new THREE.LineSegments(edgesGeometry, lineMaterial);
-                    atomsGroup.add(edgeLines);
+                    const ringMesh = new THREE.Mesh(ringGeo, ringMat);
+                    ringMesh.quaternion.setFromUnitVectors(defaultNormal, normalVec);
+                    ringMesh.position.set(0, 0, 0); // PERFECTLY CENTERED on the central blue atom
+                    atomsGroup.add(ringMesh);
                 }
             }
 
@@ -951,6 +1224,18 @@
             document.getElementById('hud-bonding').textContent = modelData.bonding;
             document.getElementById('hud-lone').textContent = modelData.lone;
             document.getElementById('hud-angle').textContent = modelData.angle;
+
+            // Update Dynamic 2D Representation Chemical Drawing Panel
+            const drawingCanvas = document.getElementById('canvas-2d-representation');
+            if (drawingCanvas && modelData.svgDraw) {
+                drawingCanvas.innerHTML = modelData.svgDraw;
+                
+                // Real-time patch to dynamically toggle 2D lone pairs display state
+                const svgLonePairs = drawingCanvas.querySelectorAll('.lone-pair-2d');
+                svgLonePairs.forEach(el => {
+                    el.style.display = showLobes ? 'inline' : 'none';
+                });
+            }
 
             // Format formula nice representation AXE
             let formulaHtml = `<span class="font-extrabold text-blue-400">A</span><span class="font-bold text-emerald-400">X</span><sub class="text-emerald-500 font-bold">${modelData.bonding}</sub>`;
