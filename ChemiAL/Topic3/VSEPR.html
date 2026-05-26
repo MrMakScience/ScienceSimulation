@@ -37,6 +37,14 @@
         ::-webkit-scrollbar-thumb:hover {
             background: rgba(59, 130, 246, 0.8);
         }
+        /* Prevents Three.js canvas from inflating the flex container during shrink resizing */
+        #canvas-container canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100% !important;
+            height: 100% !important;
+        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -66,7 +74,7 @@
         <!-- Left Side: Canvas Simulation -->
         <div class="flex-1 relative min-h-[50vh] lg:min-h-0 bg-[#090d16] flex flex-col">
             <!-- 3D Canvas Element with touch-none for flawless iPad/iPhone drag -->
-            <div id="canvas-container" class="w-full flex-1 relative cursor-grab active:cursor-grabbing touch-none">
+            <div id="canvas-container" class="w-full flex-1 relative cursor-grab active:cursor-grabbing touch-none overflow-hidden">
                 <!-- Visual Indicators Floating on Canvas -->
                 <div class="absolute top-4 left-4 z-10 space-y-2 pointer-events-none">
                     <div class="bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/5 text-xs">
