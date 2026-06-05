@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chemvas - Interactive Chemistry Simulation Platform</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+        .topic-section {
+            scroll-margin-top: 5rem;
+        }
+        .card-img-container {
+            aspect-ratio: 16 / 9;
+            overflow: hidden;
+            position: relative;
+        }
+        .card-img {
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .sim-card-active:hover .card-img {
+            transform: scale(1.06);
+        }
+        .sim-card-active {
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .sim-card-active:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px -10px rgba(79, 70, 229, 0.3);
+        }
+        
+        /* Fixed & Robust Dynamic Translation Engine */
+        [lang="zh"] { display: none !important; }
+        body.lang-zh [lang="en"] { display: none !important; }
+        
+        /* Keep inline translated elements inline so they don't break pill layouts */
+        body.lang-zh [lang="zh"] { display: inline !important; }
+        
+        /* Force translated block elements to respect their natural layout rules */
+        body.lang-zh div[lang="zh"],
+        body.lang-zh p[lang="zh"],
+        body.lang-zh h1[lang="zh"],
+        body.lang-zh h2[lang="zh"],
+        body.lang-zh h3[lang="zh"],
+        body.lang-zh section[lang="zh"] { 
+            display: block !important; 
+        }
+        
+        body.lang-zh .inline-zh { display: inline !important; }
+        .inline-zh { display: none !important; }
+        body.lang-zh .inline-en { display: none !important; }
+    </style>
+</head>
+<body class="text-slate-900 transition-colors duration-300">
+
+    <!-- Header Section -->
+    <header class="bg-gradient-to-br from-indigo-900 via-indigo-800 to-slate-900 text-white py-8 md:py-10 px-6 shadow-xl relative overflow-hidden">
+        <!-- Abstract chemical background elements -->
+        <div class="absolute inset-0 opacity-10 pointer-events-none">
+            <svg class="absolute w-96 h-96 -top-12 -left-12 text-white" fill="currentColor" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" stroke-width="2"/>
+                <circle cx="50" cy="50" r="10"/>
+                <line x1="10" y1="50" x2="90" y2="50" stroke="currentColor" stroke-width="1.5"/>
+                <line x1="50" y1="10" x2="50" y2="90" stroke="currentColor" stroke-width="1.5"/>
+            </svg>
+            <svg class="absolute w-80 h-80 -bottom-10 -right-10 text-white" fill="currentColor" viewBox="0 0 100 100">
+                <path d="M30,20 L70,20 L80,80 L20,80 Z" fill="none" stroke="currentColor" stroke-width="2"/>
+                <line x1="20" y1="40" x2="80" y2="40" stroke="currentColor" stroke-width="1"/>
+                <line x1="20" y1="60" x2="80" y2="60" stroke="currentColor" stroke-width="1"/>
+            </svg>
+        </div>
+
+        <div class="max-w-6xl mx-auto relative z-10">
+            <!-- Language Toggle at the top -->
+            <div class="flex justify-end mb-4">
+                <button onclick="document.body.classList.toggle('lang-zh')" class="bg-white/10 hover:bg-white/20 active:scale-95 backdrop-blur-md border border-white/25 px-4 py-2 rounded-xl text-sm font-semibold transition-all flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                    <span class="inline-en">繁體中文</span>
+                    <span class="inline-zh">English</span>
+                </button>
+            </div>
+
+            <h1 class="text-5xl md:text-7xl font-extrabold mb-4 tracking-tight">
+                Chemvas
+            </h1>
+            <p class="text-indigo-200 text-lg md:text-xl max-w-3xl mb-8 leading-relaxed font-normal">
+                <span lang="en">Painting a clearer picture of Chemistry.</span>
+                <span lang="zh">為化學繪製更清晰的微觀藍圖。</span>
+            </p>
+            
+            <div class="inline-flex items-start gap-3 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl px-4 py-2.5 max-w-3xl">
+                <span class="text-xl mt-0.5">💡</span>
+                <p class="text-indigo-50 text-xs md:text-sm font-medium leading-relaxed">
+                    <span lang="en">Suggest using iPad/ Computer for the best experience. For phone user, please use the simulation at vertical view.</span>
+                    <span lang="zh">建議使用 iPad 或電腦以獲得最佳體驗。手機用戶請在垂直模式下使用模擬器。</span>
+                </p>
+            </div>
+        </div>
+    </header>
+
+    <!-- Primary master navigation tabs -->
+    <div class="bg-slate-900 text-white border-b border-indigo-950">
+        <div class="max-w-6xl mx-auto px-6 flex gap-2 sm:gap-6 overflow-x-auto scrollbar-none">
+            <button onclick="switchMasterTab('simulations')" id="master-tab-simulations" class="py-4 px-4 text-sm font-bold tracking-wide uppercase border-b-4 border-indigo-500 text-white transition-all flex items-center gap-2 whitespace-nowrap">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 12c0-1.232-.046-2.453-.138-3.662a4.006 4.006 0 00-3.7-3.7 48.656 48.656 0 00-7.324 0 4.006 4.006 0 00-3.7 3.7c-.017.22-.032.441-.046.662M19.5 12l3-3m-3 3l-3-3M3 12c0 1.232.046 2.453.138 3.662a4.006 4.006 0 003.7 3.7 48.656 48.656 0 007.324 0 4.006 4.006 0 003.7-3.7c.017-.22.032-.441.046-.662M3 12l-3 3m3-3l3 3M21.75 12a9.75 9.75 0 11-19.5 0 9.75 9.75 0 0119.5 0z"/></svg>
+                <span lang="en">Simulations</span><span lang="zh">互動模擬</span>
+            </button>
+            <button onclick="switchMasterTab('vision')" id="master-tab-vision" class="py-4 px-4 text-sm font-semibold tracking-wide uppercase border-b-4 border-transparent text-slate-400 hover:text-white transition-all flex items-center gap-2 whitespace-nowrap">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                <span lang="en">Our Vision</span><span lang="zh">教育理念</span>
+            </button>
+            <button onclick="switchMasterTab('aboutme')" id="master-tab-aboutme" class="py-4 px-4 text-sm font-semibold tracking-wide uppercase border-b-4 border-transparent text-slate-400 hover:text-white transition-all flex items-center gap-2 whitespace-nowrap">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/></svg>
+                <span lang="en">About Me</span><span lang="zh">關於我</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Filters and Sub-Navigation bar (Only visible when Simulations main tab is active) -->
+    <div id="sub-navigation-container" class="sticky top-0 bg-white/90 backdrop-blur-md border-b border-slate-200 z-20 shadow-sm transition-all duration-300">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <!-- Dynamic Filters -->
+            <div class="flex items-center gap-2 overflow-x-auto w-full sm:w-auto pb-2 sm:pb-0 scrollbar-none">
+                <button onclick="filterTopics('all')" id="btn-all" class="filter-btn px-4 py-2 rounded-xl text-sm font-semibold transition-all bg-indigo-600 text-white">
+                    <span lang="en">All Topics</span><span lang="zh">全部主題</span>
+                </button>
+                <button onclick="filterTopics('compulsory')" id="btn-compulsory" class="filter-btn px-4 py-2 rounded-xl text-sm font-semibold transition-all text-slate-600 hover:bg-slate-100 hover:text-slate-900">
+                    <span lang="en">Compulsory Part</span><span lang="zh">必修部分</span>
+                </button>
+                <button onclick="filterTopics('elective')" id="btn-elective" class="filter-btn px-4 py-2 rounded-xl text-sm font-semibold transition-all text-slate-600 hover:bg-slate-100 hover:text-slate-900">
+                    <span lang="en">Elective Part</span><span lang="zh">選修部分</span>
+                </button>
+                <button onclick="filterTopics('active')" id="btn-active" class="filter-btn px-4 py-2 rounded-xl text-sm font-semibold transition-all text-indigo-600 bg-indigo-50 hover:bg-indigo-100 flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span lang="en">Available Now</span><span lang="zh">現正開放</span>
+                </button>
+            </div>
+            
+            <!-- Statistics Badge -->
+            <div class="text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+                <span lang="en">Curriculum Topics</span><span lang="zh">課程主題</span>
+                <span class="bg-indigo-100 text-indigo-800 text-sm px-2.5 py-0.5 rounded-full font-bold">15</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Primary Content Wrapper -->
+    <main class="max-w-6xl mx-auto px-6 py-12">
+        
+        <!-- ================= MASTER TAB: SIMULATIONS CONTENT ================= -->
+        <div id="panel-simulations" class="space-y-12 block">
+            <div id="topics-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                
+                <!-- Topic 1: Planet Earth (Developing) -->
+                <div class="topic-card bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden opacity-60 hover:opacity-85 transition-all flex flex-col" data-category="compulsory" data-status="tbc">
+                    <div class="card-img-container bg-slate-100 flex items-center justify-center p-6 text-slate-400">
+                        <svg class="w-20 h-20 text-slate-300" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="10" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 2a14.5 14.5 0 0 0-3.5 10 14.5 14.5 0 0 0 3.5 10m0-20a14.5 14.5 0 0 1 3.5 10 14.5 14.5 0 0 1-3.5 10M2 12h20" />
+                        </svg>
+                        <span class="absolute top-3 right-3 bg-slate-200 text-slate-600 text-xs font-bold px-2.5 py-1 rounded-lg">
+                            <span lang="en">Developing</span><span lang="zh">開發中</span>
+                        </span>
+                    </div>
+                    <div class="p-6 flex-grow flex flex-col">
+                        <span class="text-xs font-semibold text-slate-400 uppercase mb-1 flex items-center justify-between">
+                            <span><span lang="en">Topic 1</span><span lang="zh">課題 1</span> • <span lang="en">Compulsory</span><span lang="zh">必修部分</span></span>
+                        </span>
+                        <h3 class="font-bold text-xl mb-2 text-slate-700">
+                            <span lang="en">Planet Earth (Developing)</span>
+                            <span lang="zh">地球 (開發中)</span>
+                        </h3>
+                        <p class="text-slate-500 text-sm mb-6 flex-grow">
+                            <span lang="en">Explore the atmosphere, ocean, rocks, and minerals, and chemical techniques used to extract common elements from resources.</span>
+                            <span lang="zh">探索大氣、海洋、岩石及礦物，以及從天然資源提取常見元素所需的化學方法。</span>
+                        </p>
+                        <button disabled class="w-full bg-slate-100 text-slate-400 py-2.5 px-4 rounded-xl font-semibold cursor-not-allowed">
+                            <span lang="en">Under Development</span><span lang="zh">正在開發中</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Topic 2: Microscopic World I (ACTIVE) -->
+                <div class="topic-card bg-white rounded-2xl shadow-md border-2 border-indigo-500 overflow-hidden sim-card-active flex flex-col relative" data-category="compulsory" data-status="active">
+                    <div class="absolute top-4 left-4 z-10 bg-emerald-500 text-white text-xs font-bold px-2.5 py-1 rounded-lg shadow-sm flex items-center gap-1">
+                        <span class="w-1.5 h-1.5 rounded-full bg-white animate-ping"></span>
+                        <span lang="en">Active</span><span lang="zh">已開放</span>
+                    </div>
+                    <div class="card-img-container bg-indigo-50">
+                        <img id="preview-img-mic1" src="https://imgur.com/gJOKCGH.png" alt="Microscopic World I" class="card-img w-full h-full object-cover onerror-placeholder">
+                    </div>
+                    <div class="p-6 flex-grow flex flex-col">
+                        <span class="text-xs font-semibold text-indigo-500 uppercase mb-1 flex items-center justify-between">
+                            <span><span lang="en">Topic 2</span><span lang="zh">課題 2</span> • <span lang="en">Compulsory</span><span lang="zh">必修部分</span></span>
+                        </span>
+                        <h3 class="font-bold text-xl mb-2 text-slate-800">
+                            <span lang="en">Microscopic World I</span>
+                            <span lang="zh">微觀世界 I</span>
+                        </h3>
+                        <p class="text-slate-600 text-sm mb-6 flex-grow">
+                            <span lang="en">Deep dive into atomic structures, isotopes stability, the Periodic Table, ionic/covalent bonds, and properties of various substances.</span>
+                            <span lang="zh">深入研究原子結構、同位素穩定性、元素週期表、離子與共價鍵，以及各類物質的物理特點與化學屬性。</span>
+                        </p>
+                        <a href="https://mrmakscience.github.io/ScienceSimulation/MicWorld1" target="_blank" class="w-full bg-indigo-600 text-white text-center py-2.5 px-4 rounded-xl font-semibold hover:bg-indigo-700 transition shadow-md shadow-indigo-200">
+                            <span lang="en">Launch Simulation Suite</span><span lang="zh">進入模擬平台</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Topic 3: Metals (Developing) -->
+                <div class="topic-card bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden opacity-60 hover:opacity-85 transition-all flex flex-col" data-category="compulsory" data-status="tbc">
+                    <div class="card-img-container bg-slate-100 flex items-center justify-center p-6 text-slate-400">
+                        <svg class="w-20 h-20 text-slate-300" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                        </svg>
+                        <span class="absolute top-3 right-3 bg-slate-200 text-slate-600 text-xs font-bold px-2.5 py-1 rounded-lg">
+                            <span lang="en">Developing</span><span lang="zh">開發中</span>
+                        </span>
+                    </div>
+                    <div class="p-6 flex-grow flex flex-col">
+                        <span class="text-xs font-semibold text-slate-400 uppercase mb-1 flex items-center justify-between">
+                            <span><span lang="en">Topic 3</span><span lang="zh">課題 3</span> • <span lang="en">Compulsory</span><span lang="zh">必修部分</span></span>
+                        </span>
+                        <h3 class="font-bold text-xl mb-2 text-slate-700">
+                            <span lang="en">Metals (Developing)</span>
+                            <span lang="zh">金屬 (開發中)</span>
+                        </h3>
+                        <p class="text-slate-500 text-sm mb-6 flex-grow">
+                            <span lang="en">Understand the reactivity series, chemical reactions of metals, prevention of corrosion, and quantitative calculations.</span>
+                            <span lang="zh">理解金屬反應性系列、化學反應規律、防鏽措施及金屬蘊藏量的定量計算。</span>
+                        </p>
+                        <button disabled class="w-full bg-slate-100 text-slate-400 py-2.5 px-4 rounded-xl font-semibold cursor-not-allowed">
+                            <span lang="en">Under Development</span><span lang="zh">正在開發中</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Topic 4: Acids and Bases (Developing) -->
+                <div class="topic-card bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden opacity-60 hover:opacity-85 transition-all flex flex-col" data-category="compulsory" data-status="tbc">
+                    <div class="card-img-container bg-slate-100 flex items-center justify-center p-6 text-slate-400">
+                        <svg class="w-20 h-20 text-slate-300" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span class="absolute top-3 right-3 bg-slate-200 text-slate-600 text-xs font-bold px-2.5 py-1 rounded-lg">
+                            <span lang="en">Developing</span><span lang="zh">開發中</span>
+                        </span>
+                    </div>
+                    <div class="p-6 flex-grow flex flex-col">
+                        <span class="text-xs font-semibold text-slate-400 uppercase mb-1 flex items-center justify-between">
+                            <span><span lang="en">Topic 4</span><span lang="zh">課題 4</span> • <span lang="en">Compulsory</span><span lang="zh">必修部分</span></span>
+                        </span>
+                        <h3 class="font-bold text-xl mb-2 text-slate-700">
+                            <span lang="en">Acids and Bases (Developing)</span>
+                            <span lang="zh">酸和鹼 (開發中)</span>
+                        </h3>
+                        <p class="text-slate-500 text-sm mb-6 flex-grow">
+                            <span lang="en">Learn pH scales, chemical properties of common laboratory acids/alkalis, volumetric analysis, and standard salt preparations.</span>
+                            <span lang="zh">探索pH值標度、常用酸和鹼的反應特性、容量分析（滴定）及鹽類的配製步驟。</span>
+                        </p>
+                        <button disabled class="w-full bg-slate-100 text-slate-400 py-2.5 px-4 rounded-xl font-semibold cursor-not-allowed">
+                            <span lang="en">Under Development</span><span lang="zh">正在開發中</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Topic 5: Fossil Fuels (Developing) -->
+                <div class="topic-card bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden opacity-60 hover:opacity-85 transition-all flex flex-col" data-category="compulsory" data-status="tbc">
+                    <div class="card-img-container bg-slate-100 flex items-center justify-center p-6 text-slate-400">
+                        <svg class="w-20 h-20 text-slate-300" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.25 8.25 0 015-2.236A8.295 8.295 0 0014 18a8.25 8.25 0 011.362-12.786z" />
+                        </svg>
+                        <span class="absolute top-3 right-3 bg-slate-200 text-slate-600 text-xs font-bold px-2.5 py-1 rounded-lg">
+                            <span lang="en">Developing</span><span lang="zh">開發中</span>
+                        </span>
+                    </div>
+                    <div class="p-6 flex-grow flex flex-col">
+                        <span class="text-xs font-semibold text-slate-400 uppercase mb-1 flex items-center justify-between">
+                            <span><span lang="en">Topic 5</span><span lang="zh">課題 5</span> • <span lang="en">Compulsory</span><span lang="zh">必修部分</span></span>
+                        </span>
+                        <h3 class="font-bold text-xl mb-2 text-slate-700">
+                            <span lang="en">Fossil Fuels and Carbon Compounds (Developing)</span>
+                            <span lang="zh">化石燃料與碳化合物 (開發中)</span>
+                        </h3>
+                        <p class="text-slate-500 text-sm mb-6 flex-grow">
+                            <span lang="en">Study petroleum refining, organic naming of alkanes and alkenes, polymerization, and structural formulas.</span>
+                            <span lang="zh">學習石油的分餾過程、烷烴與烯烴的命名法、聚合作用，以及各有機化合物的分子結構。</span>
+                        </p>
+                        <button disabled class="w-full bg-slate-100 text-slate-400 py-2.5 px-4 rounded-xl font-semibold cursor-not-allowed">
+                            <span lang="en">Under Development</span><span lang="zh">正在開發中</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Topic 6: Microscopic World II (Developing) -->
+                <div class="topic-card bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden opacity-60 hover:opacity-85 transition-all flex flex-col" data-category="compulsory" data-status="tbc">
+                    <div class="card-img-container bg-slate-100 flex items-center justify-center p-6 text-slate-400">
+                        <svg class="w-20 h-20 text-slate-300" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719" />
+                        </svg>
+                        <span class="absolute top-3 right-3 bg-slate-200 text-slate-600 text-xs font-bold px-2.5 py-1 rounded-lg">
+                            <span lang="en">Developing</span><span lang="zh">開發中</span>
+                        </span>
+                    </div>
+                    <div class="p-6 flex-grow flex flex-col">
+                        <span class="text-xs font-semibold text-slate-400 uppercase mb-1 flex items-center justify-between">
+                            <span><span lang="en">Topic 6</span><span lang="zh">課題 6</span> • <span lang="en">Compulsory</span><span lang="zh">必修部分</span></span>
+                        </span>
+                        <h3 class="font-bold text-xl mb-2 text-slate-700">
+                            <span lang="en">Microscopic World II (Developing)</span>
+                            <span lang="zh">微觀世界 II (開發中)</span>
+                        </h3>
+                        <p class="text-slate-500 text-sm mb-6 flex-grow">
+                            <span lang="en">Discover molecular shapes, polar bonds and molecules, intermolecular attractions like hydrogen bonding, and covalent networks.</span>
+                            <span lang="zh">研究空間分子形狀、極性鍵與偶極分子、包含氫鍵的分子間引力以及立體共價網絡。</span>
+                        </p>
+                        <button disabled class="w-full bg-slate-100 text-slate-400 py-2.5 px-4 rounded-xl font-semibold cursor-not-allowed">
+                            <span lang="en">Under Development</span><span lang="zh">正在開發中</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Topic 7: Redox (Developing) -->
+                <div class="topic-card bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden opacity-60 hover:opacity-85 transition-all flex flex-col" data-category="compulsory" data-status="tbc">
+                    <div class="card-img-container bg-slate-100 flex items-center justify-center p-6 text-slate-400">
+                        <svg class="w-20 h-20 text-slate-300" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
+                        </svg>
+                        <span class="absolute top-3 right-3 bg-slate-200 text-slate-600 text-xs font-bold px-2.5 py-1 rounded-lg">
+                            <span lang="en">Developing</span><span lang="zh">開發中</span>
+                        </span>
+                    </div>
+                    <div class="p-6 flex-grow flex flex-col">
+                        <span class="text-xs font-semibold text-slate-400 uppercase mb-1 flex items-center justify-between">
+                            <span><span lang="en">Topic 7</span><span lang="zh">課題 7</span> • <span lang="en">Compulsory</span><span lang="zh">必修部分</span></span>
+                        </span>
+                        <h3 class="font-bold text-xl mb-2 text-slate-700">
+                            <span lang="en">Redox Reactions, Cells & Electrolysis (Developing)</span>
+                            <span lang="zh">氧化還原反應、化學電池及電解 (開發中)</span>
+                        </h3>
+                        <p class="text-slate-500 text-sm mb-6 flex-grow">
+                            <span lang="en">Explore oxidation numbers, chemical cells, sacrificial protections, electrolysis of molten and aqueous compounds, and electroplating.</span>
+                            <span lang="zh">探究氧化數概念、化學電池機制、犧牲性保護法、熔融和水溶液化合物的電解原理及電鍍應用。</span>
+                        </p>
+                        <button disabled class="w-full bg-slate-100 text-slate-400 py-2.5 px-4 rounded-xl font-semibold cursor-not-allowed">
+                            <span lang="en">Under Development</span><span lang="zh">正在開發中</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Topic 8: Chemical Reactions & Energy (Developing) -->
+                <div class="topic-card bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden opacity-60 hover:opacity-85 transition-all flex flex-col" data-category="compulsory" data-status="tbc">
+                    <div class="card-img-container bg-slate-100 flex items-center justify-center p-6 text-slate-400">
+                        <svg class="w-20 h-20 text-slate-300" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v18m9-9H3" />
+                        </svg>
+                        <span class="absolute top-3 right-3 bg-slate-200 text-slate-600 text-xs font-bold px-2.5 py-1 rounded-lg">
+                            <span lang="en">Developing</span><span lang="zh">開發中</span>
+                        </span>
+                    </div>
+                    <div class="p-6 flex-grow flex flex-col">
+                        <span class="text-xs font-semibold text-slate-400 uppercase mb-1 flex items-center justify-between">
+                            <span><span lang="en">Topic 8</span><span lang="zh">課題 8</span> • <span lang="en">Compulsory</span><span lang="zh">必修部分</span></span>
+                        </span>
+                        <h3 class="font-bold text-xl mb-2 text-slate-700">
+                            <span lang="en">Chemical Reactions & Energy (Developing)</span>
+                            <span lang="zh">化學反應與能量 (開發中)</span>
+                        </h3>
+                        <p class="text-slate-500 text-sm mb-6 flex-grow">
+                            <span lang="en">Learn about endothermic and exothermic reactions, enthalpy change measurement, Hess's law, and energy profiles.</span>
+                            <span lang="zh">學習吸熱和放熱反應、反應焓變的實驗測定、赫斯定律的應用及化學能量分佈曲線。</span>
+                        </p>
+                        <button disabled class="w-full bg-slate-100 text-slate-400 py-2.5 px-4 rounded-xl font-semibold cursor-not-allowed">
+                            <span lang="en">Under Development</span><span lang="zh">正在開發中</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Topic 9: Rate of Reaction (Developing) -->
+                <div class="topic-card bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden opacity-60 hover:opacity-85 transition-all flex flex-col" data-category="compulsory" data-status="tbc">
+                    <div class="card-img-container bg-slate-100 flex items-center justify-center p-6 text-slate-400">
+                        <svg class="w-20 h-20 text-slate-300" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="10" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2" />
+                        </svg>
+                        <span class="absolute top-3 right-3 bg-slate-200 text-slate-600 text-xs font-bold px-2.5 py-1 rounded-lg">
+                            <span lang="en">Developing</span><span lang="zh">開發中</span>
+                        </span>
+                    </div>
+                    <div class="p-6 flex-grow flex flex-col">
+                        <span class="text-xs font-semibold text-slate-400 uppercase mb-1 flex items-center justify-between">
+                            <span><span lang="en">Topic 9</span><span lang="zh">課題 9</span> • <span lang="en">Compulsory</span><span lang="zh">必修部分</span></span>
+                        </span>
+                        <h3 class="font-bold text-xl mb-2 text-slate-700">
+                            <span lang="en">Rate of Reaction (Developing)</span>
+                            <span lang="zh">反應速率 (開發中)</span>
+                        </h3>
+                        <p class="text-slate-500 text-sm mb-6 flex-grow">
+                            <span lang="en">Assess experimental methods of measuring rates, factors affecting reaction rates, collision theory, and the role of catalysts.</span>
+                            <span lang="zh">分析測量化學反應速率的實驗技術、反應速率影響因素、碰撞理論機制及催化劑的效能。</span>
+                        </p>
+                        <button disabled class="w-full bg-slate-100 text-slate-400 py-2.5 px-4 rounded-xl font-semibold cursor-not-allowed">
+                            <span lang="en">Under Development</span><span lang="zh">正在開發中</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Topic 10: Chemical Equilibrium (Developing) -->
+                <div class="topic-card bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden opacity-60 hover:opacity-85 transition-all flex flex-col" data-category="compulsory" data-status="tbc">
+                    <div class="card-img-container bg-slate-100 flex items-center justify-center p-6 text-slate-400">
+                        <svg class="w-20 h-20 text-slate-300" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 7.5L7.5 3m0 0L12 7.5M7.5 3v13.5m13.5 0L16.5 21m0 0L12 16.5m4.5 4.5V7.5" />
+                        </svg>
+                        <span class="absolute top-3 right-3 bg-slate-200 text-slate-600 text-xs font-bold px-2.5 py-1 rounded-lg">
+                            <span lang="en">Developing</span><span lang="zh">開發中</span>
+                        </span>
+                    </div>
+                    <div class="p-6 flex-grow flex flex-col">
+                        <span class="text-xs font-semibold text-slate-400 uppercase mb-1 flex items-center justify-between">
+                            <span><span lang="en">Topic 10</span><span lang="zh">課題 10</span> • <span lang="en">Compulsory</span><span lang="zh">必修部分</span></span>
+                        </span>
+                        <h3 class="font-bold text-xl mb-2 text-slate-700">
+                            <span lang="en">Chemical Equilibrium (Developing)</span>
+                            <span lang="zh">化學平衡 (開發中)</span>
+                        </h3>
+                        <p class="text-slate-500 text-sm mb-6 flex-grow">
+                            <span lang="en">Investigate dynamic equilibrium states, Le Chatelier’s principle, and equilibrium constant ($K_c$) formulations.</span>
+                            <span lang="zh">深入分析可逆反應的動態平衡狀態、勒沙特列原理、平衡常數 $K_c$ 定律及複雜定量推導。</span>
+                        </p>
+                        <button disabled class="w-full bg-slate-100 text-slate-400 py-2.5 px-4 rounded-xl font-semibold cursor-not-allowed">
+                            <span lang="en">Under Development</span><span lang="zh">正在開發中</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Topic 11: Chemistry of Carbon Compounds (Developing) -->
+                <div class="topic-card bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden opacity-60 hover:opacity-85 transition-all flex flex-col" data-category="compulsory" data-status="tbc">
+                    <div class="card-img-container bg-slate-100 flex items-center justify-center p-6 text-slate-400">
+                        <svg class="w-20 h-20 text-slate-300" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719" />
+                        </svg>
+                        <span class="absolute top-3 right-3 bg-slate-200 text-slate-600 text-xs font-bold px-2.5 py-1 rounded-lg">
+                            <span lang="en">Developing</span><span lang="zh">開發中</span>
+                        </span>
+                    </div>
+                    <div class="p-6 flex-grow flex flex-col">
+                        <span class="text-xs font-semibold text-slate-400 uppercase mb-1 flex items-center justify-between">
+                            <span><span lang="en">Topic 11</span><span lang="zh">課題 11</span> • <span lang="en">Compulsory</span><span lang="zh">必修部分</span></span>
+                        </span>
+                        <h3 class="font-bold text-xl mb-2 text-slate-700">
+                            <span lang="en">Chemistry of Carbon Compounds (Developing)</span>
+                            <span lang="zh">碳化合物的化學 (開發中)</span>
+                        </h3>
+                        <p class="text-slate-500 text-sm mb-6 flex-grow">
+                            <span lang="en">Explore functional groups, structural isomerism, reactions of alcohols, carbonyls, carboxylic acids, and synthetic route design.</span>
+                            <span lang="zh">研究常見官能團、結構同分異構現象、醇類、羰基化合物、羧酸的代表性化學反應及有機合成路徑設計。</span>
+                        </p>
+                        <button disabled class="w-full bg-slate-100 text-slate-400 py-2.5 px-4 rounded-xl font-semibold cursor-not-allowed">
+                            <span lang="en">Under Development</span><span lang="zh">正在開發中</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Topic 12: Patterns in the Chemical World (Developing) -->
+                <div class="topic-card bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden opacity-60 hover:opacity-85 transition-all flex flex-col" data-category="compulsory" data-status="tbc">
+                    <div class="card-img-container bg-slate-100 flex items-center justify-center p-6 text-slate-400">
+                        <svg class="w-20 h-20 text-slate-300" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25A2.25 2.25 0 0113.5 8.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
+                        </svg>
+                        <span class="absolute top-3 right-3 bg-slate-200 text-slate-600 text-xs font-bold px-2.5 py-1 rounded-lg">
+                            <span lang="en">Developing</span><span lang="zh">開發中</span>
+                        </span>
+                    </div>
+                    <div class="p-6 flex-grow flex flex-col">
+                        <span class="text-xs font-semibold text-slate-400 uppercase mb-1 flex items-center justify-between">
+                            <span><span lang="en">Topic 12</span><span lang="zh">課題 12</span> • <span lang="en">Compulsory</span><span lang="zh">必修部分</span></span>
+                        </span>
+                        <h3 class="font-bold text-xl mb-2 text-slate-700">
+                            <span lang="en">Patterns in the Chemical World (Developing)</span>
+                            <span lang="zh">化學世界的規律 (開發中)</span>
+                        </h3>
+                        <p class="text-slate-500 text-sm mb-6 flex-grow">
+                            <span lang="en">Study periodic properties of elements in Period 3, transition metals chemistry, coordination structures, and compounds characteristics.</span>
+                            <span lang="zh">研究第三週期元素性質的遞變規律、過渡金屬配位結構特徵、有色離子以及配位化合物與多樣催化反應。</span>
+                        </p>
+                        <button disabled class="w-full bg-slate-100 text-slate-400 py-2.5 px-4 rounded-xl font-semibold cursor-not-allowed">
+                            <span lang="en">Under Development</span><span lang="zh">正在開發中</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Topic 13: Industrial Chemistry (Developing) -->
+                <div class="topic-card bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden opacity-60 hover:opacity-85 transition-all flex flex-col" data-category="elective" data-status="tbc">
+                    <div class="card-img-container bg-slate-100 flex items-center justify-center p-6 text-slate-400">
+                        <svg class="w-20 h-20 text-slate-300" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-.778.099-1.533.284-2.253" />
+                        </svg>
+                        <span class="absolute top-3 right-3 bg-indigo-100 text-indigo-700 text-xs font-bold px-2.5 py-1 rounded-lg">
+                            <span lang="en">ELECTIVE</span><span lang="zh">選修</span>
+                        </span>
+                    </div>
+                    <div class="p-6 flex-grow flex flex-col">
+                        <span class="text-xs font-semibold text-indigo-500 uppercase mb-1 flex items-center justify-between">
+                            <span><span lang="en">Topic 13</span><span lang="zh">課題 13</span> • <span lang="en">Elective</span><span lang="zh">選修部分</span></span>
+                        </span>
+                        <h3 class="font-bold text-xl mb-2 text-slate-700">
+                            <span lang="en">Industrial Chemistry (Developing)</span>
+                            <span lang="zh">工業化學 (開發中)</span>
+                        </h3>
+                        <p class="text-slate-500 text-sm mb-6 flex-grow">
+                            <span lang="en">Maximize industrial yields, evaluate activation energy, analyze the Haber and chlor-alkali processes, and green principles.</span>
+                            <span lang="zh">最大化工業化學產率、測定化合活化能、分析哈柏法與氯鹼法流程，以及評估綠色化學原理。</span>
+                        </p>
+                        <button disabled class="w-full bg-slate-100 text-slate-400 py-2.5 px-4 rounded-xl font-semibold cursor-not-allowed">
+                            <span lang="en">Under Development</span><span lang="zh">正在開發中</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Topic 14: Material Chemistry (Developing) -->
+                <div class="topic-card bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden opacity-60 hover:opacity-85 transition-all flex flex-col" data-category="elective" data-status="tbc">
+                    <div class="card-img-container bg-slate-100 flex items-center justify-center p-6 text-slate-400">
+                        <svg class="w-20 h-20 text-slate-300" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719" />
+                        </svg>
+                        <span class="absolute top-3 right-3 bg-indigo-100 text-indigo-700 text-xs font-bold px-2.5 py-1 rounded-lg">
+                            <span lang="en">ELECTIVE</span><span lang="zh">選修</span>
+                        </span>
+                    </div>
+                    <div class="p-6 flex-grow flex flex-col">
+                        <span class="text-xs font-semibold text-indigo-500 uppercase mb-1 flex items-center justify-between">
+                            <span><span lang="en">Topic 14</span><span lang="zh">課題 14</span> • <span lang="en">Elective</span><span lang="zh">選修部分</span></span>
+                        </span>
+                        <h3 class="font-bold text-xl mb-2 text-slate-700">
+                            <span lang="en">Material Chemistry (Developing)</span>
+                            <span lang="zh">材料化學 (開發中)</span>
+                        </h3>
+                        <p class="text-slate-500 text-sm mb-6 flex-grow">
+                            <span lang="en">Study synthetic polymers, liquid crystals, nanomaterials, structural properties of alloys, and synthetic modern substances.</span>
+                            <span lang="zh">學習各類人工合成聚合物、液晶顯示原理、高科技納米材料、合金結構及現代新型材料的開發應用。</span>
+                        </p>
+                        <button disabled class="w-full bg-slate-100 text-slate-400 py-2.5 px-4 rounded-xl font-semibold cursor-not-allowed">
+                            <span lang="en">Under Development</span><span lang="zh">正在開發中</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Topic 15: Analytical Chemistry (Developing) -->
+                <div class="topic-card bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden opacity-60 hover:opacity-85 transition-all flex flex-col" data-category="elective" data-status="tbc">
+                    <div class="card-img-container bg-slate-100 flex items-center justify-center p-6 text-slate-400">
+                        <svg class="w-20 h-20 text-slate-300" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m11.314 11.314l.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z" />
+                        </svg>
+                        <span class="absolute top-3 right-3 bg-indigo-100 text-indigo-700 text-xs font-bold px-2.5 py-1 rounded-lg">
+                            <span lang="en">ELECTIVE</span><span lang="zh">選修</span>
+                        </span>
+                    </div>
+                    <div class="p-6 flex-grow flex flex-col">
+                        <span class="text-xs font-semibold text-indigo-500 uppercase mb-1 flex items-center justify-between">
+                            <span><span lang="en">Topic 15</span><span lang="zh">課題 15</span> • <span lang="en">Elective</span><span lang="zh">選修部分</span></span>
+                        </span>
+                        <h3 class="font-bold text-xl mb-2 text-slate-700">
+                            <span lang="en">Analytical Chemistry (Developing)</span>
+                            <span lang="zh">分析化學 (開發中)</span>
+                        </h3>
+                        <p class="text-slate-500 text-sm mb-6 flex-grow">
+                            <span lang="en">Examine chemical tests for ion detection, separation methods, and molecular instrumentation: Mass Spectrometry, IR, and NMR spectroscopy.</span>
+                            <span lang="zh">探索檢驗化學離子的各種定性測試、分離混合物技術及高階光譜分析儀：質譜、紅外光譜及核磁共振。</span>
+                        </p>
+                        <button disabled class="w-full bg-slate-100 text-slate-400 py-2.5 px-4 rounded-xl font-semibold cursor-not-allowed">
+                            <span lang="en">Under Development</span><span lang="zh">正在開發中</span>
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ================= MASTER TAB: OUR VISION CONTENT ================= -->
+        <div id="panel-vision" class="hidden animate-fade-in">
+            <div class="bg-white rounded-3xl p-8 md:p-12 border border-slate-200 shadow-sm max-w-4xl mx-auto">
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="p-3 bg-indigo-100 rounded-2xl text-indigo-600">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-.778.099-1.533.284-2.253"/></svg>
+                    </div>
+                    <div>
+                        <h2 class="text-3xl font-extrabold text-slate-900 tracking-tight">
+                            <span lang="en">Our Vision</span><span lang="zh">教育理念</span>
+                        </h2>
+                        <p class="text-indigo-600 font-semibold text-sm">
+                            <span lang="en">Painting a clearer picture of Chemistry</span><span lang="zh">描繪更清晰的化學微觀世界</span>
+                        </p>
+                    </div>
+                </div>
+
+                <div class="prose prose-indigo max-w-none text-slate-600 space-y-6">
+                    <!-- Core Pedagogical Panels Grid -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 my-8">
+                        
+                        <!-- Panel 1: Visualization of abstract concepts -->
+                        <div class="p-6 bg-slate-50 border border-slate-100 rounded-2xl hover:border-indigo-200 transition-all">
+                            <span class="text-3xl block mb-2">🔮</span>
+                            <h4 class="font-bold text-slate-900 mb-2">
+                                <span lang="en">Visualization of Abstract Concepts</span>
+                                <span lang="zh">抽象概念可視化</span>
+                            </h4>
+                            <p class="text-sm text-slate-500 leading-relaxed">
+                                <span lang="en">Chemistry involves many subatomic particles that students cannot physically see or touch, making it difficult to conceptualize. This platform visualizes these invisible structures and uses intuitive, real-world metaphors to help students grasp the core concepts behind them.</span>
+                                <span lang="zh">化學涉及許多學生無法親眼看見或觸摸的亞原子微粒，這使得概念化變得困難。本平台將這些隱形的結構呈現出來，並運用直觀且貼近生活的比喻，幫助學生掌握其背後的化學核心概念。</span>
+                            </p>
+                        </div>
+                        
+                        <!-- Panel 2: Interactive approach -->
+                        <div class="p-6 bg-slate-50 border border-slate-100 rounded-2xl hover:border-indigo-200 transition-all">
+                            <span class="text-3xl block mb-2">🔄</span>
+                            <h4 class="font-bold text-slate-900 mb-2">
+                                <span lang="en">Interactive Learning Environment</span>
+                                <span lang="zh">互動式學習環境</span>
+                            </h4>
+                            <p class="text-sm text-slate-500 leading-relaxed">
+                                <span lang="en">Students can directly manipulate variables to see real-time correlations between different chemical properties. The platform also features virtual experiments, allowing students to conduct lab work safely from any computer instead of relying solely on a physical laboratory.</span>
+                                <span lang="zh">學生可以直接操作變量，以即時觀察不同化學性質之間的關聯。平台還配備了虛擬實驗，讓學生能夠在任何電腦上安全地進行實驗操作，而無需僅僅依賴實體實驗室。</span>
+                            </p>
+                        </div>
+
+                        <!-- Panel 3: Gamification on rote learning -->
+                        <div class="p-6 bg-slate-50 border border-slate-100 rounded-2xl hover:border-indigo-200 transition-all">
+                            <span class="text-3xl block mb-2">🎮</span>
+                            <h4 class="font-bold text-slate-900 mb-2">
+                                <span lang="en">Gamifying Rote Learning</span>
+                                <span lang="zh">將死記硬背融入遊戲化學習</span>
+                            </h4>
+                            <p class="text-sm text-slate-500 leading-relaxed">
+                                <span lang="en">While memorizing things like ion tables and oxidation states in redox reactions is unavoidable in chemistry, staring at a textbook isn't the only way to learn them. We have carefully designed games that turn repetitive memorization into an engaging, purposeful experience.</span>
+                                <span lang="zh">雖然在化學中記憶離子表和氧化還原反應中的氧化態是不可避免的，但盯著教科書並非唯一的學習途徑。我們精心設計了多款遊戲，將枯燥的重複性記憶轉化為引人入勝、具有明確目標的學習體驗。</span>
+                            </p>
+                        </div>
+
+                        <!-- Panel 4: Step-by-step guidance -->
+                        <div class="p-6 bg-slate-50 border border-slate-100 rounded-2xl hover:border-indigo-200 transition-all">
+                            <span class="text-3xl block mb-2">🪜</span>
+                            <h4 class="font-bold text-slate-900 mb-2">
+                                <span lang="en">Step-by-Step Guidance</span>
+                                <span lang="zh">循序漸進的引導</span>
+                            </h4>
+                            <p class="text-sm text-slate-500 leading-relaxed">
+                                <span lang="en">Complex procedures—like drawing electron diagrams or balancing redox equations—traditionally require a teacher's close supervision. Without it, students reading a textbook can easily lose themselves in the sea of text and get stuck. Our simulations solve this by providing guided, step-by-step walkthroughs that clearly show students exactly where they are and what to do next.</span>
+                                <span lang="zh">繪製電子結構圖或配平氧化還原方程式等複雜步驟，在傳統教學中往往需要教師的密切指導。否則，學生在閱讀教科書時很容易迷失在文字海洋中而停滯不前。我們的模擬系統通過提供循序漸進的引導，清楚顯示學生當前所處的步驟以及下一步的操作，完美解決了這一難題。</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= MASTER TAB: ABOUT ME CONTENT ================= -->
+        <div id="panel-aboutme" class="hidden animate-fade-in">
+            <div class="bg-white rounded-3xl p-8 md:p-12 border border-slate-200 shadow-sm max-w-4xl mx-auto">
+                <div class="flex flex-col md:flex-row gap-8 items-center">
+                    <!-- Photo Space with Direct Support and Error Fallbacks -->
+                    <img id="profile-picture-container" 
+                         src="https://i.imgur.com/c9V7iSA.jpeg" 
+                         alt="Mr. Daniel Mak" 
+                         class="w-36 h-36 md:w-48 md:h-48 rounded-full object-cover shadow-md border-4 border-indigo-100 shrink-0 relative overflow-hidden"
+                         onerror="resolveProfileImage(this)">
+                    
+                    <div class="flex-grow space-y-4 text-center md:text-left">
+                        <div>
+                            <!-- Pill background capsule remains fully intact in both languages without line-breaks -->
+                            <span class="inline-flex items-center bg-indigo-100 text-indigo-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider select-none">
+                                <span lang="en">Educator & Developer</span><span lang="zh">教育工作者 & 研發人</span>
+                            </span>
+                            <h2 class="text-3xl font-extrabold text-slate-900 tracking-tight mt-2">
+                                <span lang="en">Mr. Daniel Mak</span><span lang="zh">麥先生</span>
+                            </h2>
+                            <p class="text-slate-500 text-sm">
+                                <span lang="en">Science Educator / Interactive UI Designer</span>
+                                <span lang="zh">科學教育工作者 / 互動介面設計師</span>
+                            </p>
+                        </div>
+
+                        <!-- Description block displaying translations successfully -->
+                        <div class="text-slate-600 text-sm leading-relaxed max-w-xl">
+                            <p>
+                                <span lang="en">HKU Chemistry graduate with 5+ years of school teaching experience. Open to collaborations on developing new simulations and welcome any error reports to improve current systems.</span>
+                                <span lang="zh">港大化學系畢業，具備 5 年以上學校教學經驗。歡迎開展各類新型模擬化學課件的開發合作，並非常期待您提交任何系統錯誤反饋，以協助我們不斷改進及優化現有系統。</span>
+                            </p>
+                        </div>
+
+                        <!-- Distinct interactive copy-to-clipboard email panel -->
+                        <div class="relative inline-block text-left w-full sm:w-auto">
+                            <button onclick="copyEmailToClipboard()" 
+                                    title="Click to copy email address"
+                                    class="group inline-flex items-center gap-3 bg-indigo-50 border border-indigo-200 hover:border-indigo-400 hover:bg-indigo-100/80 active:scale-95 rounded-2xl px-5 py-3 w-full sm:w-auto justify-center sm:justify-start transition-all duration-300 cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                                <span class="text-base sm:text-lg transition-transform group-hover:scale-110">✉️</span>
+                                <span class="font-semibold text-sm sm:text-base text-indigo-900 tracking-tight">mr.makeducation@gmail.com</span>
+                                <span class="inline-flex items-center gap-1 text-[10px] text-indigo-400 font-bold uppercase ml-2 bg-indigo-100/60 group-hover:bg-indigo-100 group-hover:text-indigo-600 px-2 py-0.5 rounded-md transition-colors">
+                                    <span lang="en">Copy</span><span lang="zh">複製</span>
+                                </span>
+                            </button>
+                            
+                            <!-- Beautiful floating dynamic copied toast notification -->
+                            <div id="copy-tooltip" class="absolute left-1/2 -translate-x-1/2 -top-12 bg-slate-900 text-white text-xs font-semibold px-3.5 py-2 rounded-xl shadow-lg opacity-0 translate-y-1 transition-all duration-300 pointer-events-none flex items-center gap-1.5 z-30">
+                                <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                <span>
+                                    <span lang="en">Copied!</span><span lang="zh">已複製！</span>
+                                </span>
+                                <!-- Arrow visual hint -->
+                                <div class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer Section -->
+    <footer class="bg-slate-950 text-slate-400 py-16 px-6 text-center border-t border-slate-900 mt-20">
+        <div class="max-w-6xl mx-auto">
+            <p class="text-slate-500 text-sm">
+                <span lang="en">© 2026 Mr. Daniel Mak. Built for interactive learning. All rights reserved.</span>
+                <span lang="zh">© 2026 Mr. Daniel Mak. 為互動學習而建。</span>
+            </p>
+        </div>
+    </footer>
+
+    <!-- Interactive Navigation and Filtering Scripts -->
+    <script>
+        // PROFILE PICTURE DIRECT LINK RESOLVER
+        // Ensures album formats from Imgur resolve to direct image URLs cleanly if the browser hits blocking rules.
+        function resolveProfileImage(imgElement) {
+            if (imgElement.src.includes('imgur.com/a/')) {
+                // Resolve Imgur album URL to a raw direct png url
+                imgElement.src = imgElement.src.replace('imgur.com/a/', 'i.imgur.com/') + '.png';
+            } else {
+                // Fallback placeholder if Imgur blocks request completely
+                imgElement.src = "https://placehold.co/200x200/4f46e5/ffffff?text=Daniel+Mak";
+            }
+        }
+
+        // MASTER TAB CONTROL FUNCTION
+        function switchMasterTab(tabName) {
+            // Define all panels and navigation elements
+            const panelSimulations = document.getElementById('panel-simulations');
+            const panelVision = document.getElementById('panel-vision');
+            const panelAboutMe = document.getElementById('panel-aboutme');
+            const subNav = document.getElementById('sub-navigation-container');
+
+            const tabSimulations = document.getElementById('master-tab-simulations');
+            const tabVision = document.getElementById('master-tab-vision');
+            const tabAboutMe = document.getElementById('master-tab-aboutme');
+
+            // Hide all panels
+            panelSimulations.classList.add('hidden');
+            panelSimulations.classList.remove('block');
+            panelVision.classList.add('hidden');
+            panelAboutMe.classList.add('hidden');
+
+            // Reset navigation tab styles
+            const tabs = [tabSimulations, tabVision, tabAboutMe];
+            tabs.forEach(t => {
+                t.classList.remove('border-indigo-500', 'text-white');
+                t.classList.add('border-transparent', 'text-slate-400');
+            });
+
+            // Activate specific panel and style
+            if (tabName === 'simulations') {
+                panelSimulations.classList.remove('hidden');
+                panelSimulations.classList.add('block');
+                tabSimulations.classList.add('border-indigo-500', 'text-white');
+                tabSimulations.classList.remove('border-transparent', 'text-slate-400');
+                // Show subtab filters only in simulations view
+                subNav.style.display = 'block';
+            } else if (tabName === 'vision') {
+                panelVision.classList.remove('hidden');
+                tabVision.classList.add('border-indigo-500', 'text-white');
+                tabVision.classList.remove('border-transparent', 'text-slate-400');
+                // Hide sub-tab filter
+                subNav.style.display = 'none';
+            } else if (tabName === 'aboutme') {
+                panelAboutMe.classList.remove('hidden');
+                tabAboutMe.classList.add('border-indigo-500', 'text-white');
+                tabAboutMe.classList.remove('border-transparent', 'text-slate-400');
+                // Hide sub-tab filter
+                subNav.style.display = 'none';
+            }
+        }
+
+        // SUB-TAB COMPULSORY/ELECTIVE CARDS FILTERS
+        function filterTopics(filter) {
+            const cards = document.querySelectorAll('.topic-card');
+            const buttons = document.querySelectorAll('.filter-btn');
+
+            // Reset active style on buttons
+            buttons.forEach(btn => {
+                btn.classList.remove('bg-indigo-600', 'text-white', 'bg-indigo-50', 'text-indigo-600');
+                btn.classList.add('text-slate-600', 'hover:bg-slate-100', 'hover:text-slate-900');
+            });
+
+            // Set current button to active style
+            const activeBtn = document.getElementById(`btn-${filter}`);
+            if (activeBtn) {
+                activeBtn.classList.remove('text-slate-600', 'hover:bg-slate-100', 'hover:text-slate-900');
+                activeBtn.classList.add('bg-indigo-600', 'text-white');
+            }
+
+            // Loop cards and apply visibility
+            cards.forEach(card => {
+                const category = card.getAttribute('data-category');
+                const status = card.getAttribute('data-status');
+
+                if (filter === 'all') {
+                    card.style.display = 'flex';
+                } else if (filter === 'compulsory') {
+                    card.style.display = (category === 'compulsory') ? 'flex' : 'none';
+                } else if (filter === 'elective') {
+                    card.style.display = (category === 'elective') ? 'flex' : 'none';
+                } else if (filter === 'active') {
+                    card.style.display = (status === 'active') ? 'flex' : 'none';
+                }
+            });
+        }
+
+        // CLIPBOARD ENGINE FOR COPY TO CLIPBOARD
+        function copyEmailToClipboard() {
+            const emailAddress = "mr.makeducation@gmail.com";
+            
+            // Fallback strategy using hidden textarea to securely handle sandbox/iframe limitations
+            const tempTextArea = document.createElement("textarea");
+            tempTextArea.value = emailAddress;
+            tempTextArea.style.position = "fixed"; 
+            tempTextArea.style.opacity = "0";
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+            
+            try {
+                const successful = document.execCommand('copy');
+                if (!successful) throw new Error("Copy command failed");
+            } catch (err) {
+                console.error("Local copy helper failed, trying Clipboard API: ", err);
+                if (navigator.clipboard) {
+                    navigator.clipboard.writeText(emailAddress);
+                }
+            }
+            
+            document.body.removeChild(tempTextArea);
+
+            // Display floating custom notification toast smoothly
+            const toast = document.getElementById("copy-tooltip");
+            toast.classList.remove("opacity-0", "translate-y-1");
+            toast.classList.add("opacity-100", "translate-y-0");
+
+            // Automatically hide after 2 seconds
+            setTimeout(() => {
+                toast.classList.remove("opacity-100", "translate-y-0");
+                toast.classList.add("opacity-0", "translate-y-1");
+            }, 2000);
+        }
+
+        // Image loading fallback logic
+        document.addEventListener("DOMContentLoaded", () => {
+            const placeholders = document.querySelectorAll('.onerror-placeholder');
+            placeholders.forEach(img => {
+                img.onerror = () => {
+                    // Fallback visually if Imgur blocks hotlinking
+                    const container = img.parentElement;
+                    container.innerHTML = `
+                        <div class="absolute inset-0 bg-gradient-to-br from-indigo-500 to-purple-600 flex flex-col items-center justify-center text-white p-6">
+                            <svg class="w-16 h-16 mb-2 animate-bounce" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span class="font-bold text-lg">Microscopic World I</span>
+                        </div>
+                    `;
+                };
+            });
+        });
+    </script>
+</body>
+</html>
